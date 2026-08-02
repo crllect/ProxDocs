@@ -175,6 +175,68 @@ to the shell. It just has no address.
 
 ---
 
+## Fake origins, and why internal pages do not use them
+
+Scramjet can intercept a request before it leaves for the network and answer it
+locally. A plugin taps the frame's fetch hook and sets `props.earlyResponse`:
+
+```js
+import { Plugin } from "@mercuryworkshop/scramjet";
+
+const plugin = new Plugin("internal-pages");
+
+plugin.tap(frame.hooks.fetch.request, (context, props) => {
+	if (context.parsed.url.origin !== "https://internal.myproxy") return;
+	props.earlyResponse = new Response(html, {
+		headers: { "content-type": "text/html; charset=utf-8" }
+	});
+});
+```
+
+Nothing is fetched. Scramjet renders a site that has no server behind it, on an
+origin you invented. Scramjet's own demo playground does exactly this, which is
+where the placeholder name `fakeorigin.com` comes from; it is a domain in an
+example, not an API.
+
+**This is an excellent tool, and it is worth knowing about.** Serving a whole
+origin from a plugin covers offline pages, blocklist interstitials, injected
+homepages, and stubbing a real site so you can test against it without touching
+the network. The other three taps, `intercept`, `preresponse`, and `response`,
+let you rewrite real responses on the way back.
+
+It would also, on the face of it, be a better fit for internal pages than
+`srcdoc`. The pages would have real URLs, so native history would work and the
+per-tab stack below would be unnecessary, the `origin: "null"` `postMessage`
+dance would go away, and pages could load real stylesheets and scripts instead
+of one inlined document.
+
+The generated builds still use `srcdoc`, for two reasons.
+
+**Fetch hooks are Scramjet-only.** Ultraviolet has no equivalent, so internal
+pages built this way would not exist in an Ultraviolet build. `srcdoc` is an
+iframe attribute; it works the same under either engine, which is why custom
+protocols are offered as a feature independent of your engine choice.
+
+**It fails when Scramjet does** A fake-origin response is produced
+inside the service worker, by a plugin tapped onto a frame that
+`controller.createFrame()` returned, after `initBootstrap()` registered the
+service worker, loaded every bundle, and built the transport, on a page whose
+COOP/COEP headers let the wasm rewriter have `SharedArrayBuffer`. If any of that
+is broken, the fake origin cannot be served. That is the failure an error page
+exists to explain, so the mechanism that renders your error page must not depend
+on the machinery that just failed. `srcdoc` depends on none of it.
+
+There is also an isolation difference. `earlyResponse` short-circuits the
+transport and returns straight to the service worker; there is no CORS layer in
+front of it, so a proxied page can read a fake-origin URL that a plugin serves.
+You can narrow this by checking `context.parsed.destination` and serving only
+navigations. With `srcdoc` the question does not arise, because there is no
+address to request.
+
+Use fake origins for plugins. Use `srcdoc` for internal pages unless you know what you are doing.
+
+---
+
 ## Talking to the shell
 
 A `srcdoc` document does not share the parent document's existing module scope.

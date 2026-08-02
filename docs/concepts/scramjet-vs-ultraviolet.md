@@ -77,7 +77,10 @@ Scramjet 2.x has:
     own URL prefix for [multiple tabs](../guides/multiple-tabs.md).
 -   **Plugins and hooks.** Tap into page init, request errors, and navigation.
     This is how you get URL-change events, HTTP caching, and custom error pages
-    without hacking around the engine.
+    without hacking around the engine. The fetch hooks can also answer a request
+    locally instead of sending it, which lets a plugin serve an entire origin
+    that has no server behind it. See
+    [fake origins](../guides/custom-protocols.md#fake-origins-and-why-internal-pages-do-not-use-them).
 -   **Cookie handling** synchronised across frames and persisted in IndexedDB.
 -   **Escaped-link interception**, so `window.open` and `target="_blank"` stay
     inside your proxy.

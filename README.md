@@ -13,7 +13,8 @@ Two things live here:
     commands for your selected package manager.
 
 Ask development questions or show your project in the **Night Network** Discord:
-<https://discord.gg/algebra>. For server support, message `@crllect` there.
+<https://discord.gg/algebra>. For more direct support, message me on discord:
+`@crllect`
 
 ---
 
@@ -232,19 +233,20 @@ published under the `alpha` tag, not `latest`.
 
 ## Credits
 
-**Night Network** for the community and the help channel:
+**Night Network**, where I personally help in building really cool stuff.
 <https://discord.gg/algebra>
 
 **Mercury Workshop** for Scramjet, wisp, epoxy and the transport layer.
-**TitaniumNetwork** for Ultraviolet, which most of this ecosystem is built on.
+
+**TitaniumNetwork** for Ultraviolet, which I would argue is the catalyst for the entire proxy community.
 
 ## Contributing
 
 Corrections are the most valuable contribution. If something here is wrong, out
-of date, or describes a fork's behaviour as if it were upstream, open an issue
+of date, or describes a fork's behavior as if it were upstream, open an issue
 or a PR. Run `npm run check` before submitting.
 
-## Licence
+## License
 
 This repository and its generated projects are AGPL-3.0-only. Several upstream
 components are AGPL as well. Review `LICENSE` before distributing or deploying a
