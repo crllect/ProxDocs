@@ -29,11 +29,28 @@ const handleRequest = (req, res) => {
 };
 export default handleRequest;
 const server = http.createServer(handleRequest);
+const listenWithFallback = (target, startPort, attempts = 20) => {
+    let port = startPort;
+    let left = attempts;
+    const onError = (error) => {
+        if (error.code !== "EADDRINUSE" || left-- <= 0) {
+            console.error(`Could not listen on port ${port}: ${error.message}`);
+            process.exit(1);
+        }
+        console.warn(`Port ${port} is in use, trying ${port + 1}...`);
+        port += 1;
+        target.listen(port);
+    };
+    target.on("error", onError);
+    target.listen(port, () => {
+        target.off("error", onError);
+        process.send?.({ type: "listening", port });
+        console.log(`Ultraviolet Vercel listening on http://localhost:${port}`);
+    });
+};
 if (!process.env.VERCEL) {
     const port = Number(process.env.PORT) || Number("3000");
-    server.listen(port, () => {
-        console.log(`Ultraviolet Vercel listening on port ${port}`);
-    });
+    listenWithFallback(server, port);
     for (const signal of ["SIGINT", "SIGTERM"]) {
         process.on(signal, () => server.close(() => process.exit(0)));
     }

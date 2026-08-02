@@ -7,6 +7,19 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 	const seen = new Map();
 	let title = null;
 
+	// parseInline returns HTML, so headings arrive with their entities already
+	// escaped. Decode the five marked emits to recover real text: otherwise
+	// "Scramjet's" slugs as "scramjet39s", and callers that escape again render
+	// a literal &#39;. &amp; goes last so "&lt;" written as text survives.
+	const decodeEntities = value =>
+		value
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#0*39;/g, "'")
+			.replace(/&#x0*27;/gi, "'")
+			.replace(/&amp;/g, "&");
+
 	const slugify = text => {
 		const base =
 			text
@@ -25,7 +38,7 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 
 	renderer.heading = function ({ tokens, depth }) {
 		const text = this.parser.parseInline(tokens);
-		const plain = text.replace(/<[^>]+>/g, "");
+		const plain = decodeEntities(text.replace(/<[^>]+>/g, ""));
 
 		if (depth === 1 && title === null) {
 			title = plain;

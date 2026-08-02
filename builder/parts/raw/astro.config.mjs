@@ -4,6 +4,8 @@ import preact from "@astrojs/preact";
 import tailwindcss from "@tailwindcss/vite";
 //#endif
 
+const backendPort = process.env.BACKEND_PORT || "{{PORT}}";
+
 export default defineConfig({
 	output: "static",
 	outDir: "./dist",

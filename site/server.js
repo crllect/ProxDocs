@@ -297,8 +297,25 @@ const escapeHtml = value => {
 	);
 };
 
-const port = Number(process.env.PORT) || 4321;
+// Astro's dev server also defaults to 4321, and a developer reading the docs is
+// very likely running a generated project beside them, so walk upward rather
+// than dying on EADDRINUSE.
+let port = Number(process.env.PORT) || 4321;
+let attemptsLeft = 20;
+
+const onListenError = error => {
+	if (error.code !== "EADDRINUSE" || attemptsLeft-- <= 0) {
+		console.error(`Could not listen on port ${port}: ${error.message}`);
+		process.exit(1);
+	}
+	console.warn(`  Port ${port} is in use, trying ${port + 1}...`);
+	port += 1;
+	server.listen(port);
+};
+
+server.on("error", onListenError);
 server.listen(port, () => {
-	console.log(`\n  ProxDocs listening on port ${port}`);
+	server.off("error", onListenError);
+	console.log(`\n  ProxDocs listening on http://localhost:${port}`);
 	console.log("  Documentation route: /\n  Builder route: /build\n");
 });

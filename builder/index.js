@@ -124,10 +124,7 @@ export const compose = async (raw = {}) => {
 		COMPONENT_EXT: componentExt,
 		STYLE_EXT: styleExt,
 		VITE_PROXY_ROUTES: Object.entries(viteProxyConfig(options))
-			.map(
-				([route, config]) =>
-					`${JSON.stringify(route)}: ${typeof config === "string" ? JSON.stringify(config) : inlineObject(config)}`
-			)
+			.map(([route, config]) => `${JSON.stringify(route)}: ${config}`)
 			.join(",\n"),
 		DEV_SERVER_EXECUTABLE: serverCommand.executable,
 		DEV_SERVER_ARGS: serverCommand.args.map(JSON.stringify).join(",\n"),
@@ -353,10 +350,12 @@ const frontendCommand = options => {
 	}
 };
 
+// Values are emitted as raw code, not JSON, so the targets can interpolate the
+// `backendPort` const that the config file resolves from BACKEND_PORT.
 const viteProxyConfig = options => {
 	const proxy = {};
 	const switches = options.features.includes("transportSwitch");
-	const backend = `http://127.0.0.1:${options.host === "vercel" ? 3000 : 8080}`;
+	const backend = "`http://127.0.0.1:${backendPort}`";
 	const http = route => {
 		proxy[route] = backend;
 	};
@@ -388,10 +387,8 @@ const viteProxyConfig = options => {
 	}
 
 	if (options.transportBackend === "wisp" || options.wiring === "bootstrap") {
-		proxy["/wisp"] = {
-			target: `ws://127.0.0.1:${options.host === "vercel" ? 3000 : 8080}`,
-			ws: true
-		};
+		proxy["/wisp"] =
+			"{ target: `ws://127.0.0.1:${backendPort}`, ws: true }";
 	}
 
 	return proxy;
@@ -613,7 +610,7 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 		start,
 		"```",
 		"",
-		`The server listens on port ${vars.PORT}.`,
+		`The server listens on port ${vars.PORT}, or the first free port above it if that one is taken. Set \`PORT\` to choose a starting point.`,
 		""
 	];
 

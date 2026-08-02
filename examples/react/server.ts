@@ -56,11 +56,35 @@ server.on("upgrade", (req, socket, head) => {
 	socket.end();
 });
 
+const listenWithFallback = (
+	target: http.Server,
+	startPort: number,
+	attempts = 20
+) => {
+	let port = startPort;
+	let left = attempts;
+
+	const onError = (error: NodeJS.ErrnoException) => {
+		if (error.code !== "EADDRINUSE" || left-- <= 0) {
+			console.error(`Could not listen on port ${port}: ${error.message}`);
+			process.exit(1);
+		}
+		console.warn(`Port ${port} is in use, trying ${port + 1}...`);
+		port += 1;
+		target.listen(port);
+	};
+
+	target.on("error", onError);
+	target.listen(port, () => {
+		target.off("error", onError);
+		process.send?.({ type: "listening", port });
+		console.log(`React listening on http://localhost:${port}`);
+	});
+};
+
 	const port = Number(process.env.PORT) || Number("8080");
 
-	server.listen(port, () => {
-		console.log(`React listening on port ${port}`);
-	});
+	listenWithFallback(server, port);
 
 	for (const signal of ["SIGINT", "SIGTERM"] as const) {
 		process.on(signal, () => server.close(() => process.exit(0)));

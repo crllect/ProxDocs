@@ -177,10 +177,23 @@ await app.register(fastifyStatic, {
 //#endif
 //#endif
 
-const port = Number(process.env.PORT) || Number("{{PORT}}");
+const attempts = 20;
+let port = Number(process.env.PORT) || Number("{{PORT}}");
 
-await app.listen({ port, host: "0.0.0.0" });
-console.log(`{{PROJECT_TITLE}} listening on port ${port}`);
+for (let attempt = 0; ; attempt++) {
+	try {
+		await app.listen({ port, host: "0.0.0.0" });
+		break;
+	} catch (error) {
+		const code = (error as NodeJS.ErrnoException).code;
+		if (code !== "EADDRINUSE" || attempt >= attempts) throw error;
+		console.warn(`Port ${port} is in use, trying ${port + 1}...`);
+		port += 1;
+	}
+}
+
+process.send?.({ type: "listening", port });
+console.log(`{{PROJECT_TITLE}} listening on http://localhost:${port}`);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	process.on(signal, () => void app.close().then(() => process.exit(0)));

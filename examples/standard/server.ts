@@ -76,10 +76,23 @@ await app.register(fastifyStatic, {
 	decorateReply: false
 });
 
-const port = Number(process.env.PORT) || Number("8080");
+const attempts = 20;
+let port = Number(process.env.PORT) || Number("8080");
 
-await app.listen({ port, host: "0.0.0.0" });
-console.log(`Standard listening on port ${port}`);
+for (let attempt = 0; ; attempt++) {
+	try {
+		await app.listen({ port, host: "0.0.0.0" });
+		break;
+	} catch (error) {
+		const code = (error as NodeJS.ErrnoException).code;
+		if (code !== "EADDRINUSE" || attempt >= attempts) throw error;
+		console.warn(`Port ${port} is in use, trying ${port + 1}...`);
+		port += 1;
+	}
+}
+
+process.send?.({ type: "listening", port });
+console.log(`Standard listening on http://localhost:${port}`);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	process.on(signal, () => void app.close().then(() => process.exit(0)));

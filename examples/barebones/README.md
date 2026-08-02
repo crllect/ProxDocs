@@ -9,7 +9,7 @@ npm install
 npm run start
 ```
 
-The server listens on port 8080.
+The server listens on port 8080, or the first free port above it if that one is taken. Set `PORT` to choose a starting point.
 
 ## What this build is
 

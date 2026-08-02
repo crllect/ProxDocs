@@ -6,6 +6,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 //#endif
 
+const backendPort = process.env.BACKEND_PORT || "{{PORT}}";
+
 export default defineConfig({
 	//#if vitePlugins
 	plugins: [

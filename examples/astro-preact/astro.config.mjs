@@ -1,6 +1,8 @@
 import { defineConfig } from "astro/config";
 import preact from "@astrojs/preact";
 
+const backendPort = process.env.BACKEND_PORT || "8080";
+
 export default defineConfig({
 	output: "static",
 	outDir: "./dist",
@@ -13,11 +15,11 @@ export default defineConfig({
 				"Cross-Origin-Embedder-Policy": "require-corp"
 			},
 			proxy: {
-				"/scram": "http://127.0.0.1:8080",
-				"/utils": "http://127.0.0.1:8080",
-				"/controller": "http://127.0.0.1:8080",
-				"/libcurl": "http://127.0.0.1:8080",
-				"/wisp": { target: "ws://127.0.0.1:8080", ws: true }
+				"/scram": `http://127.0.0.1:${backendPort}`,
+				"/utils": `http://127.0.0.1:${backendPort}`,
+				"/controller": `http://127.0.0.1:${backendPort}`,
+				"/libcurl": `http://127.0.0.1:${backendPort}`,
+				"/wisp": { target: `ws://127.0.0.1:${backendPort}`, ws: true }
 			}
 		},
 	}

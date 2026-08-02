@@ -210,7 +210,50 @@ a {
 	max-height: calc(100vh - 4rem);
 	overflow-y: auto;
 	padding: 1.25rem 0;
+}
+
+/* Thumb only, no track. Firefox and friends take the standard properties;
+   WebKit needs the pseudo-elements, including the arrow buttons. */
+.sidebar,
+.filelist,
+.filepreview {
 	scrollbar-width: thin;
+	scrollbar-color: var(--border) transparent;
+}
+
+.sidebar::-webkit-scrollbar,
+.filelist::-webkit-scrollbar,
+.filepreview::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-corner,
+.filelist::-webkit-scrollbar-track,
+.filelist::-webkit-scrollbar-corner,
+.filepreview::-webkit-scrollbar-track,
+.filepreview::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-button,
+.filelist::-webkit-scrollbar-button,
+.filepreview::-webkit-scrollbar-button {
+	display: none;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.filelist::-webkit-scrollbar-thumb,
+.filepreview::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.filelist::-webkit-scrollbar-thumb:hover,
+.filepreview::-webkit-scrollbar-thumb:hover {
+	background: var(--fg-muted);
 }
 
 .nav-section {
@@ -711,13 +754,16 @@ pre:hover .copy {
 
 .filepreview {
 	margin: 0;
-	margin-right: 16px;
 	min-height: 0;
 	padding: 0;
 	overflow: auto;
 	font-size: 0.75rem;
 	line-height: 1.6;
 	background: var(--bg-code);
+}
+
+pre.filepreview {
+	margin-right: 16px;
 }
 
 .prose .filepreview code {
