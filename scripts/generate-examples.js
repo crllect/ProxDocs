@@ -10,9 +10,6 @@ import { presets, exampleNames, packageManagers } from "../builder/options.js";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const examplesDir = path.join(root, "examples");
 
-// Installs, lockfiles and build output live inside an example but are not
-// generated. Removing them would uninstall the example's dependencies out from
-// under any dev server running against it.
 const localArtifacts = new Set([
 	"node_modules",
 	"dist",
