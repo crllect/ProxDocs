@@ -1,0 +1,336 @@
+# URL parsing and history
+
+Two separate topics that both live in the address bar. Getting either wrong is
+very visible to users.
+
+---
+
+## Part 1: parsing what someone typed
+
+This check appears in many proxy frontends:
+
+```js
+if (!input.includes(".")) {
+	url = searchUrl + encodeURIComponent(input);
+} else if (!input.startsWith("http://") && !input.startsWith("https://")) {
+	url = "https://" + input;
+}
+```
+
+The dot check came from the first Proxy Tutorial I wrote. I was too lazy to come
+up with a regex, people copied it, and it stuck.
+
+Three lines, and it fails on all of these:
+
+| Input                     | What it does                               | What it should do       |
+| ------------------------- | ------------------------------------------ | ----------------------- |
+| `localhost:3000`          | Searches for it, no dot                    | Navigate                |
+| `what is 3.5mm cable`     | Navigates to `https://what is 3.5mm cable` | Search                  |
+| `1.5`                     | Navigates to `https://1.5`                 | Search                  |
+| `https://x.com`           | Fine                                       | Fine                    |
+| `httpfoo.com`             | Fine by luck                               | Navigate                |
+| `mailto:user@crllect.dev` | Prepends `https://`                        | Hand off to the browser |
+| `javascript:alert(1)`     | Prepends `https://`                        | Refuse                  |
+| `münchen.de`              | Works by accident                          | Navigate                |
+
+The `javascript:` row matters. If your address bar can be populated from a link
+or a query parameter, blindly navigating a `javascript:` URL is an XSS vector on
+your own origin.
+
+There is also a privacy failure hiding in the first row. When a URL is
+misclassified as a search, **you send it to a search engine**. Users paste URLs
+containing session tokens, password-reset links, and invite codes. Silently
+forwarding those to Google is a real leak.
+
+### A safer parser
+
+Check hostname-shaped input before the generic scheme test because
+`localhost:3000` is syntactically a URL scheme. Accept a hostname, `localhost`,
+an IP address, or an IPv6 literal; then handle explicit schemes and search
+everything else.
+
+```js
+const proxyableSchemes = new Set(["http:", "https:"]);
+const blockedSchemes = new Set([
+	"javascript:",
+	"data:",
+	"vbscript:",
+	"file:",
+	"blob:",
+	"filesystem:"
+]);
+const looksLikeUrl =
+	/^(?:(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
+
+export const resolveInput = (rawInput, searchTemplate) => {
+	const input = String(rawInput ?? "").trim();
+	if (!input) return { url: "", kind: "empty" };
+
+	if (looksLikeUrl.test(input)) {
+		try {
+			const url = new URL("https://" + input);
+			if (!url.username && !url.password)
+				return { url: url.href, kind: "url" };
+		} catch {}
+	}
+
+	if (/^[a-z][a-z0-9+.-]*:/i.test(input)) {
+		try {
+			const parsed = new URL(input);
+			if (
+				parsed.username ||
+				parsed.password ||
+				blockedSchemes.has(parsed.protocol)
+			) {
+				return { url: "", kind: "blocked" };
+			}
+			return proxyableSchemes.has(parsed.protocol)
+				? { url: parsed.href, kind: "url" }
+				: { url: parsed.href, kind: "external" };
+		} catch {
+			return { url: "", kind: "blocked" };
+		}
+	}
+
+	return {
+		url: searchTemplate.replace("%s", encodeURIComponent(input)),
+		kind: "search"
+	};
+};
+```
+
+The credential check runs for explicit and inferred URLs. It rejects text such
+as `https://crllect.dev@attacker.crllect.dev/`, whose destination is
+`attacker.crllect.dev` despite the name at the start.
+
+### Displaying URLs back
+
+Browsers hide the scheme and a leading `www.`. Copy that, people judge trust
+from this string:
+
+```js
+export const formatForDisplay = url => {
+	try {
+		const parsed = new URL(url);
+		const host = parsed.host.replace(/^www\./, "");
+		const rest = parsed.pathname === "/" ? "" : parsed.pathname;
+		return host + rest + parsed.search + parsed.hash;
+	} catch {
+		return url;
+	}
+};
+```
+
+One rule that matters more than it looks: **never overwrite the address bar
+while the user is typing.**
+
+```js
+if (!addressBarFocused) {
+	addressBar.value = tab?.url ? formatForDisplay(tab.url) : "";
+}
+```
+
+Without that check, a background frame finishing a load wipes what someone is
+halfway through typing. It is the most irritating bug a proxy frontend can have,
+and it is one line to prevent.
+
+---
+
+## Part 2: history
+
+"History" means two unrelated things, and conflating them is why so many proxy
+frontends have a broken back button.
+
+### Document history, the engine owns this
+
+The iframe still has a browser-managed document history. Scramjet wraps it as
+`frame.back()`, `frame.forward()`, and `frame.reload()`; Ultraviolet delegates
+to the iframe's `contentWindow.history`.
+
+That history is richer than a URL list. It includes form submissions, redirects,
+`history.replaceState`, hash changes, and state associated with a same-document
+navigation. Do not try to serialize or recreate it from URLs.
+
+```js
+const back = () => element.contentWindow?.history.back();
+const forward = () => element.contentWindow?.history.forward();
+const reload = () => element.contentWindow?.location.reload();
+```
+
+The proxy shell cannot use that history alone. Its initial new-tab and settings
+pages are `srcdoc` documents, not engine navigations. The browser has no useful
+document-history entry that connects a proxied page back to that generated
+new-tab page.
+
+### Shell history, you do own this
+
+The generated browser controls keep a small, per-tab list of top-level entries.
+This includes the internal new-tab and settings pages as well as the final URLs
+reported by the proxy engine. It exists for the shell, not to recreate every
+browser-history detail.
+
+```js
+record(url) {
+	if (this.history[this.historyIndex] === url) return;
+
+	const existing = this.history.lastIndexOf(url, this.historyIndex - 1);
+	if (existing >= 0) {
+		this.historyIndex = existing;
+		return;
+	}
+
+	this.history.splice(this.historyIndex + 1);
+	this.history.push(url);
+	this.historyIndex = this.history.length - 1;
+}
+```
+
+This makes control state deterministic across browsers. Back is disabled on a
+fresh new tab. After navigating to `https://crllect.dev/`, Back returns to the
+new-tab page and Forward becomes available. A new navigation after Back drops
+the forward branch.
+
+The engine URL event feeds this top-level list, so links, redirects, and SPA URL
+changes still update the shell address bar. Its purpose is only to select the
+next shell view and compute whether controls should be enabled; it cannot and
+does not reproduce in-document form or state history.
+
+When selecting a previous entry, render or proxy-navigate it without recording a
+new entry. Otherwise Back itself creates a new history branch. Ignore late URL
+events from a frame while it is displaying an internal `srcdoc` page; the old
+page can finish asynchronously after the shell has already changed views.
+
+#### Why not use `history.length`?
+
+`history.length` includes entries outside the proxy frame and does not tell you
+which direction is available. The Navigation API exposes `canGoBack` and
+`canGoForward` in Chromium, but it is not portable and still cannot represent an
+internal `srcdoc` new-tab page:
+
+```js
+const navigation = frameWindow.navigation;
+if (navigation) {
+	update(navigation.canGoBack, navigation.canGoForward);
+	navigation.addEventListener("currententrychange", update);
+	navigation.addEventListener("navigatesuccess", update);
+}
+```
+
+The per-tab shell list is therefore the cross-browser source of control state.
+The engine's document history remains the source of in-document state.
+
+The persisted visit log remains separate. It records visits for a history page;
+it is not the current tab's Back/Forward stack.
+
+### The visit log, you do own this
+
+A persisted, searchable record of where the user went. Independent of any tab.
+
+```js
+const maxEntries = 1000;
+const dedupeWindowMs = 30_000;
+
+export const record = (url, title = "") => {
+	if (!url) return;
+	if (!/^https?:/i.test(url)) return;
+
+	const now = Date.now();
+	const last = entries[0];
+
+	if (last && last.url === url && now - last.at < dedupeWindowMs) {
+		last.at = now;
+		if (title) last.title = title;
+		persist();
+		return;
+	}
+
+	entries.unshift({ url, title, at: now });
+	if (entries.length > maxEntries) entries.length = maxEntries;
+	persist();
+};
+```
+
+The dedupe window collapses repeated callbacks and reloads of the same URL.
+Redirects to different URLs remain separate entries.
+
+Cap the length. `localStorage` gives you around 5 MB for the whole origin, and
+an uncapped history will eventually take all of it and start throwing on every
+write, including your settings.
+
+### Where the record call goes
+
+Hook it to the engine's URL event, not to your `navigate()` function.
+`navigate()` only knows about addresses the user typed; it never sees links they
+clicked, redirects, or SPA route changes.
+
+```js
+this.session = await engine.createSession(this.element, {
+	url: url => {
+		this.url = url;
+		if (settings.get("saveHistory")) visitLog.record(url, this.title);
+	}
+});
+```
+
+With Scramjet that event comes from `UrlWatcherPlugin`, which fires on real
+navigations, hash changes, and `history.pushState`. With Ultraviolet there is no
+event and you poll `contentWindow.location`, see the generated `engine.js` for
+the UV version.
+
+### Let people turn it off
+
+A proxy is often used because someone does not want a local record. Ship a
+`saveHistory` setting, honor it, and delete entries when the user clears them:
+
+```js
+export const clear = () => {
+	entries = [];
+	persist();
+};
+```
+
+If you ever sync history to a server, that must be opt-in and it must be
+obvious. See [Running a proxy site well](site-best-practices.md).
+
+---
+
+## On URL codecs
+
+Ultraviolet encodes the destination into the path with a codec.
+`Ultraviolet.codec.xor` by default. Scramjet's controller uses
+`encodeURIComponent` by default and lets you supply your own.
+
+Be clear about what this is for. **It is obfuscation, not encryption.** The key
+is in the client bundle, so anyone can decode it. Its only real function is to
+stop naive substring filters from matching `youtube.com` in a URL.
+
+Writing a custom codec is easy and occasionally worthwhile:
+
+```js
+const encode = value => {
+	const bytes = new TextEncoder().encode(value);
+	const binary = String.fromCharCode(...bytes);
+	return btoa(binary)
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_")
+		.replace(/=+$/, "");
+};
+
+const decode = value => {
+	const base64 = value
+		.replace(/-/g, "+")
+		.replace(/_/g, "/")
+		.padEnd(Math.ceil(value.length / 4) * 4, "=");
+	const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+	return new TextDecoder().decode(bytes);
+};
+
+config.codec = { encode, decode };
+```
+
+Two constraints: the output must be path-safe, and **encode/decode must be
+byte-for-byte inverses** for every input including unicode and already-encoded
+sequences. A codec that round-trips imperfectly produces failures that look like
+rewriter bugs and are miserable to trace.
+
+Do not tell users a codec hides their browsing. It does not.

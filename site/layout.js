@@ -1,0 +1,146 @@
+import { adjacent } from "./nav.js";
+
+export const escapeHtml = value => {
+	return String(value).replace(
+		/[&<>"']/g,
+		c =>
+			({
+				"&": "&amp;",
+				"<": "&lt;",
+				">": "&gt;",
+				'"': "&quot;",
+				"'": "&#39;"
+			})[c]
+	);
+};
+
+export const sidebar = (nav, activeSlug) => {
+	return nav
+		.map(
+			section => `
+    <div class="nav-section">
+      <h2>${escapeHtml(section.title)}</h2>
+      <ul>
+        ${section.items
+			.map(item => {
+				const href = item.slug === "index" ? "/" : `/${item.slug}`;
+				const active =
+					item.slug === activeSlug ? ' class="active"' : "";
+				const badge = item.isBuilder
+					? ' <span class="badge">interactive</span>'
+					: "";
+				return `<li><a href="${href}"${active}>${escapeHtml(item.title)}${badge}</a></li>`;
+			})
+			.join("\n        ")}
+      </ul>
+    </div>`
+		)
+		.join("\n");
+};
+
+export const shell = ({
+	title,
+	slug,
+	nav,
+	main,
+	extraHead = "",
+	extraBody = ""
+}) => {
+	return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(title)} · ProxyTutorial</title>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🛰️</text></svg>">
+${extraHead}
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="/">ProxyTutorial</a>
+  <div class="docs-search">
+    <form id="docs-search-form" role="search">
+      <input id="docs-search" type="search" placeholder="Search docs" aria-label="Search documentation" autocomplete="off">
+    </form>
+    <div id="docs-search-results" class="docs-search__results" hidden></div>
+  </div>
+  <nav class="topbar__links">
+    <a href="/build">Build</a>
+    <a href="/reference/troubleshooting">Troubleshooting</a>
+    <a href="https://github.com/crllect/ProxyTutorial" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
+</header>
+
+<div class="layout">
+  <aside id="sidebar" class="sidebar">
+    ${sidebar(nav, slug)}
+  </aside>
+  ${main}
+</div>
+
+<script src="/static/site.js" type="module"></script>
+${extraBody}
+</body>
+</html>`;
+};
+
+export const layout = ({
+	title,
+	slug,
+	nav,
+	breadcrumb,
+	toc,
+	body,
+	sourcePath
+}) => {
+	const { prev, next } = adjacent(slug);
+
+	const tocHtml = toc.length
+		? `<nav class="toc" aria-label="On this page">
+         <h2>On this page</h2>
+         <ul>
+           ${toc
+				.map(
+					h =>
+						`<li class="toc-${h.depth}"><a href="#${h.id}">${escapeHtml(h.text)}</a></li>`
+				)
+				.join("\n           ")}
+         </ul>
+       </nav>`
+		: "";
+
+	const crumbs = breadcrumb.length
+		? `<p class="breadcrumb">${breadcrumb.map(c => escapeHtml(c.title)).join(" › ")}</p>`
+		: "";
+
+	const pager = `
+    <nav class="pager">
+      ${prev ? `<a class="pager__prev" href="/${prev.slug}"><span>Previous</span>${escapeHtml(prev.title)}</a>` : "<span></span>"}
+      ${next ? `<a class="pager__next" href="/${next.slug}"><span>Next</span>${escapeHtml(next.title)}</a>` : "<span></span>"}
+    </nav>`;
+
+	const source = sourcePath
+		? `<p class="source-link">Source: <code>${escapeHtml(sourcePath)}</code></p>`
+		: "";
+
+	return shell({
+		title,
+		slug,
+		nav,
+		main: `
+    <main id="content" class="content">
+      <article class="prose">
+        ${crumbs}
+        ${body}
+        ${source}
+        ${pager}
+      </article>
+    </main>
+    ${tocHtml}`
+	});
+};

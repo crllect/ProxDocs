@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Ultraviolet Vercel</title>
+		<link rel="stylesheet" href="/styles.css" />
+		<meta name="robots" content="noindex" />
+		<script src="/uv/uv.bundle.js"></script>
+		<script src="/uv-config.js"></script>
+		<script src="/baremux/index.js"></script>
+	</head>
+
+	<body>
+		<div class="toolbar">
+			<div class="toolbar__left">
+				<button id="back" type="button" aria-label="Back" title="Back">
+					&lt;
+				</button>
+				<button
+					id="forward"
+					type="button"
+					aria-label="Forward"
+					title="Forward"
+				>
+					&gt;
+				</button>
+				<button id="reload" type="button">reload</button>
+			</div>
+
+			<form id="omnibox" class="omnibox" role="search">
+				<input
+					id="address"
+					type="text"
+					name="address"
+					placeholder="search or enter address"
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
+					enterkeyhint="go"
+					aria-label="Address"
+				/>
+			</form>
+
+			<div class="toolbar__right">
+				<button id="menu-toggle" type="button" aria-expanded="false">
+					menu
+				</button>
+			</div>
+		</div>
+
+		<div id="menu" class="menu" hidden>
+			<button data-open="ultravioletvercel://settings" type="button">
+				settings
+			</button>
+			<button data-open="ultravioletvercel://history" type="button">
+				history
+			</button>
+			<button data-open="ultravioletvercel://about" type="button">
+				about
+			</button>
+		</div>
+
+		<p id="status" class="status" role="status" hidden></p>
+
+		<main id="frames" class="frames"></main>
+
+		<script type="module" src="/js/app.js"></script>
+	</body>
+</html>

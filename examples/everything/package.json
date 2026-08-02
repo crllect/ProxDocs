@@ -1,0 +1,30 @@
+{
+  "name": "everything",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "start": "bun run build && bun server.ts",
+    "dev": "bun dev.js",
+    "server": "bun server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mercuryworkshop/epoxy-transport": "^3.0.1",
+    "@mercuryworkshop/libcurl-transport": "^2.0.5",
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
+    "@mercuryworkshop/wisp-js": "^0.4.1",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.6"
+  }
+}

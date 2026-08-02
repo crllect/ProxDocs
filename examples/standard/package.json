@@ -1,0 +1,33 @@
+{
+  "name": "standard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "start": "npm run build && tsx server.ts",
+    "dev": "node dev.js",
+    "server": "tsx server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.2",
+    "@mercuryworkshop/epoxy-transport": "^3.0.1",
+    "@mercuryworkshop/libcurl-transport": "^2.0.5",
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
+    "@mercuryworkshop/wisp-js": "^0.4.1",
+    "fastify": "^5.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "sass": "^1.83.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.6"
+  }
+}

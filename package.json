@@ -1,0 +1,27 @@
+{
+	"name": "proxytutorial",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"description": "Documentation and a modular generator for modern web proxies (Scramjet, Ultraviolet, wisp, bare)",
+	"scripts": {
+		"start": "node site/server.js",
+		"docs": "node site/server.js",
+		"build": "node builder/cli.js",
+		"examples": "node scripts/generate-examples.js",
+		"check": "node scripts/check.js",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
+	},
+	"engines": {
+		"node": ">=22.13"
+	},
+	"license": "AGPL-3.0-only",
+	"dependencies": {
+		"marked": "^15.0.7",
+		"typescript": "5.9.2"
+	},
+	"devDependencies": {
+		"prettier": "3.6.2"
+	}
+}

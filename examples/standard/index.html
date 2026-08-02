@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Standard</title>
+		<meta name="robots" content="noindex" />
+	</head>
+
+	<body>
+		<div class="toolbar">
+			<div class="toolbar__left">
+				<button id="back" type="button" aria-label="Back" title="Back">
+					&lt;
+				</button>
+				<button
+					id="forward"
+					type="button"
+					aria-label="Forward"
+					title="Forward"
+				>
+					&gt;
+				</button>
+				<button id="reload" type="button">reload</button>
+			</div>
+
+			<form id="omnibox" class="omnibox" role="search">
+				<input
+					id="address"
+					type="text"
+					name="address"
+					placeholder="search or enter address"
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
+					enterkeyhint="go"
+					aria-label="Address"
+				/>
+			</form>
+
+			<div class="toolbar__right">
+				<button id="bookmark" type="button" aria-pressed="false">
+					bookmark
+				</button>
+				<button id="menu-toggle" type="button" aria-expanded="false">
+					menu
+				</button>
+			</div>
+		</div>
+
+		<div id="menu" class="menu" hidden>
+			<button data-open="standard://settings" type="button">
+				settings
+			</button>
+			<button data-open="standard://history" type="button">
+				history
+			</button>
+			<button data-open="standard://bookmarks" type="button">
+				bookmarks
+			</button>
+			<button data-open="standard://about" type="button">
+				about
+			</button>
+		</div>
+
+		<div id="tabs" class="tabs" role="tablist"></div>
+
+		<p id="status" class="status" role="status" hidden></p>
+
+		<main id="frames" class="frames"></main>
+
+		<script type="module" src="/src/app.ts"></script>
+	</body>
+</html>
