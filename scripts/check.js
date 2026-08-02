@@ -13,7 +13,7 @@ import { nav } from "../site/nav.js";
 import { markdownToHtml } from "../site/markdown.js";
 import { shell } from "../site/layout.js";
 import { highlight } from "../site/public/highlight.js";
-import { compose } from "../builder/index.js";
+import { compose } from "../builder/node.js";
 import { toJavaScript } from "../builder/transpile.js";
 import {
 	presets,
@@ -467,7 +467,7 @@ for (const combo of combinations) {
 
 	for (const [relative, contents] of tsFiles) {
 		try {
-			toJavaScript(contents, relative);
+			await toJavaScript(contents, relative);
 		} catch (error) {
 			fail(
 				`${combo.label}: ${relative} — ${error.message.split("\n")[0]}`

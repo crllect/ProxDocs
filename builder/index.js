@@ -1,7 +1,3 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import {
 	resolve as resolveOptions,
 	has,
@@ -21,13 +17,14 @@ import { render } from "./template.js";
 import { toJavaScript, rewriteImportExtensions } from "./transpile.js";
 import { versions, scramjetSpecifiers, verifiedOn } from "./versions.js";
 
-const partsDir = path.join(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"parts"
-);
-const part = relative => readFile(path.join(partsDir, relative), "utf8");
+export const compose = async (raw = {}, { readPart } = {}) => {
+	if (typeof readPart !== "function") {
+		throw new TypeError(
+			"compose() needs a readPart(relativePath) function. Import compose from builder/node.js for the filesystem-backed version."
+		);
+	}
+	const part = readPart;
 
-export const compose = async (raw = {}) => {
 	const { options, notes } = resolveOptions(raw);
 
 	const isScramjet = options.engine === "scramjet";
@@ -140,7 +137,7 @@ export const compose = async (raw = {}) => {
 			files[`${destinationBase}.ts`] = rendered;
 		} else {
 			files[`${destinationBase}.js`] = rewriteImportExtensions(
-				toJavaScript(rendered, source),
+				await toJavaScript(rendered, source),
 				"js"
 			);
 		}

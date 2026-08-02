@@ -4,7 +4,7 @@ import { writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { compose } from "../builder/index.js";
+import { compose } from "../builder/node.js";
 import { presets, exampleNames, packageManagers } from "../builder/options.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");

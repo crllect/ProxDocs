@@ -5,12 +5,12 @@ Ultraviolet, Wisp, Bare, and their transport layers.
 
 Two things live here:
 
--   **`docs/`**. An explanation of the whole stack, written to be read. Plain
-    markdown, so it renders fine on GitHub, and there is a local site that
-    renders it with navigation and search-friendly structure.
--   **`builder/`**. A generator that composes a working proxy from parts. Pick
-    an engine and tick the features you want; the generated README gives the
-    commands for your selected package manager.
+- **`docs/`**. An explanation of the whole stack, written to be read. Plain
+  markdown, so it renders fine on GitHub, and there is a local site that renders
+  it with navigation and search-friendly structure.
+- **`builder/`**. A generator that composes a working proxy from parts. Pick an
+  engine and tick the features you want; the generated README gives the commands
+  for your selected package manager.
 
 Ask development questions or show your project in the **Night Network** Discord:
 <https://discord.gg/algebra>. For more direct support, message me on discord:
@@ -29,8 +29,48 @@ The documentation is served at `/`, and the interactive builder is served at
 `/build`, on the configured port.
 
 The site renders the Markdown in `docs/`, so you can
-[read the guides on GitHub](docs/index.md). The interactive builder runs only on
-the local site.
+[read the guides on GitHub](docs/index.md).
+
+## Deploy the documentation
+
+The site also builds to static files with the builder kept working, so it can be
+hosted for people who would rather read it in a browser than on GitHub.
+
+```bash
+npm run build:site
+```
+
+That writes `dist/`: every page prerendered to `<slug>.html`, the search index,
+and `site/public` copied to `/static`. It also writes
+`functions/_generated/parts.js`, a frozen copy of `builder/parts/` that the
+Cloudflare Functions import, since a Worker cannot read them off disk.
+
+To preview the built site with its Functions exactly as Cloudflare runs them:
+
+```bash
+npm run preview:site
+```
+
+That fetches `wrangler` through `npx` on first use rather than carrying it as a
+dependency, since deploying from GitHub does not need it locally.
+
+### Cloudflare Pages
+
+Create a Pages project pointed at this repository and set:
+
+| Setting             | Value                |
+| ------------------- | -------------------- |
+| Build command       | `npm run build:site` |
+| Build output        | `dist`               |
+| Compatibility flags | `nodejs_compat`      |
+
+`wrangler.toml` already carries the output directory and the compatibility flag,
+so a `wrangler pages deploy` picks them up without further arguments. The flag
+is not optional: `/api/preview` and `/api/download` bundle `typescript` to emit
+JavaScript builds, and it reaches for node builtins.
+
+Pushes to `main` redeploy. Docs are served as static files; only the two builder
+endpoints run as Functions, so reading the documentation costs no invocations.
 
 ## Generate a proxy
 

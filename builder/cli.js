@@ -3,7 +3,7 @@
 import { mkdir, writeFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import { compose } from "./index.js";
+import { compose } from "./node.js";
 import {
 	presets,
 	engines,

@@ -1,6 +1,19 @@
-import ts from "typescript";
+let typescript;
 
-export const toJavaScript = (source, filename = "part.ts") => {
+const loadTypeScript = () => {
+	typescript ??= (async () => {
+		globalThis.__filename ??= "/typescript.js";
+		globalThis.__dirname ??= "/";
+
+		const module = await import("typescript");
+		return module.default ?? module;
+	})();
+	return typescript;
+};
+
+export const toJavaScript = async (source, filename = "part.ts") => {
+	const ts = await loadTypeScript();
+
 	const result = ts.transpileModule(source, {
 		fileName: filename,
 		reportDiagnostics: true,

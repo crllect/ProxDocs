@@ -7,7 +7,8 @@ import { markdownToHtml } from "./markdown.js";
 import { nav, findPage, breadcrumbFor } from "./nav.js";
 import { layout } from "./layout.js";
 import { buildPage } from "./builder-page.js";
-import { compose } from "../builder/index.js";
+import { buildSearchIndex } from "./search-index.js";
+import { compose } from "../builder/node.js";
 import {
 	presets,
 	engines,
@@ -25,23 +26,15 @@ const publicDir = path.join(
 	"public"
 );
 
-const searchDocuments = await Promise.all(
-	nav
-		.flatMap(section => section.items)
-		.filter(page => page.file)
-		.map(async page => {
-			const source = await readFile(
-				path.join(docsDir, page.file),
-				"utf8"
-			);
-			const text = source
-				.replace(/```[\s\S]*?```/g, " ")
-				.replace(/[#*_`>\[\]()|]/g, " ")
-				.replace(/\s+/g, " ")
-				.trim();
-			return { title: page.title, slug: page.slug, text };
-		})
-);
+const searchIndexJson = JSON.stringify(await buildSearchIndex(docsDir));
+const optionsJson = JSON.stringify({
+	presets,
+	engines,
+	wirings,
+	features,
+	servers,
+	hosts
+});
 
 const mimeTypes = {
 	".css": "text/css; charset=utf-8",
@@ -108,39 +101,6 @@ const renderDoc = async (res, slug) => {
 	return true;
 };
 
-const searchDocs = query => {
-	const normalized = query.trim().toLowerCase();
-	if (normalized.length < 2) return [];
-
-	return searchDocuments
-		.map(document => {
-			const titleIndex = document.title.toLowerCase().indexOf(normalized);
-			const textIndex = document.text.toLowerCase().indexOf(normalized);
-			const matchIndex = textIndex >= 0 ? textIndex : 0;
-			const start = Math.max(0, matchIndex - 70);
-			const end = Math.min(
-				document.text.length,
-				matchIndex + normalized.length + 110
-			);
-			return {
-				...document,
-				titleIndex,
-				textIndex,
-				snippet: `${start ? "..." : ""}${document.text.slice(start, end)}${end < document.text.length ? "..." : ""}`
-			};
-		})
-		.filter(result => result.titleIndex >= 0 || result.textIndex >= 0)
-		.sort((a, b) => {
-			const aScore =
-				a.titleIndex >= 0 ? a.titleIndex : a.textIndex + 1000;
-			const bScore =
-				b.titleIndex >= 0 ? b.titleIndex : b.textIndex + 1000;
-			return aScore - bScore;
-		})
-		.slice(0, 8)
-		.map(({ title, slug, snippet }) => ({ title, slug, snippet }));
-};
-
 const server = http.createServer(async (req, res) => {
 	try {
 		let requestUrl;
@@ -152,36 +112,23 @@ const server = http.createServer(async (req, res) => {
 			return send(res, 400, "Bad request", "text/plain; charset=utf-8");
 		}
 
+		if (pathname === "/static/search-index.json") {
+			return send(
+				res,
+				200,
+				searchIndexJson,
+				"application/json; charset=utf-8"
+			);
+		}
+		if (pathname === "/static/options.json") {
+			return send(res, 200, optionsJson, "application/json; charset=utf-8");
+		}
 		if (pathname.startsWith("/static/")) {
 			if (await serveStatic(res, pathname)) return;
 			return send(res, 404, "Not found", "text/plain");
 		}
 
 		switch (pathname) {
-			case "/api/search":
-				if (req.method !== "GET") break;
-				return send(
-					res,
-					200,
-					JSON.stringify(
-						searchDocs(requestUrl.searchParams.get("q") ?? "")
-					),
-					"application/json; charset=utf-8"
-				);
-			case "/api/options":
-				return send(
-					res,
-					200,
-					JSON.stringify({
-						presets,
-						engines,
-						wirings,
-						features,
-						servers,
-						hosts
-					}),
-					"application/json; charset=utf-8"
-				);
 			case "/api/preview": {
 				if (req.method !== "POST") break;
 				const body = await readBody(req);

@@ -21,7 +21,7 @@ const searchForm = document.getElementById("docs-search-form");
 const searchInput = document.getElementById("docs-search");
 const searchResults = document.getElementById("docs-search-results");
 let searchDebounce;
-let searchController;
+let searchIndex;
 
 const hideSearch = () => {
 	searchResults.hidden = true;
@@ -52,6 +52,40 @@ const renderSearchResults = results => {
 	searchResults.hidden = false;
 };
 
+const loadSearchIndex = () => {
+	searchIndex ??= fetch("/static/search-index.json")
+		.then(response => (response.ok ? response.json() : []))
+		.catch(() => []);
+	return searchIndex;
+};
+
+const matchDocuments = (documents, normalized) =>
+	documents
+		.map(document => {
+			const titleIndex = document.title.toLowerCase().indexOf(normalized);
+			const textIndex = document.text.toLowerCase().indexOf(normalized);
+			const matchIndex = textIndex >= 0 ? textIndex : 0;
+			const start = Math.max(0, matchIndex - 70);
+			const end = Math.min(
+				document.text.length,
+				matchIndex + normalized.length + 110
+			);
+			return {
+				...document,
+				titleIndex,
+				textIndex,
+				snippet: `${start ? "..." : ""}${document.text.slice(start, end)}${end < document.text.length ? "..." : ""}`
+			};
+		})
+		.filter(result => result.titleIndex >= 0 || result.textIndex >= 0)
+		.sort((a, b) => {
+			const aScore = a.titleIndex >= 0 ? a.titleIndex : a.textIndex + 1000;
+			const bScore = b.titleIndex >= 0 ? b.titleIndex : b.textIndex + 1000;
+			return aScore - bScore;
+		})
+		.slice(0, 8)
+		.map(({ title, slug, snippet }) => ({ title, slug, snippet }));
+
 const search = async () => {
 	const query = searchInput.value.trim();
 	if (query.length < 2) {
@@ -59,13 +93,9 @@ const search = async () => {
 		return;
 	}
 
-	searchController?.abort();
-	searchController = new AbortController();
-	const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
-		signal: searchController.signal
-	}).catch(() => null);
-	if (!response?.ok) return;
-	renderSearchResults(await response.json());
+	const documents = await loadSearchIndex();
+	if (searchInput.value.trim() !== query) return;
+	renderSearchResults(matchDocuments(documents, query.toLowerCase()));
 };
 
 searchInput?.addEventListener("input", () => {
@@ -301,7 +331,7 @@ if (form) {
 
 	for (const button of document.querySelectorAll("[data-preset]")) {
 		button.addEventListener("click", async () => {
-			const response = await fetch("/api/options");
+			const response = await fetch("/static/options.json");
 			const { presets } = await response.json();
 			const preset = presets[button.dataset.preset];
 			if (!preset) return;

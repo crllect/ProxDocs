@@ -31,6 +31,8 @@ coverage/
 .vercel/
 
 /.generated/
+/functions/_generated/
+.wrangler/
 /my-proxy/
 *.zip
 *.tgz
