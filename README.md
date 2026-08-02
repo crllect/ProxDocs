@@ -1,4 +1,4 @@
-# ProxyTutorial
+# ProxDocs
 
 Documentation and a modular generator for modern web proxies: Scramjet,
 Ultraviolet, Wisp, Bare, and their transport layers.

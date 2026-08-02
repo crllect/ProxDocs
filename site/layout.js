@@ -51,7 +51,7 @@ export const shell = ({
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)} · ProxyTutorial</title>
+<title>${escapeHtml(title)} · ProxDocs</title>
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🛰️</text></svg>">
 ${extraHead}
@@ -61,7 +61,7 @@ ${extraHead}
 
 <header class="topbar">
   <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-  <a class="brand" href="/">ProxyTutorial</a>
+  <a class="brand" href="/">ProxDocs</a>
   <div class="docs-search">
     <form id="docs-search-form" role="search">
       <input id="docs-search" type="search" placeholder="Search docs" aria-label="Search documentation" autocomplete="off">
@@ -71,7 +71,7 @@ ${extraHead}
   <nav class="topbar__links">
     <a href="/build">Build</a>
     <a href="/reference/troubleshooting">Troubleshooting</a>
-    <a href="https://github.com/crllect/ProxyTutorial" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/crllect/ProxDocs" target="_blank" rel="noopener">GitHub</a>
   </nav>
   <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
 </header>

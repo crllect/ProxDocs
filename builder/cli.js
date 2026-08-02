@@ -43,7 +43,7 @@ const parseArgs = argv => {
 const usage = () => {
 	const list = obj => Object.keys(obj).join(" | ");
 	console.log(`
-Scaffold a proxy from the ProxyTutorial builder.
+Scaffold a proxy from the ProxDocs builder.
 
   node builder/cli.js --out <dir> [options]
 

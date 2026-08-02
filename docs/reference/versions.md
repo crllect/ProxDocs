@@ -1,7 +1,7 @@
 # Version matrix
 
 Verified against the npm registry on **2026-08-02**. The canonical copy lives in
-[`builder/versions.js`](https://github.com/crllect/ProxyTutorial/blob/main/builder/versions.js),
+[`builder/versions.js`](https://github.com/crllect/ProxDocs/blob/main/builder/versions.js),
 which is what the generator uses.
 
 ---

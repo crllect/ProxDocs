@@ -299,6 +299,6 @@ const escapeHtml = value => {
 
 const port = Number(process.env.PORT) || 4321;
 server.listen(port, () => {
-	console.log(`\n  ProxyTutorial listening on port ${port}`);
+	console.log(`\n  ProxDocs listening on port ${port}`);
 	console.log("  Documentation route: /\n  Builder route: /build\n");
 });

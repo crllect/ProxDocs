@@ -1,9 +1,22 @@
 {
-	"name": "proxytutorial",
+	"name": "proxdocs",
 	"version": "1.0.0",
 	"private": true,
 	"type": "module",
-	"description": "Documentation and a modular generator for modern web proxies (Scramjet, Ultraviolet, wisp, bare)",
+	"description": "Documentation and a modular generator for modern web proxies",
+	"keywords": [
+		"Proxy",
+		"tutorial",
+		"scramjet",
+		"documentation",
+		"night"
+	],
+	"author": {
+		"name": "crllect",
+		"email": "crllect@proton.me",
+		"url": "https://crllect.dev"
+	},
+	"license": "AGPL-3.0-only",
 	"scripts": {
 		"start": "node site/server.js",
 		"docs": "node site/server.js",
@@ -16,12 +29,24 @@
 	"engines": {
 		"node": ">=22.13"
 	},
-	"license": "AGPL-3.0-only",
 	"dependencies": {
 		"marked": "^15.0.7",
 		"typescript": "5.9.2"
 	},
 	"devDependencies": {
 		"prettier": "3.6.2"
+	},
+	"prettier": {
+		"tabWidth": 4,
+		"useTabs": true,
+		"semi": true,
+		"singleQuote": false,
+		"trailingComma": "none",
+		"bracketSpacing": true,
+		"bracketSameLine": false,
+		"arrowParens": "avoid",
+		"requirePragma": false,
+		"insertPragma": false,
+		"proseWrap": "always"
 	}
 }
