@@ -14,13 +14,13 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
-      wrangler:
-        specifier: ^4
-        version: 4.118.0
     devDependencies:
       prettier:
         specifier: 3.6.2
         version: 3.6.2
+      wrangler:
+        specifier: ^4
+        version: 4.118.0
 
 packages:
 
