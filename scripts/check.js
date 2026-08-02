@@ -117,7 +117,7 @@ if (!oneLine.includes("const") || !oneLine.includes("value")) {
 }
 
 const headless = markdownToHtml(
-	"| | |\n|---|---|\n|a|b|",
+	"| | |\n| --- | --- |\n|a|b|",
 	"guides/test.md"
 ).html;
 if (headless.includes("<thead>")) fail("blank table heading was rendered");

@@ -84,7 +84,7 @@ npm start
 \`\`\`
 
 | Directory | Preset | Package manager | What it is |
-|---|---|---|---|
+| --- | --- | --- | --- |
 ${Object.entries(exampleNames)
 	.map(([preset, dir]) => {
 		const manager = presets[preset].options.packageManager;

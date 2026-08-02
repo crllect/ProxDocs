@@ -636,7 +636,7 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 		"## What this build is",
 		"",
 		"| Field | Value |",
-		"|---|---|",
+		"| --- | --- |",
 		`| Language | ${languages[options.language].label} |`,
 		`| Package manager | ${packageManagers[options.packageManager].label} |`,
 		`| Runtime | ${runtimes[options.runtime].label} |`,

@@ -238,13 +238,14 @@ published under the `alpha` tag, not `latest`.
 
 **Mercury Workshop** for Scramjet, wisp, epoxy and the transport layer.
 
-**TitaniumNetwork** for Ultraviolet, which I would argue is the catalyst for the entire proxy community.
+**TitaniumNetwork** for Ultraviolet, which I would argue is the catalyst for the
+entire proxy community.
 
 ## Contributing
 
 Corrections are the most valuable contribution. If something here is wrong, out
-of date, or describes a fork's behavior as if it were upstream, open an issue
-or a PR. Run `npm run check` before submitting.
+of date, or describes a fork's behavior as if it were upstream, open an issue or
+a PR. Run `npm run check` before submitting.
 
 ## License
 

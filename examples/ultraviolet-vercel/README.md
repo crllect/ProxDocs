@@ -14,7 +14,7 @@ The server listens on port 3000.
 ## What this build is
 
 | Field | Value |
-|---|---|
+| --- | --- |
 | Language | JavaScript |
 | Package manager | npm |
 | Runtime | Node |

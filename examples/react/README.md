@@ -24,7 +24,7 @@ it you get an importScripts 500 and a blank page.
 ## What this build is
 
 | Field | Value |
-|---|---|
+| --- | --- |
 | Language | TypeScript |
 | Package manager | npm |
 | Runtime | Node |

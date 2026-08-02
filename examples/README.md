@@ -12,7 +12,7 @@ npm start
 ```
 
 | Directory | Preset | Package manager | What it is |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | [`barebones/`](barebones/) | `barebones` | npm | One iframe and a URL bar, in plain JavaScript with no build step. Read this one first; everything else is this plus features. |
 | [`standard/`](standard/) | `standard` | npm | TypeScript, Vite and Fastify, with the features most people want. |
 | [`everything/`](everything/) | `everything` | bun | Every feature enabled, on Bun with Tailwind. Heavier than you need. |

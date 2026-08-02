@@ -217,14 +217,14 @@ pages built this way would not exist in an Ultraviolet build. `srcdoc` is an
 iframe attribute; it works the same under either engine, which is why custom
 protocols are offered as a feature independent of your engine choice.
 
-**It fails when Scramjet does** A fake-origin response is produced
-inside the service worker, by a plugin tapped onto a frame that
-`controller.createFrame()` returned, after `initBootstrap()` registered the
-service worker, loaded every bundle, and built the transport, on a page whose
-COOP/COEP headers let the wasm rewriter have `SharedArrayBuffer`. If any of that
-is broken, the fake origin cannot be served. That is the failure an error page
-exists to explain, so the mechanism that renders your error page must not depend
-on the machinery that just failed. `srcdoc` depends on none of it.
+**It fails when Scramjet does** A fake-origin response is produced inside the
+service worker, by a plugin tapped onto a frame that `controller.createFrame()`
+returned, after `initBootstrap()` registered the service worker, loaded every
+bundle, and built the transport, on a page whose COOP/COEP headers let the wasm
+rewriter have `SharedArrayBuffer`. If any of that is broken, the fake origin
+cannot be served. That is the failure an error page exists to explain, so the
+mechanism that renders your error page must not depend on the machinery that
+just failed. `srcdoc` depends on none of it.
 
 There is also an isolation difference. `earlyResponse` short-circuits the
 transport and returns straight to the service worker; there is no CORS layer in
@@ -233,7 +233,8 @@ You can narrow this by checking `context.parsed.destination` and serving only
 navigations. With `srcdoc` the question does not arise, because there is no
 address to request.
 
-Use fake origins for plugins. Use `srcdoc` for internal pages unless you know what you are doing.
+Use fake origins for plugins. Use `srcdoc` for internal pages unless you know
+what you are doing.
 
 ---
 
