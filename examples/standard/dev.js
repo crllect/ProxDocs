@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import net from "node:net";
 
 const children = [];
@@ -20,7 +20,30 @@ const findFreePort = (port, attempts = 20) =>
 		});
 	});
 
-const useIpc = process.platform !== "win32";
+const waitForPort = (port, timeout) =>
+	new Promise(resolve => {
+		const giveUp = Date.now() + timeout;
+
+		const attempt = () => {
+			const socket = net.connect({ port, host: "127.0.0.1" });
+
+			socket.once("connect", () => {
+				socket.destroy();
+				resolve(true);
+			});
+
+			socket.once("error", () => {
+				socket.destroy();
+				if (Date.now() >= giveUp) resolve(false);
+				else setTimeout(attempt, 100);
+			});
+		};
+
+		attempt();
+	});
+
+const isWindows = process.platform === "win32";
+const useIpc = !isWindows;
 
 const start = (label, command, args, env, ipc) => {
 	const child = spawn(command, args, {
@@ -28,7 +51,7 @@ const start = (label, command, args, env, ipc) => {
 			ipc && useIpc
 				? ["inherit", "inherit", "inherit", "ipc"]
 				: "inherit",
-		shell: process.platform === "win32",
+		shell: isWindows,
 		env: { ...process.env, ...env }
 	});
 
@@ -44,7 +67,14 @@ const start = (label, command, args, env, ipc) => {
 
 const stop = () => {
 	for (const child of children) {
-		if (!child.killed) child.kill("SIGTERM");
+		if (child.killed || child.exitCode !== null) continue;
+		if (isWindows && child.pid) {
+			spawnSync("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
+				stdio: "ignore"
+			});
+		} else {
+			child.kill("SIGTERM");
+		}
 	}
 	process.exit(0);
 };
@@ -78,6 +108,13 @@ const boundPort = server.channel
 
 if (boundPort !== requestedPort) {
 	console.log(`Port ${requestedPort} taken, backend is on ${boundPort}.`);
+}
+
+if (!(await waitForPort(boundPort, 60000))) {
+	console.error(
+		`Backend never started listening on port ${boundPort}. Not starting the frontend, because its proxy routes would fail.`
+	);
+	stop();
 }
 
 start(

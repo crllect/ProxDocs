@@ -78,11 +78,11 @@ location / {
 
 Cloudflare proxying works with WebSockets, but check two things:
 
--   **Do not enable "Rocket Loader" or HTML minification.** They rewrite your
-    HTML and can break the proxy shell.
--   **Confirm COOP/COEP survive.** Cloudflare features can add or alter response
-    headers. Verify `crossOriginIsolated === true` in production, not just
-    locally.
+- **Do not enable "Rocket Loader" or HTML minification.** They rewrite your HTML
+  and can break the proxy shell.
+- **Confirm COOP/COEP survive.** Cloudflare features can add or alter response
+  headers. Verify `crossOriginIsolated === true` in production, not just
+  locally.
 
 Also be aware Cloudflare's terms of service cover running proxies, and enabling
 their proxy puts your traffic through them.
@@ -196,15 +196,15 @@ and your server is mostly moving bytes.
 
 ## Before you go live
 
--   [ ] `crossOriginIsolated === true` in the production console
--   [ ] The service worker registers over HTTPS
--   [ ] A site with WebSockets works (proves Wisp end to end)
--   [ ] `sw.js` is served with `Cache-Control: no-cache`
--   [ ] Reverse-proxy timeouts raised above the default
--   [ ] File descriptor limit raised
--   [ ] The process restarts on failure
--   [ ] You know your bandwidth allowance
--   [ ] You have read your host's acceptable use policy
+- [ ] `crossOriginIsolated === true` in the production console
+- [ ] The service worker registers over HTTPS
+- [ ] A site with WebSockets works (proves Wisp end to end)
+- [ ] `sw.js` is served with `Cache-Control: no-cache`
+- [ ] Reverse-proxy timeouts raised above the default
+- [ ] File descriptor limit raised
+- [ ] The process restarts on failure
+- [ ] You know your bandwidth allowance
+- [ ] You have read your host's acceptable use policy
 
 ---
 
@@ -235,13 +235,13 @@ tunnel. Usually better than compromising on the engine to fit one platform.
 
 Public proxies attract abuse, and hosts respond to complaints. Expect:
 
--   **Takedowns.** Most free hosts' terms prohibit this. Have a backup.
--   **Domain blocklists.** Filtering vendors can add public proxy domains
-    quickly. `noindex` only asks search engines not to index a page; it does not
-    prevent filtering vendors from discovering it.
--   **Abuse reports.** Your IP is the source of whatever users do. Rate limiting
-    and a blocklist for abusive destinations are worth having before you need
-    them.
+- **Takedowns.** Most free hosts' terms prohibit this. Have a backup.
+- **Domain blocklists.** Filtering vendors can add public proxy domains quickly.
+  `noindex` only asks search engines not to index a page; it does not prevent
+  filtering vendors from discovering it.
+- **Abuse reports.** Your IP is the source of whatever users do. Rate limiting
+  and a blocklist for abusive destinations are worth having before you need
+  them.
 
 [Practices worth knowing](site-best-practices.md) covers storage, disclosure,
 performance, and accessibility.

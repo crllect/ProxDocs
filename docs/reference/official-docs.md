@@ -39,14 +39,12 @@ this site documents. Both are real; check which one a page means. See
 
 The most useful things in that repository are not the README:
 
--   `packages/create-proxy-app/templates/default` is the canonical minimal app.
-    If this site and that template disagree about an API call, the template
-    wins.
--   `packages/demo` is the maintainers' own test harness, and shows what the
-    engine exposes that a simple app never touches.
--   `packages/controller/src/index.ts` is the window-side API. It is readable,
-    and it is the only place the `Frame` and `Controller` surface is fully
-    described.
+- `packages/create-proxy-app/templates/default` is the canonical minimal app. If
+  this site and that template disagree about an API call, the template wins.
+- `packages/demo` is the maintainers' own test harness, and shows what the
+  engine exposes that a simple app never touches.
+- `packages/controller/src/index.ts` is the window-side API. It is readable, and
+  it is the only place the `Frame` and `Controller` surface is fully described.
 
 ## Ultraviolet
 

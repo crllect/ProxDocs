@@ -280,10 +280,10 @@ navigation, so neither check identifies an internal page by itself.
 
 ## Choosing a scheme name
 
--   Letters first, then letters, digits, `+`, `-`, `.`
--   Avoid real schemes: `http`, `https`, `ftp`, `file`, `data`, `blob`, `about`,
-    `chrome`, `edge`, `view-source`
--   Keep it short, people type it
+- Letters first, then letters, digits, `+`, `-`, `.`
+- Avoid real schemes: `http`, `https`, `ftp`, `file`, `data`, `blob`, `about`,
+  `chrome`, `edge`, `view-source`
+- Keep it short, people type it
 
 The generator derives one from your project name, so `my-proxy` produces
 `myproxy://settings`. If the cleaned project name is a reserved scheme such as

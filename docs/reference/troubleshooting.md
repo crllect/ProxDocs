@@ -284,12 +284,12 @@ privacy cost, because misclassified URLs get sent to a search engine.
 
 Collect these before asking anywhere:
 
--   `crossOriginIsolated`
--   `navigator.serviceWorker.controller?.scriptURL`
--   Engine and exact versions from `package.json`
--   Which transport
--   Whether it works on `localhost`
--   The first error in the console, and the first in the **frame's** console
--   The Network tab entry for the failing request
+- `crossOriginIsolated`
+- `navigator.serviceWorker.controller?.scriptURL`
+- Engine and exact versions from `package.json`
+- Which transport
+- Whether it works on `localhost`
+- The first error in the console, and the first in the **frame's** console
+- The Network tab entry for the failing request
 
 "It doesn't work" is unanswerable. That list usually contains the answer.

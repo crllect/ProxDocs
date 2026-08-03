@@ -20,12 +20,12 @@ needs to reach the network.
 
 Without coordination each context builds its own transport. That means:
 
--   **Several TLS stacks in memory.** Each wasm instance is megabytes.
--   **Several Wisp WebSockets** to your server, per user.
--   **Split state.** Connection reuse, cookies, and settings do not line up
-    between contexts.
--   **Nothing to switch.** Changing transports would mean rebuilding it
-    everywhere, in contexts you do not hold a reference to.
+- **Several TLS stacks in memory.** Each wasm instance is megabytes.
+- **Several Wisp WebSockets** to your server, per user.
+- **Split state.** Connection reuse, cookies, and settings do not line up
+  between contexts.
+- **Nothing to switch.** Changing transports would mean rebuilding it
+  everywhere, in contexts you do not hold a reference to.
 
 **bare-mux** ("bare multiplexer") fixes this by putting the transport in one
 **SharedWorker** and giving every context a thin client that talks to it over a
@@ -68,12 +68,12 @@ directly and does not use bare-mux at all.
 
 The name change reflects a scope change:
 
--   **bare-mux** was "swap out your _bare client_", the name is a fossil from
-    when bare was the only option. It owned both the interface _and_ the
-    SharedWorker multiplexing.
--   **proxy-transports** is just the **interface**: the `ProxyTransport` type
-    that [transports](transports.md) implement. Multiplexing is the engine's
-    problem now.
+- **bare-mux** was "swap out your _bare client_", the name is a fossil from when
+  bare was the only option. It owned both the interface _and_ the SharedWorker
+  multiplexing.
+- **proxy-transports** is just the **interface**: the `ProxyTransport` type that
+  [transports](transports.md) implement. Multiplexing is the engine's problem
+  now.
 
 In Scramjet 2.x the `Controller` owns the transport and distributes it to frames
 and the service worker itself, over its own message channels. So you construct

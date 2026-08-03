@@ -37,6 +37,7 @@ const fail = message => {
 	failures++;
 };
 const ok = message => console.log(`  ok    ${message}`);
+const posix = value => value.split(path.sep).join("/");
 
 console.log("\nDocumentation files");
 
@@ -561,7 +562,7 @@ for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
 
 	const owner = diagnostic.file
 		? clientTypeChecks.find(check =>
-				diagnostic.file.fileName.startsWith(check.dir + path.sep)
+				diagnostic.file.fileName.startsWith(posix(check.dir) + "/")
 			)
 		: undefined;
 	const where = diagnostic.file
@@ -573,7 +574,7 @@ for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
 	fail(`${owner?.label ?? "generator"}: ${where} — ${message}`);
 }
 
-await rm(tmp, { recursive: true, force: true });
+await rm(tmp, { recursive: true, force: true, maxRetries: 3 });
 
 if (checked === combinations.length && failures === generatorFailureStart)
 	ok(`${checked} combinations generate, parse, and type-check`);
@@ -581,6 +582,7 @@ if (checked === combinations.length && failures === generatorFailureStart)
 console.log("\nGenerated examples");
 
 let staleExamples = 0;
+let crlfExamples = 0;
 
 for (const [preset, directory] of Object.entries(exampleNames)) {
 	const { files } = await compose({
@@ -595,6 +597,7 @@ for (const [preset, directory] of Object.entries(exampleNames)) {
 				"utf8"
 			);
 			if (actual !== expected) {
+				if (actual.replace(/\r\n/g, "\n") === expected) crlfExamples++;
 				fail(`examples/${directory}/${relative} is stale`);
 				staleExamples++;
 			}
@@ -605,6 +608,11 @@ for (const [preset, directory] of Object.entries(exampleNames)) {
 	}
 }
 
+if (crlfExamples) {
+	console.error(
+		`  hint  ${crlfExamples} of those differ only in line endings. Git checked them out as CRLF; run "git add --renormalize ." to restore LF.`
+	);
+}
 if (!staleExamples) ok("all preset files match the generator");
 
 console.log("\nURL parsing");

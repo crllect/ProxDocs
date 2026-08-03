@@ -4,11 +4,11 @@ A working Scramjet proxy, from nothing, in about two minutes.
 
 ## Requirements
 
--   **Node 22.13 or newer** to run this repository's builder. Check with
-    `node -v`.
--   A host that can hold a WebSocket open. Your own machine qualifies; Vercel
-    Functions do not, though Vercel may serve the client while Wisp runs
-    elsewhere. See [Deployment](deployment.md).
+- **Node 22.13 or newer** to run this repository's builder. Check with
+  `node -v`.
+- A host that can hold a WebSocket open. Your own machine qualifies; Vercel
+  Functions do not, though Vercel may serve the client while Wisp runs
+  elsewhere. See [Deployment](deployment.md).
 
 ## Generate a project
 
@@ -101,13 +101,13 @@ service worker, loads every bundle, builds the transport, and hands back a ready
 
 The plugins are worth knowing:
 
--   **`HttpCachePlugin`** caches subresources so a reload does not pull every
-    asset back through the tunnel.
--   **`UrlWatcherPlugin`** is the only reliable way to learn where the page
-    went. Scramjet 2.x has no `urlchange` event. It fires for real navigations,
-    hash changes, and `history.pushState`.
--   **`CatchEscapedLinksPlugin`** catches `window.open` and `target="_blank"`,
-    which would otherwise escape the proxy entirely.
+- **`HttpCachePlugin`** caches subresources so a reload does not pull every
+  asset back through the tunnel.
+- **`UrlWatcherPlugin`** is the only reliable way to learn where the page went.
+  Scramjet 2.x has no `urlchange` event. It fires for real navigations, hash
+  changes, and `history.pushState`.
+- **`CatchEscapedLinksPlugin`** catches `window.open` and `target="_blank"`,
+  which would otherwise escape the proxy entirely.
 
 > **`frame.go()` is synchronous.** It rewrites the URL and assigns `iframe.src`.
 > Awaiting it does nothing useful. The real "it loaded" signal is the
@@ -172,7 +172,6 @@ Full list: [Troubleshooting](../reference/troubleshooting.md).
 
 ## Next
 
--   [How a proxy works](../concepts/how-proxies-work.md). What those four files
-    do
--   [Multiple tabs](multiple-tabs.md). The first feature most people want
--   [Deployment](deployment.md). Getting it online, with HTTPS
+- [How a proxy works](../concepts/how-proxies-work.md). What those four files do
+- [Multiple tabs](multiple-tabs.md). The first feature most people want
+- [Deployment](deployment.md). Getting it online, with HTTPS

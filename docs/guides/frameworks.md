@@ -107,13 +107,13 @@ is how you get at it to attach the upgrade handler.
 
 Two `@fastify/static` gotchas that cost people an hour each:
 
--   **`decorateReply: false` on every registration after the first.** Omit it
-    and Fastify throws about a duplicate decorator.
--   **Two registrations may not share a prefix.** Express happily stacks
-    `express.static` calls on one path and falls through; Fastify throws
-    `FST_ERR_DUPLICATED_ROUTE`. That is why `scramjet-utils` is mounted at
-    `/utils/` above rather than alongside the core bundle at `/scram/`, and why
-    the engine adapter loads it from `/utils/scramjet-utils.js`.
+- **`decorateReply: false` on every registration after the first.** Omit it and
+  Fastify throws about a duplicate decorator.
+- **Two registrations may not share a prefix.** Express happily stacks
+  `express.static` calls on one path and falls through; Fastify throws
+  `FST_ERR_DUPLICATED_ROUTE`. That is why `scramjet-utils` is mounted at
+  `/utils/` above rather than alongside the core bundle at `/scram/`, and why
+  the engine adapter loads it from `/utils/scramjet-utils.js`.
 
 ---
 

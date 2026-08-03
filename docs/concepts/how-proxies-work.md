@@ -10,11 +10,10 @@ or WebSocket problem narrows down where to debug it.
 You want `https://crllect.dev` to render inside a page you control, on a domain
 you control. The browser will not let you do that directly:
 
--   **CORS** blocks reading `fetch("https://crllect.dev")` cross-origin.
--   **`X-Frame-Options` / `frame-ancestors`** blocks putting it in an
-    `<iframe>`.
--   Even if you got the HTML, every relative URL inside it (`/style.css`,
-    `/api/user`) would resolve against _your_ domain, not theirs.
+- **CORS** blocks reading `fetch("https://crllect.dev")` cross-origin.
+- **`X-Frame-Options` / `frame-ancestors`** blocks putting it in an `<iframe>`.
+- Even if you got the HTML, every relative URL inside it (`/style.css`,
+  `/api/user`) would resolve against _your_ domain, not theirs.
 
 So a proxy has to do two separate jobs, and people constantly conflate them:
 
@@ -50,13 +49,13 @@ transforms the response before the browser sees it.
 This is called an **interception proxy**, and it is what makes the modern
 generation different from old server-side proxies:
 
--   The site runs **in the browser**, on _your_ origin, inside an iframe.
--   The rewriter replaces APIs such as `fetch`, `XMLHttpRequest`, `WebSocket`,
-    `importScripts`, and workers. The service worker intercepts the resulting
-    HTTP requests; WebSocket shims use the transport directly.
--   JavaScript is rewritten too, not just HTML. `location.href`,
-    `window.parent`, `document.cookie` are all trapped so the page cannot tell
-    it is being proxied and cannot escape to your real origin.
+- The site runs **in the browser**, on _your_ origin, inside an iframe.
+- The rewriter replaces APIs such as `fetch`, `XMLHttpRequest`, `WebSocket`,
+  `importScripts`, and workers. The service worker intercepts the resulting HTTP
+  requests; WebSocket shims use the transport directly.
+- JavaScript is rewritten too, not just HTML. `location.href`, `window.parent`,
+  `document.cookie` are all trapped so the page cannot tell it is being proxied
+  and cannot escape to your real origin.
 
 The rewriter is why `https://crllect.dev/foo` becomes
 `https://proxy.crllect.dev/~/sj/<controller>/<frame>/https%3A%2F%2Fcrllect.dev%2Ffoo`
@@ -132,27 +131,26 @@ Those eight steps identify where to start debugging a failed request.
 
 **Buys you:**
 
--   JavaScript-created URLs and WebSockets can be handled at runtime.
--   With epoxy/libcurl, the Wisp relay does not terminate target TLS. The relay
-    sees destinations, sizes, timing, and encrypted bytes. An operator that also
-    controls the client code could still modify it to expose plaintext.
+- JavaScript-created URLs and WebSockets can be handled at runtime.
+- With epoxy/libcurl, the Wisp relay does not terminate target TLS. The relay
+  sees destinations, sizes, timing, and encrypted bytes. An operator that also
+  controls the client code could still modify it to expose plaintext.
 
 **Costs you:**
 
--   A service worker, so **HTTPS is mandatory** in production.
--   Scramjet's wasm rewriter needs `SharedArrayBuffer`, so **cross-origin
-    isolation headers are mandatory**. See
-    [Cross-origin isolation](cross-origin-isolation.md).
--   Wisp needs a **persistent WebSocket**, so request/response functions cannot
-    host the relay. The client and relay may be deployed separately.
--   Rewriting JavaScript correctly is hard. This is a common reason sites break,
-    and the reason [Scramjet replaced Ultraviolet](scramjet-vs-ultraviolet.md).
+- A service worker, so **HTTPS is mandatory** in production.
+- Scramjet's wasm rewriter needs `SharedArrayBuffer`, so **cross-origin
+  isolation headers are mandatory**. See
+  [Cross-origin isolation](cross-origin-isolation.md).
+- Wisp needs a **persistent WebSocket**, so request/response functions cannot
+  host the relay. The client and relay may be deployed separately.
+- Rewriting JavaScript correctly is hard. This is a common reason sites break,
+  and the reason [Scramjet replaced Ultraviolet](scramjet-vs-ultraviolet.md).
 
 ---
 
 ## Next
 
--   [Wisp vs Bare](wisp-vs-bare.md). The two tunnel protocols, and why wisp won.
--   [Transports](transports.md). Epoxy, libcurl, bare, and how to choose.
--   [Scramjet vs Ultraviolet](scramjet-vs-ultraviolet.md), which rewriter to
-    use.
+- [Wisp vs Bare](wisp-vs-bare.md). The two tunnel protocols, and why wisp won.
+- [Transports](transports.md). Epoxy, libcurl, bare, and how to choose.
+- [Scramjet vs Ultraviolet](scramjet-vs-ultraviolet.md), which rewriter to use.

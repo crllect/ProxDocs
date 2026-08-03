@@ -37,10 +37,10 @@ footer, especially if other people use the service.
 Proxied sites run **on your origin**. They can read and write your
 `localStorage`, your IndexedDB, and your cookies. A hostile page can:
 
--   Read your settings, including a configured wisp URL
--   Overwrite settings to point your transport somewhere it controls
--   Read your history and bookmarks
--   Fill your quota so your own writes start failing
+- Read your settings, including a configured wisp URL
+- Overwrite settings to point your transport somewhere it controls
+- Read your history and bookmarks
+- Fill your quota so your own writes start failing
 
 Mitigations, in order of value:
 
@@ -80,15 +80,15 @@ your server or CDN applies gzip or brotli to it.
 
 Proxy frontends are notoriously bad at this, and it is easy to fix:
 
--   **Keyboard navigation.** Tabs reachable by Tab, activated by Enter or Space.
-    `Ctrl/Cmd+L` to focus the address bar.
--   **Focus visible.** Do not `outline: none` without a replacement.
--   **Label the icon buttons.** `aria-label="Back"` on a `‹` glyph.
--   **Announce state.** `role="status"` on your status line so screen readers
-    report loading and errors.
--   **Respect `prefers-reduced-motion`.** Loading animations especially.
--   **Choose an intentional color scheme.** The generated UI is always dark; add
-    a user setting or `prefers-color-scheme` handling if you need both themes.
+- **Keyboard navigation.** Tabs reachable by Tab, activated by Enter or Space.
+  `Ctrl/Cmd+L` to focus the address bar.
+- **Focus visible.** Do not `outline: none` without a replacement.
+- **Label the icon buttons.** `aria-label="Back"` on a `‹` glyph.
+- **Announce state.** `role="status"` on your status line so screen readers
+  report loading and errors.
+- **Respect `prefers-reduced-motion`.** Loading animations especially.
+- **Choose an intentional color scheme.** The generated UI is always dark; add a
+  user setting or `prefers-color-scheme` handling if you need both themes.
 
 The generated projects include keyboard tabs, labels, visible focus states, and
 a live status region.

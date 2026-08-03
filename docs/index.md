@@ -98,16 +98,16 @@ It asks about the stack:
 
 It also asks about the features:
 
--   **Browser controls:** back, forward, and reload wired to the frame's history
--   **Multiple tabs:** one proxy session per tab, kept alive in the background
--   **Settings:** validated and persisted, shown in a popup unless custom
-    protocols are enabled
--   **Transport switching:** libcurl or epoxy at runtime, plus a custom Wisp
-    server
--   **History:** a visit log, separate from per-tab back and forward
--   **Bookmarks and history menus:** popup overlays or navigable custom protocol
-    pages
--   **Cloaking and custom protocol pages**
+- **Browser controls:** back, forward, and reload wired to the frame's history
+- **Multiple tabs:** one proxy session per tab, kept alive in the background
+- **Settings:** validated and persisted, shown in a popup unless custom
+  protocols are enabled
+- **Transport switching:** libcurl or epoxy at runtime, plus a custom Wisp
+  server
+- **History:** a visit log, separate from per-tab back and forward
+- **Bookmarks and history menus:** popup overlays or navigable custom protocol
+  pages
+- **Cloaking and custom protocol pages**
 
 Choices that cannot work together are greyed out with the reason, rather than
 letting you pick them and quietly changing them afterwards. Picking an
@@ -151,20 +151,19 @@ local-site functionality.
 
 ## Limits
 
--   URL codecs are **obfuscation, not encryption**. The key is in the client
-    bundle.
--   `about:blank` cloaking hides a URL from someone looking at your screen. It
-    adds no network privacy. What an observer sees depends on whether the proxy
-    uses Wisp or Bare; a managed-browser extension can still inspect the page.
--   Scramjet handles more sites. An all-in-one Vercel deployment uses
-    Ultraviolet over Bare; Vercel can serve a Scramjet client when Wisp is
-    hosted separately.
--   The published Scramjet docs currently describe the 1.x API while the
-    repository has moved on. [Breaking changes](reference/breaking-changes.md)
-    tracks the difference.
--   This repository and generated projects use AGPL-3.0-only. See
-    [licensing](reference/official-docs.md) for upstream links and the license
-    notice.
+- URL codecs are **obfuscation, not encryption**. The key is in the client
+  bundle.
+- `about:blank` cloaking hides a URL from someone looking at your screen. It
+  adds no network privacy. What an observer sees depends on whether the proxy
+  uses Wisp or Bare; a managed-browser extension can still inspect the page.
+- Scramjet handles more sites. An all-in-one Vercel deployment uses Ultraviolet
+  over Bare; Vercel can serve a Scramjet client when Wisp is hosted separately.
+- The published Scramjet docs currently describe the 1.x API while the
+  repository has moved on. [Breaking changes](reference/breaking-changes.md)
+  tracks the difference.
+- This repository and generated projects use AGPL-3.0-only. See
+  [licensing](reference/official-docs.md) for upstream links and the license
+  notice.
 
 If something here is wrong or out of date, open an issue or a PR.
 

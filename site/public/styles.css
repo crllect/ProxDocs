@@ -50,8 +50,8 @@ body {
 code,
 pre,
 .filelist button {
-	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-		monospace;
+	font-family:
+		ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 a {

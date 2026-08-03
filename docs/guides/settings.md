@@ -354,12 +354,12 @@ something a proxied page wrote there.
 The generated settings page keeps all cloaking controls in one section. There is
 no separate cloaking page or toolbar button.
 
--   **Preset** changes the current tab title and icon. Google Classroom, Google
-    Drive, Google Docs, and Desmos are included.
--   **Custom** enables the title and icon URL fields.
--   **Open in about:blank** opens a same-origin blank tab and embeds the app.
--   **Open as blob** creates a temporary HTML document with a blob URL and
-    embeds the app there.
+- **Preset** changes the current tab title and icon. Google Classroom, Google
+  Drive, Google Docs, and Desmos are included.
+- **Custom** enables the title and icon URL fields.
+- **Open in about:blank** opens a same-origin blank tab and embeds the app.
+- **Open as blob** creates a temporary HTML document with a blob URL and embeds
+  the app there.
 
 The two open buttons call `window.open()` directly from their click handler.
 Moving that call into an asynchronous `postMessage` handler causes browsers to

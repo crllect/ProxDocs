@@ -22,12 +22,12 @@ frameContainer.replaceChildren(activeTab.element);
 Removing an iframe from the document **destroys its document**. The page
 unloads. When you switch back you get a fresh load, which means:
 
--   Scroll position is gone.
--   Form input is gone.
--   Video and audio stop and restart.
--   Every asset is re-fetched through the tunnel, slow, and it burns your
-    server's bandwidth.
--   Any site with a login flow in progress loses it.
+- Scroll position is gone.
+- Form input is gone.
+- Video and audio stop and restart.
+- Every asset is re-fetched through the tunnel, slow, and it burns your server's
+  bandwidth.
+- Any site with a login flow in progress loses it.
 
 Keep every iframe mounted and toggle **visibility**:
 

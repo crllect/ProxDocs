@@ -73,17 +73,17 @@ separate code.
 
 Scramjet 2.x has:
 
--   **Frames.** `controller.createFrame(element, { plugins })`, each with its
-    own URL prefix for [multiple tabs](../guides/multiple-tabs.md).
--   **Plugins and hooks.** Tap into page init, request errors, and navigation.
-    This is how you get URL-change events, HTTP caching, and custom error pages
-    without hacking around the engine. The fetch hooks can also answer a request
-    locally instead of sending it, which lets a plugin serve an entire origin
-    that has no server behind it. See
-    [fake origins](../guides/custom-protocols.md#fake-origins-and-why-internal-pages-do-not-use-them).
--   **Cookie handling** synchronised across frames and persisted in IndexedDB.
--   **Escaped-link interception**, so `window.open` and `target="_blank"` stay
-    inside your proxy.
+- **Frames.** `controller.createFrame(element, { plugins })`, each with its own
+  URL prefix for [multiple tabs](../guides/multiple-tabs.md).
+- **Plugins and hooks.** Tap into page init, request errors, and navigation.
+  This is how you get URL-change events, HTTP caching, and custom error pages
+  without hacking around the engine. The fetch hooks can also answer a request
+  locally instead of sending it, which lets a plugin serve an entire origin that
+  has no server behind it. See
+  [fake origins](../guides/custom-protocols.md#fake-origins-and-why-internal-pages-do-not-use-them).
+- **Cookie handling** synchronised across frames and persisted in IndexedDB.
+- **Escaped-link interception**, so `window.open` and `target="_blank"` stay
+  inside your proxy.
 
 With Ultraviolet you reimplement each of these. The generated Ultraviolet
 adapter in this repo polls `iframe.contentWindow.location` on a timer to detect
@@ -98,11 +98,11 @@ Bare without Wisp.
 
 Scramjet requires:
 
--   `SharedArrayBuffer`, therefore
-    [cross-origin isolation](cross-origin-isolation.md), therefore COOP/COEP
-    headers on every response and HTTPS.
--   [Wisp](wisp-vs-bare.md), therefore a persistent WebSocket, therefore a host
-    that can hold one open.
+- `SharedArrayBuffer`, therefore
+  [cross-origin isolation](cross-origin-isolation.md), therefore COOP/COEP
+  headers on every response and HTTPS.
+- [Wisp](wisp-vs-bare.md), therefore a persistent WebSocket, therefore a host
+  that can hold one open.
 
 Ultraviolet requires none of that. Its rewriter is plain JavaScript, so no
 `SharedArrayBuffer` and no isolation headers. And because it can use a
@@ -165,11 +165,11 @@ underneath it.
 
 What it means is:
 
--   **No fixes.** When a site changes something UV's rewriter gets wrong, it
-    stays wrong.
--   **No security patches.** Consider that carefully if you run a public site.
--   **No new browser support.** If a future browser change breaks it, that is
-    permanent.
+- **No fixes.** When a site changes something UV's rewriter gets wrong, it stays
+  wrong.
+- **No security patches.** Consider that carefully if you run a public site.
+- **No new browser support.** If a future browser change breaks it, that is
+  permanent.
 
 Building something new on Ultraviolet is a reasonable choice for an all-in-one
 serverless constraint. If you can host Wisp separately, that constraint does not

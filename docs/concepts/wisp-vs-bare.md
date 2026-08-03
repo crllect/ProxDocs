@@ -45,16 +45,15 @@ your server logs as a normal request.
 
 ### What Bare is bad at
 
--   **Your server sees everything.** Not a theoretical concern, it is the whole
-    design. You are asking users to trust you with plaintext traffic.
--   **It looks exactly like what it is.** A stream of requests to one endpoint
-    with an `X-Bare-URL` header is recognisable in your server and terminating
-    proxy logs. HTTPS prevents passive network observers from reading the
-    header.
--   **Websockets are second-class.** They work, but the tunnel is bolted on, and
-    on serverless hosts they do not work at all.
--   **Per-request overhead.** Each proxied request is a fresh HTTP request to
-    your server, with headers re-serialised as JSON.
+- **Your server sees everything.** Not a theoretical concern, it is the whole
+  design. You are asking users to trust you with plaintext traffic.
+- **It looks exactly like what it is.** A stream of requests to one endpoint
+  with an `X-Bare-URL` header is recognisable in your server and terminating
+  proxy logs. HTTPS prevents passive network observers from reading the header.
+- **Websockets are second-class.** They work, but the tunnel is bolted on, and
+  on serverless hosts they do not work at all.
+- **Per-request overhead.** Each proxied request is a fresh HTTP request to your
+  server, with headers re-serialised as JSON.
 
 ---
 
@@ -95,22 +94,22 @@ plaintext before encryption.
 
 It also means:
 
--   **Websockets to the target site are native.** They are just another TCP
-    stream. Nothing is bolted on, so sites that depend on WebSockets work.
--   **UDP works too**, which bare cannot do at all.
--   **One connection is reused** for everything, so there is no per-request
-    connection setup.
+- **Websockets to the target site are native.** They are just another TCP
+  stream. Nothing is bolted on, so sites that depend on WebSockets work.
+- **UDP works too**, which bare cannot do at all.
+- **One connection is reused** for everything, so there is no per-request
+  connection setup.
 
 ### What Wisp costs
 
 **A persistent WebSocket:**
 
--   Vercel and Netlify Functions cannot host it. Other serverless runtimes need
-    a Wisp-compatible WebSocket and outbound-socket implementation.
--   Any proxy or load balancer between you and the user must pass WebSockets
-    through, correctly, without an aggressive idle timeout.
--   Your server holds an open connection and open sockets per user, so capacity
-    planning is about concurrent connections rather than requests per second.
+- Vercel and Netlify Functions cannot host it. Other serverless runtimes need a
+  Wisp-compatible WebSocket and outbound-socket implementation.
+- Any proxy or load balancer between you and the user must pass WebSockets
+  through, correctly, without an aggressive idle timeout.
+- Your server holds an open connection and open sockets per user, so capacity
+  planning is about concurrent connections rather than requests per second.
 
 There is also more machinery in the browser: a whole TLS implementation in
 WebAssembly, which is a meaningful download and some startup cost.
@@ -176,6 +175,6 @@ client transport in the browser.
 
 ## Next
 
--   [Transports](transports.md). Epoxy and libcurl, the things that speak wisp
--   [bare-mux and proxy-transports](bare-mux.md). The layer that lets you swap
-    them
+- [Transports](transports.md). Epoxy and libcurl, the things that speak wisp
+- [bare-mux and proxy-transports](bare-mux.md). The layer that lets you swap
+  them

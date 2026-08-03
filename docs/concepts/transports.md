@@ -57,11 +57,11 @@ It is curl. That means decades of accumulated correctness about HTTP: redirect
 edge cases, chunked encoding, content negotiation, cookie handling, HTTP/2,
 weird server behaviour that only shows up on real sites.
 
--   **Broad protocol compatibility.** It includes curl's handling for redirects,
-    content negotiation, and unusual HTTP behavior.
--   **Heaviest.** It is curl plus Mbed TLS in WebAssembly; the initial load is
-    noticeable.
--   Supports an upstream HTTP proxy via a `proxy` option, which epoxy does not.
+- **Broad protocol compatibility.** It includes curl's handling for redirects,
+  content negotiation, and unusual HTTP behavior.
+- **Heaviest.** It is curl plus Mbed TLS in WebAssembly; the initial load is
+  noticeable.
+- Supports an upstream HTTP proxy via a `proxy` option, which epoxy does not.
 
 ```js
 const { default: LibcurlClient } = await import("/libcurl/index.mjs");
@@ -77,9 +77,9 @@ Purpose-built rather than ported, so it is smaller and starts faster. The
 tradeoff is that it has seen less of the internet's weirdness than curl has, so
 occasionally a site works under libcurl and not epoxy.
 
--   **Lighter and faster to initialise.**
--   Slightly pickier on unusual servers.
--   Exposes wisp-level tuning (`wisp_v2`, buffer sizes, redirect limits).
+- **Lighter and faster to initialise.**
+- Slightly pickier on unusual servers.
+- Exposes wisp-level tuning (`wisp_v2`, buffer sizes, redirect limits).
 
 ```js
 const { default: EpoxyTransport } = await import("/epoxy/index.mjs");
@@ -91,11 +91,11 @@ const transport = new EpoxyTransport({ wisp: "wss://proxy.crllect.dev/wisp/" });
 The original: it talks to a [Bare server](wisp-vs-bare.md) over plain HTTP. No
 WebAssembly, no WebSocket, and no client TLS stack.
 
--   **The all-in-one option on request/response hosts.**
--   Tiny, no startup cost.
--   Your server sees all traffic in plaintext.
--   Only works with Ultraviolet. Scramjet has no bare transport, the bootstrap
-    package has a stub that throws.
+- **The all-in-one option on request/response hosts.**
+- Tiny, no startup cost.
+- Your server sees all traffic in plaintext.
+- Only works with Ultraviolet. Scramjet has no bare transport, the bootstrap
+  package has a stub that throws.
 
 ```js
 await connection.setTransport("/baremod/index.mjs", [
@@ -214,9 +214,9 @@ await connection.setTransport("/epoxy/index.mjs", [{ wisp: wispUrl }]);
 
 Implement `request` and `connect`. Common reasons for a custom transport are:
 
--   Routing through infrastructure you already have.
--   A different tunnel protocol.
--   Instrumentation. Logging, metrics, request rewriting.
+- Routing through infrastructure you already have.
+- A different tunnel protocol.
+- Instrumentation. Logging, metrics, request rewriting.
 
 Before you start: the hard part of a transport is not the interface, it is HTTP
 correctness. Redirects, chunked encoding, and header edge cases are where naive
