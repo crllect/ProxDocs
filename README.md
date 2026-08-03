@@ -5,12 +5,12 @@ Ultraviolet, Wisp, Bare, and their transport layers.
 
 Two things live here:
 
-- **`docs/`**. An explanation of the whole stack, written to be read. Plain
-  markdown, so it renders fine on GitHub, and there is a local site that renders
-  it with navigation and search-friendly structure.
-- **`builder/`**. A generator that composes a working proxy from parts. Pick an
-  engine and tick the features you want; the generated README gives the commands
-  for your selected package manager.
+-   **`docs/`**. An explanation of the whole stack, written to be read. Plain
+    markdown, so it renders fine on GitHub, and there is a local site that
+    renders it with navigation and search-friendly structure.
+-   **`builder/`**. A generator that composes a working proxy from parts. Pick
+    an engine and tick the features you want; the generated README gives the
+    commands for your selected package manager.
 
 Ask development questions or show your project in the **Night Network** Discord:
 <https://discord.gg/algebra>. For more direct support, message me on discord:

@@ -79,8 +79,10 @@ const matchDocuments = (documents, normalized) =>
 		})
 		.filter(result => result.titleIndex >= 0 || result.textIndex >= 0)
 		.sort((a, b) => {
-			const aScore = a.titleIndex >= 0 ? a.titleIndex : a.textIndex + 1000;
-			const bScore = b.titleIndex >= 0 ? b.titleIndex : b.textIndex + 1000;
+			const aScore =
+				a.titleIndex >= 0 ? a.titleIndex : a.textIndex + 1000;
+			const bScore =
+				b.titleIndex >= 0 ? b.titleIndex : b.textIndex + 1000;
 			return aScore - bScore;
 		})
 		.slice(0, 8)

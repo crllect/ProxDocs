@@ -121,7 +121,12 @@ const server = http.createServer(async (req, res) => {
 			);
 		}
 		if (pathname === "/static/options.json") {
-			return send(res, 200, optionsJson, "application/json; charset=utf-8");
+			return send(
+				res,
+				200,
+				optionsJson,
+				"application/json; charset=utf-8"
+			);
 		}
 		if (pathname.startsWith("/static/")) {
 			if (await serveStatic(res, pathname)) return;

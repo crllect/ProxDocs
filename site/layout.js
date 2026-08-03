@@ -18,10 +18,10 @@ export const sidebar = (nav, activeSlug) => {
 	return nav
 		.map(
 			section => `
-    <div class="nav-section">
-      <h2>${escapeHtml(section.title)}</h2>
-      <ul>
-        ${section.items
+	<div class="nav-section">
+		<h2>${escapeHtml(section.title)}</h2>
+		<ul>
+		${section.items
 			.map(item => {
 				const href = item.slug === "index" ? "/" : `/${item.slug}`;
 				const active =
@@ -32,8 +32,8 @@ export const sidebar = (nav, activeSlug) => {
 				return `<li><a href="${href}"${active}>${escapeHtml(item.title)}${badge}</a></li>`;
 			})
 			.join("\n        ")}
-      </ul>
-    </div>`
+		</ul>
+	</div>`
 		)
 		.join("\n");
 };
@@ -49,39 +49,40 @@ export const shell = ({
 	return `<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)} · ProxDocs</title>
-<link rel="stylesheet" href="/static/styles.css">
-<link rel="icon" href="/static/favicon.png" type="image/png" sizes="64x64">
-<link rel="icon" href="/static/favicon.webp" type="image/webp" sizes="64x64">
-${extraHead}
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>${escapeHtml(title)} · ProxDocs</title>
+	<link rel="stylesheet" href="/static/styles.css">
+	<link rel="icon" href="/static/favicon.png" type="image/png" sizes="64x64">
+	<link rel="icon" href="/static/favicon.webp" type="image/webp" sizes="64x64">
+	<link rel="canonical" href="https://docs.crllect.dev" />
+	${extraHead}
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
 
 <header class="topbar">
-  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-  <a class="brand" href="/">ProxDocs</a>
-  <div class="docs-search">
-    <form id="docs-search-form" role="search">
-      <input id="docs-search" type="search" placeholder="Search docs" aria-label="Search documentation" autocomplete="off">
-    </form>
-    <div id="docs-search-results" class="docs-search__results" hidden></div>
-  </div>
-  <nav class="topbar__links">
-    <a href="/build">Build</a>
-    <a href="/reference/troubleshooting">Troubleshooting</a>
-    <a href="https://github.com/crllect/ProxDocs" target="_blank" rel="noopener">GitHub</a>
-  </nav>
-  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
+	<button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+	<a class="brand" href="/">ProxDocs</a>
+	<div class="docs-search">
+		<form id="docs-search-form" role="search">
+			<input id="docs-search" type="search" placeholder="Search docs" aria-label="Search documentation" autocomplete="off">
+		</form>
+		<div id="docs-search-results" class="docs-search__results" hidden></div>
+	</div>
+	<nav class="topbar__links">
+	<a href="/build">Build</a>
+	<a href="/reference/troubleshooting">Troubleshooting</a>
+	<a href="https://github.com/crllect/ProxDocs" target="_blank" rel="noopener">GitHub</a>
+	</nav>
+	<button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="layout">
-  <aside id="sidebar" class="sidebar">
-    ${sidebar(nav, slug)}
-  </aside>
-  ${main}
+	<aside id="sidebar" class="sidebar">
+		${sidebar(nav, slug)}
+	</aside>
+	${main}
 </div>
 
 <script src="/static/site.js" type="module"></script>
@@ -104,16 +105,16 @@ export const layout = ({
 
 	const tocHtml = toc.length
 		? `<nav class="toc" aria-label="On this page">
-         <h2>On this page</h2>
-         <ul>
-           ${toc
+		<h2>On this page</h2>
+		<ul>
+			${toc
 				.map(
 					h =>
 						`<li class="toc-${h.depth}"><a href="#${h.id}">${escapeHtml(h.text)}</a></li>`
 				)
 				.join("\n           ")}
-         </ul>
-       </nav>`
+		</ul>
+	</nav>`
 		: "";
 
 	const crumbs = breadcrumb.length
@@ -121,10 +122,10 @@ export const layout = ({
 		: "";
 
 	const pager = `
-    <nav class="pager">
-      ${prev ? `<a class="pager__prev" href="/${prev.slug}"><span>Previous</span>${escapeHtml(prev.title)}</a>` : "<span></span>"}
-      ${next ? `<a class="pager__next" href="/${next.slug}"><span>Next</span>${escapeHtml(next.title)}</a>` : "<span></span>"}
-    </nav>`;
+	<nav class="pager">
+		${prev ? `<a class="pager__prev" href="/${prev.slug}"><span>Previous</span>${escapeHtml(prev.title)}</a>` : "<span></span>"}
+		${next ? `<a class="pager__next" href="/${next.slug}"><span>Next</span>${escapeHtml(next.title)}</a>` : "<span></span>"}
+	</nav>`;
 
 	const source = sourcePath
 		? `<p class="source-link">Source: <code>${escapeHtml(sourcePath)}</code></p>`
@@ -135,14 +136,14 @@ export const layout = ({
 		slug,
 		nav,
 		main: `
-    <main id="content" class="content">
-      <article class="prose">
-        ${crumbs}
-        ${body}
-        ${source}
-        ${pager}
-      </article>
-    </main>
-    ${tocHtml}`
+	<main id="content" class="content">
+		<article class="prose">
+		${crumbs}
+		${body}
+		${source}
+		${pager}
+		</article>
+	</main>
+	${tocHtml}`
 	});
 };
