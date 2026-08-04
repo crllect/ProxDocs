@@ -3,8 +3,8 @@ import { engine } from "./engine.ts";
 import * as settings from "./settings.ts";
 
 const transportOptions = [
-	{ id: "libcurl", label: "libcurl", detail: "Widest compatibility, heavier to start." },
-	{ id: "epoxy", label: "epoxy", detail: "Lighter and faster, slightly pickier." }
+	{ id: "libcurl", label: "libcurl", detail: "curl in WebAssembly, over wisp. Widest site compatibility." },
+	{ id: "epoxy", label: "epoxy", detail: "A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl." }
 ] as {
 	id: string;
 	label: string;

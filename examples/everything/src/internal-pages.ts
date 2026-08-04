@@ -5,8 +5,9 @@ import * as visitLog from "./history.ts";
 import * as bookmarks from "./bookmarks.ts";
 
 const transportOptions = [
-	{ id: "libcurl", label: "libcurl", detail: "Widest compatibility, heavier to start." },
-	{ id: "epoxy", label: "epoxy", detail: "Lighter and faster, slightly pickier." }
+	{ id: "libcurl", label: "libcurl", detail: "curl in WebAssembly, over wisp. Widest site compatibility." },
+	{ id: "epoxy", label: "epoxy", detail: "A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl." },
+	{ id: "bare", label: "bare", detail: "The only transport that runs on request/response serverless hosts. Your server can inspect target request and response data, and WebSocket sites will not work." }
 ] as {
 	id: string;
 	label: string;

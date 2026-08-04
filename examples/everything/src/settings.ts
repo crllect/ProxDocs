@@ -49,7 +49,8 @@ const searchTemplate: Validator<string> = (value, fallback) => {
 
 const transportIds = [
 	"libcurl",
-	"epoxy"
+	"epoxy",
+	"bare"
 ] as const;
 
 const wispUrl: Validator<string> = (value, fallback) => {

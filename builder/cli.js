@@ -32,8 +32,8 @@ const parseArgs = argv => {
 			inlineValue ??
 			(argv[i + 1]?.startsWith("--") ? undefined : argv[++i]);
 
-		if (key === "features")
-			out.features = (value ?? "").split(",").filter(Boolean);
+		if (key === "features" || key === "transport")
+			out[key] = (value ?? "").split(",").filter(Boolean);
 		else if (key === "help") out.help = true;
 		else out[key] = value ?? true;
 	}
@@ -62,7 +62,7 @@ Options
 
   --engine <id>      ${list(engines)}
   --wiring <id>      ${list(wirings)}
-  --transport <id>   ${list(transports)}
+  --transport <ids>  ${list(transports)} (comma separated)
   --host <id>        ${list(hosts)}
 
   --features a,b,c   ${Object.keys(features).join(",")}
@@ -111,12 +111,13 @@ for (const key of [
 	"styling",
 	"engine",
 	"wiring",
-	"transport",
 	"host"
 ]) {
 	if (args[key]) raw[key] = args[key];
 }
 if (Array.isArray(args.features)) raw.features = args.features;
+if (Array.isArray(args.transport)) raw.transports = args.transport;
+else if (args.transport) raw.transports = [args.transport];
 
 try {
 	const existing = await readdir(outDir);
@@ -146,7 +147,7 @@ console.log(
 		`${styling[options.styling].label}`
 );
 console.log(
-	`  ${engines[options.engine].label}, ${options.wiring} wiring, ${options.transport} transport`
+	`  ${engines[options.engine].label}, ${options.wiring} wiring, ${options.transports.join(" + ")}`
 );
 console.log(
 	`  features: ${options.features.length ? options.features.join(", ") : "none (barebones)"}`

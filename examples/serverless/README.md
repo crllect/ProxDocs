@@ -24,7 +24,7 @@ The server listens on port 3000, or the first free port above it if that one is 
 | Styling | Plain CSS |
 | Engine | Scramjet |
 | Wiring | manual |
-| Transport | bare (bare) |
+| Transports | bare (default) |
 | Target host | Vercel or serverless |
 
 ### Features
@@ -68,6 +68,16 @@ the interval reintroduces that bug.
   run, but it re-sends them onto proxied responses, which is what lets a
   proxied site use `SharedArrayBuffer`. Drop them and any site that needs
   it breaks from inside its own code. Keep them.
+
+### The service worker keepalive
+
+`engine.ts` pings the service worker every 15 seconds. That is a
+workaround for an upstream bug, not something Scramjet asks for: browsers
+terminate idle service workers, Scramjet's worker loses the frame prefixes
+it was routing, and every navigation after that lands on this server's 404
+until you reload. Posting a message resets the idle timer.
+
+Delete it once upstream fixes the revive handshake.
 
 ## Deploying to Vercel
 

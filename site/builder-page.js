@@ -8,7 +8,6 @@ import {
 	frontends,
 	bundlers,
 	styling,
-	engines,
 	transports,
 	features,
 	defaults
@@ -91,20 +90,20 @@ export const buildPage = ({ nav }) => {
         ${group("Frontend", radios("frontend", frontends, defaults.frontend))}
         ${group("Build step", radios("bundler", bundlers, defaults.bundler))}
         ${group("Styling", radios("styling", styling, defaults.styling))}
-        ${group("Proxy engine", radios("engine", engines, defaults.engine))}
-        <fieldset data-when-engine="ultraviolet">
-          <legend>Serverless</legend>
-          <div class="choices">
-            <label class="choice choice--compact">
-              <input type="checkbox" name="serverless" value="vercel">
-              <span class="choice__body">
-                <span class="choice__label">Include Vercel config</span>
-                <span class="choice__tagline">Adds vercel.json. Forces Ultraviolet over Bare, which serverless requires.</span>
-              </span>
-            </label>
-          </div>
-        </fieldset>
-        ${group("Default transport", radios("transport", transports, defaults.transport))}
+        ${group(
+			"Transports",
+			Object.entries(transports)
+				.map(([id, def]) =>
+					choice(
+						"checkbox",
+						"transport",
+						id,
+						def,
+						defaults.transports.includes(id)
+					)
+				)
+				.join("")
+		)}
 
         <fieldset>
           <legend>Features
@@ -140,7 +139,7 @@ export const buildPage = ({ nav }) => {
         </div>
         <div class="result__body">
           <ul id="filelist" class="filelist"></ul>
-          <pre id="filepreview" class="filepreview"><code></code></pre>
+          <div class="filepreview__wrap"><pre id="filepreview" class="filepreview"><code></code></pre></div>
         </div>
       </div>
     </article>

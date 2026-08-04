@@ -271,9 +271,11 @@ And confirm the upgrade headers are forwarded, see
 
 In this order:
 
-1. **Try the other transport.** libcurl and epoxy use different HTTP/TLS
-   implementations, so a site may work with one and not the other. Shipping
-   [transport switching](../concepts/transports.md) gives users that fallback.
+1. **Try another transport.** libcurl and epoxy use different HTTP/TLS
+   implementations, and bare does not terminate TLS in the browser at all, so a
+   site can work on one and not another. Shipping more than one transport turns
+   on [transport switching](../concepts/transports.md) and gives users that
+   fallback themselves.
 2. **Try Scramjet if you are on Ultraviolet.** UV's JavaScript rewriter breaks
    on more sites, and it has not had a release since October 2024, so most of
    those breakages are not getting fixed for you. Check UV's `main` branch

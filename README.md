@@ -6,8 +6,9 @@ Bare, and their transport layers.
 Two things live here:
 
 - **`docs/`**. An explanation of the whole stack, written to be read. Plain
-  markdown, so it renders fine on GitHub, and there is a local site that renders
-  it with navigation and search-friendly structure.
+  markdown, so it renders fine on GitHub, and there is a
+  [site](https://docs.crllect.dev) that renders it with navigation and
+  search-friendly structure.
 - **`builder/`**. A generator that composes a working proxy from parts. Tick the
   features you want; the generated README gives the commands for your selected
   package manager.
@@ -81,14 +82,16 @@ cd my-proxy && npm install && npm start
 
 ### Presets
 
-| Preset        | Frontend       | Toolchain                       | Server  | Transport | Purpose                          |
-| ------------- | -------------- | ------------------------------- | ------- | --------- | -------------------------------- |
-| `minimal`     | Vanilla        | JavaScript, no build step       | Express | libcurl   | Smallest readable build          |
-| `standard`    | Vanilla        | Bun, TypeScript, Vite, Tailwind | Fastify | libcurl   | The recommended setup            |
-| `everything`  | Vanilla        | Bun, TypeScript, Vite, Tailwind | Express | libcurl   | Every optional feature           |
-| `serverless`  | Vanilla        | JavaScript, no build step       | Express | bare      | No WebSocket needed              |
-| `react`       | React          | TypeScript, Vite                | Express | libcurl   | Hydrated React shell             |
-| `astroPreact` | Astro + Preact | TypeScript, Astro               | Express | libcurl   | Static page with a Preact island |
+| Preset        | Frontend       | Toolchain                       | Server  | Transports           | Purpose                          |
+| ------------- | -------------- | ------------------------------- | ------- | -------------------- | -------------------------------- |
+| `minimal`     | Vanilla        | JavaScript, no build step       | Express | libcurl              | Smallest readable build          |
+| `standard`    | Vanilla        | Bun, TypeScript, Vite, Tailwind | Fastify | libcurl, epoxy       | The recommended setup            |
+| `everything`  | Vanilla        | Bun, TypeScript, Vite, Tailwind | Express | libcurl, epoxy, bare | Every optional feature           |
+| `serverless`  | Vanilla        | JavaScript, no build step       | Express | bare                 | No WebSocket needed              |
+| `react`       | React          | TypeScript, Vite                | Express | libcurl              | Hydrated React shell             |
+| `astroPreact` | Astro + Preact | TypeScript, Astro               | Express | libcurl              | Static page with a Preact island |
+
+Selecting more than one transport turns on runtime switching automatically.
 
 Every preset uses Scramjet with manual wiring.
 
@@ -98,23 +101,23 @@ Or answer the questions yourself:
 node builder/cli.js --out ./my-proxy \
     --language ts --runtime bun --server express \
     --frontend react --bundler vite --styling tailwind \
-    --transport libcurl \
+    --transport libcurl,epoxy \
     --features browserControls,tabs,settings,transportSwitch,history,bookmarks
 ```
 
 ### Build options
 
-| Question            | Options                                    |
-| ------------------- | ------------------------------------------ |
-| `--language`        | `ts`, `js`                                 |
-| `--package-manager` | `npm`, `pnpm`, `yarn`, `bun`               |
-| `--runtime`         | `node`, `bun`                              |
-| `--server`          | `express`, `fastify`                       |
-| `--frontend`        | `vanilla`, `react`, `astro`                |
-| `--bundler`         | `vite`, `none`                             |
-| `--styling`         | `plain`, `scss`, `tailwind`                |
-| `--transport`       | `libcurl`, `epoxy`, `bare`                 |
-| `--features`        | Comma-separated feature identifiers below. |
+| Question            | Options                                      |
+| ------------------- | -------------------------------------------- |
+| `--language`        | `ts`, `js`                                   |
+| `--package-manager` | `npm`, `pnpm`, `yarn`, `bun`                 |
+| `--runtime`         | `node`, `bun`                                |
+| `--server`          | `express`, `fastify`                         |
+| `--frontend`        | `vanilla`, `react`, `astro`                  |
+| `--bundler`         | `vite`, `none`                               |
+| `--styling`         | `plain`, `scss`, `tailwind`                  |
+| `--transport`       | `libcurl`, `epoxy`, `bare` (comma separated) |
+| `--features`        | Comma-separated feature identifiers below.   |
 
 Two more flags exist but are not part of the normal path. `--wiring manual`
 (default) or `bootstrap` picks how Scramjet's browser files are served; only

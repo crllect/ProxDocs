@@ -353,7 +353,7 @@ const combinations = [
 		options: {
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "epoxy",
+			transports: ["epoxy"],
 			features: ["browserControls"]
 		}
 	},
@@ -362,8 +362,17 @@ const combinations = [
 		options: {
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "bare",
+			transports: ["bare"],
 			features: ["browserControls", "tabs"]
+		}
+	},
+	{
+		label: "scramjet-multi-transport",
+		options: {
+			engine: "scramjet",
+			wiring: "manual",
+			transports: ["libcurl", "epoxy", "bare"],
+			features: ["browserControls", "settings"]
 		}
 	},
 	{
@@ -371,7 +380,7 @@ const combinations = [
 		options: {
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "bare",
+			transports: ["bare"],
 			host: "vercel",
 			features: ["browserControls"]
 		}

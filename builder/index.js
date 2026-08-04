@@ -57,7 +57,6 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		options.packageManager,
 		options.host,
 		options.bundler === "vite" ? "vite" : "nobundler",
-		`transport${cap(options.transportBackend)}`,
 		...options.features
 	]);
 
@@ -72,22 +71,19 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		flags.add("popupMenus");
 	if (engines[options.engine].requiresIsolation)
 		flags.add("requiresIsolation");
-	if (
-		options.transport === "libcurl" ||
-		options.features.includes("transportSwitch")
-	) {
-		flags.add("hasLibcurl");
+	const selectedTransports = options.transports ?? [options.transport];
+
+	if (selectedTransports.includes("libcurl")) flags.add("hasLibcurl");
+	if (selectedTransports.includes("epoxy")) flags.add("hasEpoxy");
+	if (selectedTransports.includes("bare")) flags.add("transportBare");
+	if (selectedTransports.some(id => transports[id].backend === "wisp")) {
+		flags.add("transportWisp");
 	}
-	if (
-		options.transport === "epoxy" ||
-		options.features.includes("transportSwitch")
-	) {
-		flags.add("hasEpoxy");
-	}
+
 	if (
 		isBootstrap ||
-		options.transportBackend === "wisp" ||
-		(options.transportBackend === "bare" && options.host !== "vercel")
+		flags.has("transportWisp") ||
+		(flags.has("transportBare") && options.host !== "vercel")
 	) {
 		flags.add("hasWebsockets");
 	}
@@ -285,27 +281,12 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	return { files, options, notes };
 };
 
-const transportChoices = options => {
-	if (!options.features.includes("transportSwitch")) {
-		const t = transports[options.transport];
-		return [{ id: options.transport, label: t.label, detail: t.detail }];
-	}
-	if (options.transportBackend === "bare") {
-		return [{ id: "bare", label: "bare", detail: transports.bare.detail }];
-	}
-	return [
-		{
-			id: "libcurl",
-			label: "libcurl",
-			detail: "Widest compatibility, heavier to start."
-		},
-		{
-			id: "epoxy",
-			label: "epoxy",
-			detail: "Lighter and faster, slightly pickier."
-		}
-	];
-};
+const transportChoices = options =>
+	(options.transports ?? [options.transport]).map(id => ({
+		id,
+		label: transports[id].label,
+		detail: transports[id].detail ?? transports[id].tagline
+	}));
 
 const devServerCommand = (options, isTs) => {
 	if (options.runtime === "bun")
@@ -359,18 +340,21 @@ const viteProxyConfig = options => {
 				http(p);
 		} else {
 			for (const p of ["/scram", "/utils", "/controller"]) http(p);
-			if (options.transportBackend === "bare") {
+			const chosen = options.transports ?? [options.transport];
+			if (chosen.includes("bare")) {
 				http("/baremod");
 				http("/bare");
-			} else {
-				if (options.transport === "libcurl" || switches)
-					http("/libcurl");
-				if (options.transport === "epoxy" || switches) http("/epoxy");
 			}
+			if (chosen.includes("libcurl")) http("/libcurl");
+			if (chosen.includes("epoxy")) http("/epoxy");
 		}
 	}
 
-	if (options.transportBackend === "wisp" || options.wiring === "bootstrap") {
+	const chosenForWisp = options.transports ?? [options.transport];
+	if (
+		chosenForWisp.some(id => transports[id].backend === "wisp") ||
+		options.wiring === "bootstrap"
+	) {
 		proxy["/wisp"] =
 			"{ target: `ws://127.0.0.1:${backendPort}`, ws: true }";
 	}
@@ -467,25 +451,22 @@ const packageJson = (
 		} else {
 			Object.assign(deps, scramjetSpecifiers);
 
-			if (options.transportBackend === "bare") {
+			const chosen = options.transports ?? [options.transport];
+
+			if (chosen.includes("bare")) {
 				deps["@mercuryworkshop/bare-transport"] =
 					versions.bareTransport;
 				deps["@tomphttp/bare-server-node"] = versions.bareServerNode;
-			} else {
-				if (
-					options.transport === "libcurl" ||
-					options.features.includes("transportSwitch")
-				) {
-					deps["@mercuryworkshop/libcurl-transport"] =
-						versions.libcurlTransport;
-				}
-				if (
-					options.transport === "epoxy" ||
-					options.features.includes("transportSwitch")
-				) {
-					deps["@mercuryworkshop/epoxy-transport"] =
-						versions.epoxyTransport;
-				}
+			}
+			if (chosen.includes("libcurl")) {
+				deps["@mercuryworkshop/libcurl-transport"] =
+					versions.libcurlTransport;
+			}
+			if (chosen.includes("epoxy")) {
+				deps["@mercuryworkshop/epoxy-transport"] =
+					versions.epoxyTransport;
+			}
+			if (chosen.some(id => transports[id].backend === "wisp")) {
 				deps["@mercuryworkshop/wisp-js"] = versions.wispJs;
 			}
 		}
@@ -560,6 +541,7 @@ const packageJson = (
 };
 
 const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
+	const selectedTransports = options.transports ?? [options.transport];
 	const engine = engines[options.engine];
 	const pm = packageManagers[options.packageManager];
 	const install = pm.install;
@@ -610,7 +592,13 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 		`| Styling | ${styling[options.styling].label} |`,
 		`| Engine | ${engine.label} |`,
 		`| Wiring | ${options.wiring} |`,
-		`| Transport | ${transports[options.transport].label} (${options.transportBackend}) |`,
+		`| Transports | ${selectedTransports
+			.map(id =>
+				id === options.transport
+					? `${transports[id].label} (default)`
+					: transports[id].label
+			)
+			.join(", ")} |`,
 		`| Target host | ${hosts[options.host].label} |`,
 		"",
 		"### Features",
@@ -682,12 +670,25 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 			"  it breaks from inside its own code. Keep them."
 		);
 
-		if (options.transportBackend === "wisp") {
+		if (selectedTransports.some(id => transports[id].backend === "wisp")) {
 			lines.push(
 				"- **WebSockets.** The Wisp tunnel is a long-lived WebSocket, so serverless",
 				"  hosts will not work. Use a VPS, Render, Fly, Railway, or similar."
 			);
 		}
+
+		lines.push(
+			"",
+			"### The service worker keepalive",
+			"",
+			"`engine.ts` pings the service worker every 15 seconds. That is a",
+			"workaround for an upstream bug, not something Scramjet asks for: browsers",
+			"terminate idle service workers, Scramjet's worker loses the frame prefixes",
+			"it was routing, and every navigation after that lands on this server's 404",
+			"until you reload. Posting a message resets the idle timer.",
+			"",
+			"Delete it once upstream fixes the revive handshake."
+		);
 
 		lines.push("");
 	}

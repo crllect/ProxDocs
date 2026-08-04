@@ -34,6 +34,8 @@ export const defaultWispUrl = (): string => {
 	return scheme + "//" + location.host + "/wisp/";
 };
 
+export const bareUrl = new URL("/bare/", location.href).href;
+
 const runtimeScripts = [
 	"/scram/scramjet.js",
 	"/controller/controller.api.js",
@@ -90,6 +92,7 @@ const registerServiceWorker = async (): Promise<ServiceWorker> => {
 const transportModules: Partial<Record<string, string>> = {
 	libcurl: "/libcurl/index.mjs",
 	epoxy: "/epoxy/index.mjs",
+	bare: "/baremod/index.mjs"
 };
 
 let currentTransport: TransportConfig = {
@@ -108,6 +111,12 @@ const resolveTransport = (
 		: "libcurl";
 
 	switch (kind) {
+		case "bare":
+			return {
+				path: transportModules.bare!,
+				kind,
+				endpoint: config.bare || bareUrl
+			};
 		default:
 			return {
 				path: transportModules[kind]!,
@@ -125,6 +134,8 @@ const buildTransport = async (config: TransportConfig): Promise<unknown> => {
 	activeTransport = JSON.stringify([path, endpoint]);
 
 	switch (kind) {
+		case "bare":
+			return new module.default(endpoint);
 		default:
 			return new module.default({ wisp: endpoint });
 	}
@@ -414,16 +425,9 @@ export const engine: ProxyEngine = {
 
 	listTransports(): TransportChoice[] {
 		return [
-			{
-				id: "libcurl",
-				label: "libcurl",
-				detail: "A full curl build in WebAssembly. Widest compatibility, heavier to start."
-			},
-			{
-				id: "epoxy",
-				label: "epoxy",
-				detail: "A Rust TLS stack in WebAssembly. Lighter and faster, slightly pickier."
-			}
+			{ id: "libcurl", label: "libcurl", detail: "curl in WebAssembly, over wisp. Widest site compatibility." },
+			{ id: "epoxy", label: "epoxy", detail: "A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl." },
+			{ id: "bare", label: "bare", detail: "The only transport that runs on request/response serverless hosts. Your server can inspect target request and response data, and WebSocket sites will not work." }
 		];
 	}
 };

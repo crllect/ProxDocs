@@ -92,16 +92,16 @@ you did not ask for and fills in a few names.
 
 It asks about the stack:
 
-| Question          | Options                           |
-| ----------------- | --------------------------------- |
-| Language          | TypeScript or JavaScript          |
-| Package manager   | npm, pnpm, yarn, bun              |
-| Runtime           | Node or Bun                       |
-| Server framework  | Express or Fastify                |
-| Frontend          | Vanilla, React, or Astro + Preact |
-| Build step        | Vite, or none at all              |
-| Styling           | Plain CSS, SCSS, or Tailwind      |
-| Default transport | libcurl, epoxy, or bare           |
+| Question         | Options                           |
+| ---------------- | --------------------------------- |
+| Language         | TypeScript or JavaScript          |
+| Package manager  | npm, pnpm, yarn, bun              |
+| Runtime          | Node or Bun                       |
+| Server framework | Express or Fastify                |
+| Frontend         | Vanilla, React, or Astro + Preact |
+| Build step       | Vite, or none at all              |
+| Styling          | Plain CSS, SCSS, or Tailwind      |
+| Transports       | libcurl, epoxy, bare, or any mix  |
 
 It also asks about the features:
 
@@ -109,8 +109,8 @@ It also asks about the features:
 - **Multiple tabs:** one proxy session per tab, kept alive in the background
 - **Settings:** validated and persisted, shown in a popup unless custom
   protocols are enabled
-- **Transport switching:** libcurl or epoxy at runtime, plus a custom Wisp
-  server
+- **Transport switching:** any transport you shipped, at runtime, plus a custom
+  Wisp server
 - **History:** a visit log, separate from per-tab back and forward
 - **Bookmarks and history menus:** popup overlays or navigable custom protocol
   pages

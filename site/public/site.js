@@ -130,7 +130,16 @@ for (const block of document.querySelectorAll("pre > code")) {
 		button.textContent = "Copied";
 		setTimeout(() => (button.textContent = "Copy"), 1200);
 	});
-	pre.append(button);
+
+	if (pre.classList.contains("filepreview")) {
+		pre.parentElement.append(button);
+		continue;
+	}
+
+	const wrapper = document.createElement("div");
+	wrapper.className = "codeblock";
+	pre.replaceWith(wrapper);
+	wrapper.append(pre, button);
 }
 
 const tocLinks = [...document.querySelectorAll(".toc a")];
@@ -167,6 +176,7 @@ if (form) {
 	let currentFiles = {};
 	let selectedFile = null;
 	let debounce;
+	let lastOptions = null;
 
 	const readForm = () => {
 		const data = new FormData(form);
@@ -181,19 +191,13 @@ if (form) {
 			styling: data.get("styling"),
 			engine: data.get("engine"),
 			wiring: data.get("wiring"),
-			transport: data.get("transport"),
-			host:
-				data.get("engine") === "ultraviolet" &&
-				form.querySelector('[name="serverless"]')?.checked
-					? "vercel"
-					: "node",
+			transports: data.getAll("transport"),
+			host: "node",
 			features: data.getAll("features")
 		};
 	};
 
 	const applyPreset = options => {
-		const serverless = form.querySelector('[name="serverless"]');
-		if (serverless) serverless.checked = options.host === "vercel";
 		for (const [key, value] of Object.entries(options)) {
 			if (key === "features" || key === "host") continue;
 			const input = form.querySelector(
@@ -204,15 +208,13 @@ if (form) {
 		for (const box of form.querySelectorAll('[name="features"]')) {
 			box.checked = options.features?.includes(box.value) ?? false;
 		}
+		for (const box of form.querySelectorAll('[name="transport"]')) {
+			box.checked = options.transports?.includes(box.value) ?? false;
+		}
 		refresh();
 	};
 
 	const refresh = async () => {
-		const engine = form.querySelector('[name="engine"]:checked')?.value;
-		for (const fieldset of form.querySelectorAll("[data-when-engine]")) {
-			fieldset.hidden = fieldset.dataset.whenEngine !== engine;
-		}
-
 		const response = await fetch("/api/preview", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
@@ -224,6 +226,7 @@ if (form) {
 			await response.json();
 
 		currentFiles = files;
+		lastOptions = options;
 
 		for (const [field, reasons] of Object.entries(blocked ?? {})) {
 			for (const input of form.querySelectorAll(`[name="${field}"]`)) {
@@ -231,7 +234,7 @@ if (form) {
 				const note = consequence?.[field]?.[input.value];
 				const unavailable = Boolean(reason) && !input.checked;
 
-				input.disabled = unavailable;
+				input.dataset.blockedReason = reason ?? "";
 				const label = input.closest(".choice");
 				if (!label) continue;
 
@@ -254,10 +257,11 @@ if (form) {
 			);
 			if (input) input.checked = true;
 		}
-		const serverless = form.querySelector('[name="serverless"]');
-		if (serverless) serverless.checked = options.host === "vercel";
 		for (const box of form.querySelectorAll('[name="features"]')) {
 			box.checked = options.features.includes(box.value);
+		}
+		for (const box of form.querySelectorAll('[name="transport"]')) {
+			box.checked = options.transports.includes(box.value);
 		}
 
 		notesEl.hidden = notes.length === 0;
@@ -269,7 +273,7 @@ if (form) {
 		summaryEl.textContent =
 			`${names.length} files · ${options.language.toUpperCase()} · ${options.runtime} · ` +
 			`${options.server} · ${options.bundler} · ${options.styling} · ` +
-			`${options.frontend} · ${options.engine} (${options.transport}) · ` +
+			`${options.frontend} · ${options.engine} (${options.transports.join(" + ")}) · ` +
 			`${options.features.length ? options.features.join(", ") : "no extra features"}`;
 
 		fileListEl.replaceChildren(
@@ -341,14 +345,45 @@ if (form) {
 		previewEl.innerHTML = highlight(currentFiles[name] ?? "", language);
 	};
 
-	form.addEventListener("input", () => {
+	form.addEventListener("input", event => {
+		const input = event.target;
+
+		if (input.name === "transport" && !input.checked) {
+			const left = form.querySelectorAll(
+				'[name="transport"]:checked'
+			).length;
+			if (left === 0) {
+				input.checked = true;
+				alert(
+					"A proxy needs at least one transport. Pick another one before removing this."
+				);
+				return;
+			}
+		}
+
+		const reason = input.dataset?.blockedReason;
+		if (reason && input.checked) {
+			if (input.type === "radio") {
+				const previous = lastOptions?.[input.name];
+				const restore = form.querySelector(
+					`[name="${input.name}"][value="${previous}"]`
+				);
+				if (restore) restore.checked = true;
+				else input.checked = false;
+			} else {
+				input.checked = false;
+			}
+			alert(reason);
+			return;
+		}
+
 		clearTimeout(debounce);
 		debounce = setTimeout(refresh, 150);
 	});
 
 	const setAllFeatures = checked => {
 		for (const box of form.querySelectorAll('[name="features"]')) {
-			if (!box.disabled) box.checked = checked;
+			if (!box.dataset.blockedReason) box.checked = checked;
 		}
 		refresh();
 	};

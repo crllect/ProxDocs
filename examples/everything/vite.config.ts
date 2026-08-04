@@ -18,6 +18,8 @@ export default defineConfig({
 			"/scram": `http://127.0.0.1:${backendPort}`,
 			"/utils": `http://127.0.0.1:${backendPort}`,
 			"/controller": `http://127.0.0.1:${backendPort}`,
+			"/baremod": `http://127.0.0.1:${backendPort}`,
+			"/bare": `http://127.0.0.1:${backendPort}`,
 			"/libcurl": `http://127.0.0.1:${backendPort}`,
 			"/epoxy": `http://127.0.0.1:${backendPort}`,
 			"/wisp": { target: `ws://127.0.0.1:${backendPort}`, ws: true }

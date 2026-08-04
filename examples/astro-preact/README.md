@@ -34,7 +34,7 @@ it you get an importScripts 500 and a blank page.
 | Styling | Plain CSS |
 | Engine | Scramjet |
 | Wiring | manual |
-| Transport | libcurl (wisp) |
+| Transports | libcurl (default) |
 | Target host | Node host or VPS |
 
 ### Features
@@ -79,3 +79,13 @@ the interval reintroduces that bug.
   it breaks from inside its own code. Keep them.
 - **WebSockets.** The Wisp tunnel is a long-lived WebSocket, so serverless
   hosts will not work. Use a VPS, Render, Fly, Railway, or similar.
+
+### The service worker keepalive
+
+`engine.ts` pings the service worker every 15 seconds. That is a
+workaround for an upstream bug, not something Scramjet asks for: browsers
+terminate idle service workers, Scramjet's worker loses the frame prefixes
+it was routing, and every navigation after that lands on this server's 404
+until you reload. Posting a message resets the idle timer.
+
+Delete it once upstream fixes the revive handshake.

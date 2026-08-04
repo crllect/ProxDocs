@@ -147,11 +147,14 @@ export const wirings = {
 	}
 };
 
+const transportOrder = ["libcurl", "epoxy", "bare"];
+
 export const transports = {
 	libcurl: {
 		label: "libcurl",
 		tagline: "curl in WebAssembly, over wisp. Widest site compatibility.",
 		backend: "wisp",
+		docs: "/concepts/transports",
 		engines: ["scramjet"]
 	},
 	epoxy: {
@@ -159,6 +162,7 @@ export const transports = {
 		tagline:
 			"A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl.",
 		backend: "wisp",
+		docs: "/concepts/transports",
 		engines: ["scramjet"]
 	},
 	bare: {
@@ -166,6 +170,7 @@ export const transports = {
 		tagline: "Plain HTTP to a Bare server. Works without WebSockets.",
 		detail: "The only transport that runs on request/response serverless hosts. Your server can inspect target request and response data, and WebSocket sites will not work.",
 		backend: "bare",
+		docs: "/guides/serverless",
 		engines: ["scramjet"]
 	}
 };
@@ -202,7 +207,7 @@ export const features = {
 	transportSwitch: {
 		label: "Transport switching",
 		tagline:
-			"Pick libcurl or epoxy at runtime, or point at another wisp server.",
+			"Pick libcurl, epoxy or bare at runtime, or point at another wisp server.",
 		docs: "/concepts/transports"
 	},
 	history: {
@@ -252,7 +257,7 @@ export const presets = {
 			styling: "plain",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "libcurl",
+			transports: ["libcurl"],
 			host: "node",
 			features: ["browserControls"]
 		}
@@ -272,9 +277,9 @@ export const presets = {
 			styling: "tailwind",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "libcurl",
+			transports: ["libcurl", "epoxy"],
 			host: "node",
-			features: ["browserControls", "tabs", "settings", "transportSwitch"]
+			features: ["browserControls", "tabs", "settings"]
 		}
 	},
 	everything: {
@@ -291,7 +296,7 @@ export const presets = {
 			styling: "tailwind",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "libcurl",
+			transports: ["libcurl", "epoxy", "bare"],
 			host: "node",
 			features: Object.keys(features)
 		}
@@ -310,7 +315,7 @@ export const presets = {
 			styling: "plain",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "bare",
+			transports: ["bare"],
 			host: "vercel",
 			features: ["browserControls", "settings", "history", "aboutPages"]
 		}
@@ -328,7 +333,7 @@ export const presets = {
 			styling: "plain",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "libcurl",
+			transports: ["libcurl"],
 			host: "node",
 			features: ["browserControls", "tabs", "settings"]
 		}
@@ -347,7 +352,7 @@ export const presets = {
 			styling: "plain",
 			engine: "scramjet",
 			wiring: "manual",
-			transport: "libcurl",
+			transports: ["libcurl"],
 			host: "node",
 			features: ["browserControls", "settings"]
 		}
@@ -374,7 +379,7 @@ export const defaults = {
 	styling: "plain",
 	engine: "scramjet",
 	wiring: "manual",
-	transport: "libcurl",
+	transports: ["libcurl"],
 	host: "node",
 	features: ["browserControls", "tabs"]
 };
@@ -477,43 +482,52 @@ export const resolve = (raw = {}) => {
 	pick("styling", styling, "plain");
 	pick("engine", engines, "scramjet");
 	pick("wiring", wirings, "manual");
-	pick("transport", transports, "libcurl");
 	pick("host", hosts, "node");
 
 	if (!wirings[opts.wiring]?.engines.includes(opts.engine)) {
 		opts.wiring = "manual";
 	}
 
-	if (!transports[opts.transport].engines.includes(opts.engine)) {
+	let selected = Array.isArray(opts.transports)
+		? opts.transports
+		: opts.transports
+			? [opts.transports]
+			: opts.transport
+				? [opts.transport]
+				: [];
+	selected = transportOrder.filter(
+		id =>
+			selected.includes(id) &&
+			transports[id].engines.includes(opts.engine)
+	);
+	if (!selected.length) selected = ["libcurl"];
+
+	if (opts.wiring === "bootstrap" && selected.includes("epoxy")) {
 		notes.push(
-			`${engines[opts.engine].label} cannot use that transport, so libcurl was used.`
+			"proxy-bootstrap 0.0.5 cannot serve epoxy correctly, so epoxy was dropped."
 		);
-		opts.transport = "libcurl";
+		selected = selected.filter(id => id !== "epoxy");
 	}
 
-	if (opts.wiring === "bootstrap" && opts.transport === "epoxy") {
-		notes.push(
-			"proxy-bootstrap 0.0.5 cannot serve epoxy correctly, so libcurl was used."
-		);
-		opts.transport = "libcurl";
-	}
-
-	if (
-		!hosts[opts.host].supportsWebsockets &&
-		transports[opts.transport].backend === "wisp"
-	) {
-		notes.push(
-			"Serverless hosts cannot hold a WebSocket open, so the transport is Bare."
-		);
-		opts.transport = "bare";
-	}
-
-	if (opts.wiring === "bootstrap" && opts.transport === "bare") {
+	if (opts.wiring === "bootstrap" && selected.includes("bare")) {
 		notes.push(
 			"proxy-bootstrap 0.0.5 cannot wire the Bare transport, so manual wiring was used."
 		);
 		opts.wiring = "manual";
 	}
+
+	if (!hosts[opts.host].supportsWebsockets) {
+		if (selected.some(id => transports[id].backend === "wisp")) {
+			notes.push(
+				"A serverless function cannot hold a WebSocket open, so only Bare was kept."
+			);
+		}
+		selected = ["bare"];
+	}
+
+	if (!selected.length) selected = ["libcurl"];
+	opts.transports = selected;
+	opts.transport = selected[0];
 
 	if (opts.runtime === "bun" && opts.host === "vercel") {
 		notes.push("Vercel functions run Node, so the runtime was switched.");
@@ -556,9 +570,14 @@ export const resolve = (raw = {}) => {
 	for (const key of requested) {
 		if (!Object.hasOwn(features, key)) continue;
 
+		if (key === "transportSwitch" && opts.transports.length > 1) {
+			selectedFeatures.push(key);
+			continue;
+		}
+
 		if (key === "transportSwitch" && opts.host === "vercel") {
 			notes.push(
-				"Vercel cannot use Wisp transports, so transport switching was removed."
+				"A serverless function cannot hold a WebSocket open, so only the Bare transport is available and switching was removed."
 			);
 			continue;
 		}
@@ -582,6 +601,16 @@ export const resolve = (raw = {}) => {
 			notes.push(why);
 		}
 	};
+
+	if (
+		opts.transports.length > 1 &&
+		!selectedFeatures.includes("transportSwitch")
+	) {
+		selectedFeatures.push("transportSwitch");
+		notes.push(
+			"More than one transport was selected, so transport switching is on."
+		);
+	}
 
 	dependsOn(
 		"bookmarks",

@@ -6,6 +6,7 @@ import express from "express";
 import { createRequire } from "node:module";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+import { createBareServer } from "@tomphttp/bare-server-node";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticRoot = path.join(__dirname, "dist");
@@ -32,6 +33,7 @@ app.use(
 	express.static(dirOf("@mercuryworkshop/libcurl-transport"))
 );
 app.use("/epoxy/", express.static(dirOf("@mercuryworkshop/epoxy-transport")));
+app.use("/baremod/", express.static(dirOf("@mercuryworkshop/bare-transport")));
 
 app.use(
 	express.static(staticRoot, {
@@ -43,13 +45,29 @@ app.use(
 	})
 );
 
+const bareServer = createBareServer("/bare/", {
+	connectionLimiter: {
+		maxConnectionsPerIP: 2000,
+		windowDuration: 60,
+		blockDuration: 10
+	}
+});
+
 const handleRequest = (req: http.IncomingMessage, res: http.ServerResponse) => {
+	if (bareServer.shouldRoute(req)) {
+		bareServer.routeRequest(req, res);
+		return;
+	}
 	app(req, res);
 };
 
 const server = http.createServer(handleRequest);
 
 server.on("upgrade", (req, socket, head) => {
+	if (bareServer.shouldRoute(req)) {
+		bareServer.routeUpgrade(req, socket, head);
+		return;
+	}
 	if (
 		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
 		"/wisp/"

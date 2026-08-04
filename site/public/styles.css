@@ -216,14 +216,16 @@ a {
    WebKit needs the pseudo-elements, including the arrow buttons. */
 .sidebar,
 .filelist,
-.filepreview {
+.filepreview,
+.prose pre {
 	scrollbar-width: thin;
 	scrollbar-color: var(--border) transparent;
 }
 
 .sidebar::-webkit-scrollbar,
 .filelist::-webkit-scrollbar,
-.filepreview::-webkit-scrollbar {
+.filepreview::-webkit-scrollbar,
+.prose pre::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
@@ -233,26 +235,31 @@ a {
 .filelist::-webkit-scrollbar-track,
 .filelist::-webkit-scrollbar-corner,
 .filepreview::-webkit-scrollbar-track,
-.filepreview::-webkit-scrollbar-corner {
+.filepreview::-webkit-scrollbar-corner,
+.prose pre::-webkit-scrollbar-track,
+.prose pre::-webkit-scrollbar-corner {
 	background: transparent;
 }
 
 .sidebar::-webkit-scrollbar-button,
 .filelist::-webkit-scrollbar-button,
-.filepreview::-webkit-scrollbar-button {
+.filepreview::-webkit-scrollbar-button,
+.prose pre::-webkit-scrollbar-button {
 	display: none;
 }
 
 .sidebar::-webkit-scrollbar-thumb,
 .filelist::-webkit-scrollbar-thumb,
-.filepreview::-webkit-scrollbar-thumb {
+.filepreview::-webkit-scrollbar-thumb,
+.prose pre::-webkit-scrollbar-thumb {
 	background: var(--border);
 	border-radius: 4px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover,
 .filelist::-webkit-scrollbar-thumb:hover,
-.filepreview::-webkit-scrollbar-thumb:hover {
+.filepreview::-webkit-scrollbar-thumb:hover,
+.prose pre::-webkit-scrollbar-thumb:hover {
 	background: var(--fg-muted);
 }
 
@@ -400,8 +407,16 @@ h3:hover .anchor {
 	font-size: 0.875em;
 }
 
-.prose pre {
+.codeblock {
 	position: relative;
+	margin: 1.25rem 0;
+}
+
+.codeblock > pre {
+	margin: 0;
+}
+
+.prose pre {
 	margin: 1.25rem 0;
 	padding: 1rem 0 1rem 1.125rem;
 	overflow-x: auto;
@@ -427,6 +442,8 @@ h3:hover .anchor {
 	transition: opacity 0.1s;
 }
 
+.codeblock:hover .copy,
+.filepreview__wrap:hover .copy,
 pre:hover .copy {
 	opacity: 1;
 }
@@ -750,6 +767,14 @@ pre:hover .copy {
 .filelist button.active {
 	background: var(--accent-soft);
 	color: var(--accent-text);
+}
+
+.filepreview__wrap {
+	position: relative;
+	display: grid;
+	grid-template-rows: minmax(0, 1fr);
+	min-height: 0;
+	overflow: hidden;
 }
 
 .filepreview {

@@ -461,16 +461,7 @@ export const engine: ProxyEngine = {
 
 	listTransports(): TransportChoice[] {
 		return [
-			{
-				id: "libcurl",
-				label: "libcurl",
-				detail: "A full curl build in WebAssembly. Widest compatibility, heavier to start."
-			},
-			{
-				id: "epoxy",
-				label: "epoxy",
-				detail: "A Rust TLS stack in WebAssembly. Lighter and faster, slightly pickier."
-			}
+			//#insert TRANSPORT_OPTIONS
 		];
 	}
 	//#endif
