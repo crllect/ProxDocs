@@ -69,8 +69,10 @@ Cross-origin isolation. See above.
 favicons in _your own shell_ will be blocked.
 
 Self-host them, or try `Cross-Origin-Embedder-Policy: credentialless`, which
-still grants isolation but does not require opt-in. Chromium and Firefox support
-it; Safari has lagged.
+still grants isolation but does not require opt-in. Chromium 96+ and Firefox
+119+ support it. **Safari does not, at any version**, and WebKit has not
+signalled that it intends to, so `credentialless` is not a fix you can ship to
+everyone. Self-hosting is the portable answer.
 
 This applies to **your shell's** assets. Assets of proxied pages go through the
 service worker and are same-origin by the time the browser sees them.
@@ -135,10 +137,13 @@ A proxied URL can contain `/wisp/` in its path, so do not use
 `req.url.includes("/wisp/")`. Match the parsed pathname:
 
 ```js
-if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
 	wisp.routeRequest(req, socket, head);
 }
 ```
+
+The base only exists to make `req.url` parseable; the scheme and host are
+discarded when you read `.pathname`.
 
 **Check the scheme.** An `https://` page cannot open a `ws://` socket. The
 browser blocks it as mixed content.

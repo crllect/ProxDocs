@@ -8,7 +8,7 @@ which is what the generator uses.
 
 ## Pick a row and use everything in it
 
-Here are two working mixing generations:
+Do not mix generations. Here are two sets that work:
 
 ### Scramjet 2.x, current architecture
 
@@ -153,8 +153,8 @@ work in Express and Fastify.
 | `@mercuryworkshop/scramjet`            | 2.0.67-alpha.2     | 2026-06-24 |
 | `@mercuryworkshop/scramjet`            | 1.1.0 (`latest`)   | 2026-04-27 |
 | `@mercuryworkshop/scramjet-controller` | 0.0.14             | 2026-06-24 |
-| `@mercuryworkshop/scramjet-utils`      | 0.0.3              | 2026       |
-| `@mercuryworkshop/proxy-bootstrap`     | 0.0.5              | 2026       |
+| `@mercuryworkshop/scramjet-utils`      | 0.0.3              | 2026-05-24 |
+| `@mercuryworkshop/proxy-bootstrap`     | 0.0.5              | 2026-05-24 |
 | `@mercuryworkshop/proxy-transports`    | 1.0.2              | 2025-12-18 |
 | `@mercuryworkshop/bare-mux`            | 2.1.9 (deprecated) | 2026-04-27 |
 | `@mercuryworkshop/epoxy-transport`     | 3.0.1              | 2025-12-25 |

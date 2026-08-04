@@ -76,26 +76,36 @@ this entire ecosystem has contributors.
 ### Content Security Policy
 
 A site sends a CSP header restricting where scripts and frames may come from.
-Since the proxy serves everything from your origin, a strict policy can block
+Since the proxy serves everything from your origin, a strict policy would block
 Scramjet's own injected runtime.
 
-Symptom: the frame is blank, and the frame's console has explicit CSP violation
-messages naming the directive.
+**Scramjet already strips these headers**, from every response, before the page
+ever sees them. There is nothing for you to configure and no hook to write. The
+full list it removes:
 
-This one you can actually fix. Strip the header on the way back, in a
-[`fetch.preresponse` hook](plugins-and-hooks.md):
-
-```js
-this.tap(frame.hooks.fetch.preresponse, (context, props) => {
-	props.response.headers.delete("content-security-policy");
-	props.response.headers.delete("content-security-policy-report-only");
-});
+```text
+content-security-policy              cross-origin-embedder-policy
+content-security-policy-report-only  cross-origin-opener-policy
+x-frame-options                      cross-origin-resource-policy
+strict-transport-security            origin-isolation
+upgrade-insecure-requests            x-content-type-options
+clear-site-data                      x-xss-protection
+expect-ct                            x-download-options
+feature-policy                       x-permitted-cross-domain-policies
 ```
 
-Know what that costs. CSP is one of the page's defences against script
-injection, and you just removed it for every site. Defensible for a proxy, since
-you are already running foreign code on your own origin, but make it a decision
-instead of an accident.
+Know what that means. CSP is one of the page's defences against script
+injection, and it is gone for every site you proxy. That is defensible, since
+you are already running foreign code on your own origin, but it is not your
+decision to make and there is no opt-out.
+
+The in-document routes are covered too: a
+`<meta http-equiv="content-security-policy">` is replaced with a comment during
+HTML rewriting, and the `csp` attribute is stripped off `<iframe>` elements.
+
+So if you do see the symptom, a blank frame with explicit CSP violations naming
+the directive in the frame's console, that is a rewriter bug rather than
+something to configure around. Report it upstream with the failing URL.
 
 ### Workers
 
@@ -184,5 +194,5 @@ promised everything report all of them, and stop trusting anything you say.
 - [Troubleshooting](troubleshooting.md). When nothing works, rather than one
   site.
 - [Config and flags](scramjet-config.md). The per-site escape hatch.
-- [Plugins and hooks](plugins-and-hooks.md). Where response header rewriting
-  belongs.
+- [Plugins and hooks](plugins-and-hooks.md). Where response rewriting that
+  Scramjet does not already do for you belongs.

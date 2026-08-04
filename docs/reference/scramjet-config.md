@@ -129,8 +129,10 @@ client bundle, so anyone can decode it. It defeats naive substring matching on
 ### `globals`
 
 Scramjet rewrites `location` into a call to a helper function, and `globals`
-names those helpers. The defaults are all `$scramjet$`-prefixed: `wrapfn` is
-`$scramjet$wrap`, `importfn` is `$scramjet$import`, and so on.
+names those helpers. The defaults all start with `$scramjet`: `wrapfn` is
+`$scramjet$wrap`, `importfn` is `$scramjet$import`, and so on. Two do not follow
+the `$scramjet$` shape exactly, so do not derive them: `wrappropertybase` is
+`$scramjet__` and `wrappropertyfn` is `$scramjet$prop`.
 
 You rename them for one reason: a proxied site that sniffs for `$scramjet` in
 the global scope to detect it is being proxied. Renaming to a neutral prefix
@@ -168,8 +170,7 @@ default.
 
 ## Flags
 
-Thirteen booleans. Defaults are what upstream ships; the controller overrides
-`allowFailedIntercepts` to `true`.
+Thirteen booleans. These are the defaults upstream ships.
 
 | Flag                    | Default | Effect                                                         |
 | ----------------------- | ------- | -------------------------------------------------------------- |
@@ -186,6 +187,12 @@ Thirteen booleans. Defaults are what upstream ships; the controller overrides
 | `cleanErrors`           | `false` | Strip Scramjet's frames out of stack traces                    |
 | `debugTrampolines`      | `false` | Debug output for the trampoline functions                      |
 | `debugSourceURL`        | `false` | Append `sourceURL` comments to fetched bodies                  |
+
+> **`allowFailedIntercepts` is a special case.** Controller 0.0.14 sets it to
+> `true` for itself, but then merges its own config _underneath_ upstream's
+> defaults rather than over them, so the default `false` wins and the flag ends
+> up off. Assume `false`, set it explicitly if you want it on, and check
+> `controller.scramjetConfig.flags` rather than trusting either value.
 
 ### The ones you will actually change
 

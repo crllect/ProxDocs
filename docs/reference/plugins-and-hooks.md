@@ -76,10 +76,14 @@ loaded. If you follow [manual wiring](../guides/wiring.md), that is inside
 There are two, they are not interchangeable, and picking the wrong one produces
 a confusing failure.
 
-| Class           | From             | Constructor            | Use for                             |
-| --------------- | ---------------- | ---------------------- | ----------------------------------- |
-| `Plugin`        | `$scramjet`      | `(name, tapOrder?)`    | Tapping a hook on an existing frame |
-| `ManagedPlugin` | `$scramjetUtils` | `(name, dependencies)` | Anything passed to `createFrame()`  |
+| Class           | From                  | Constructor            | Use for                             |
+| --------------- | --------------------- | ---------------------- | ----------------------------------- |
+| `Plugin`        | `$scramjet`           | `(name, tapOrder?)`    | Tapping a hook on an existing frame |
+| `ManagedPlugin` | `$scramjetController` | `(name, dependencies)` | Anything passed to `createFrame()`  |
+
+`ManagedPlugin` is defined in `scramjet-controller` and re-exported by
+`scramjet-utils`, so `$scramjetUtils.ManagedPlugin` works too. You do not need
+to load utils to subclass it.
 
 `ManagedPlugin` extends `Plugin` and adds two things: a `dependencies` array and
 an `install(frame)` method.
@@ -106,7 +110,8 @@ Two things follow from that:
 
 `LinkHandlerPlugin` is the real example. It declares
 `super("link-handler", ["event-handler"])` and then looks its dependency up by
-name at install time:
+name from inside its `init.post` tap, so the lookup happens per proxied document
+rather than once at install:
 
 ```js
 const eventHandler = frame.plugins.find(p => p.name === "event-handler");
@@ -129,6 +134,8 @@ class TitlePlugin extends globalThis.$scramjetUtils.ManagedPlugin {
 	}
 
 	install(frame) {
+		super.install(frame);
+
 		this.tap(frame.hooks.init.post, context => {
 			if (!context.isTopLevel) return;
 			const doc = context.window.document;
@@ -147,9 +154,12 @@ What that shape is obeying:
 1. **Pass both constructor arguments.** `dependencies` has no default.
 2. **Tap inside `install`, not in the constructor.** The frame does not exist
    yet when the constructor runs, and hooks live on the frame.
-3. **One instance per frame.** `install(frame)` stores `this.frame`, so sharing
-   an instance across frames leaves it pointing at whichever installed last. The
-   class can be shared; the instance cannot.
+3. **One instance per frame.** `ManagedPlugin.install(frame)` stores
+   `this.frame`, so sharing an instance across frames leaves it pointing at
+   whichever installed last. The class can be shared; the instance cannot.
+4. **Call `super.install(frame)` if you override `install`.** That is what sets
+   `this.frame`. Some of the shipped plugins skip it and close over the `frame`
+   argument instead, which works but leaves `this.frame` unset.
 
 > A `MutationObserver` watches for DOM changes and fires a callback
 > ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)). It
@@ -157,7 +167,8 @@ What that shape is obeying:
 
 ### Ordering between plugins
 
-Both classes accept a `tapOrder` describing which plugins to run around:
+Every `tap` call takes an optional `tapOrder` describing which plugins to run
+around:
 
 ```js
 this.tap(frame.hooks.fetch.request, callback, {
@@ -169,6 +180,11 @@ this.tap(frame.hooks.fetch.request, callback, {
 Names refer to other plugins' `name` values. Use it when two taps on the same
 hook would otherwise fight. An early-response tap has to run before a caching
 tap, or the cache stores a response that was never fetched.
+
+`Plugin` also takes a `tapOrder` as its second constructor argument, which
+becomes the default for every tap that does not pass its own. `ManagedPlugin`
+does not: its second argument is `dependencies`, and it passes only the name up
+to `Plugin`. On a `ManagedPlugin`, set ordering per tap.
 
 ---
 
@@ -234,9 +250,11 @@ go here.
 - Mutate `props.init` to change method, headers, or body.
 - Set `props.earlyResponse` to answer locally and skip the network entirely.
 
-`earlyResponse` is what makes [fake origins](../guides/custom-protocols.md) work
+`earlyResponse` is what makes [fake origins](../guides/custom-protocols.md)
 work: you invent an origin, match on `context.parsed.url.origin`, and hand back
-a `Response` for a site that has no server.
+a `Response` for a site that has no server. A native `Response` is fine here;
+Scramjet converts it with `BareResponse.fromNativeResponse` if you did not
+already hand it a `BareResponse`.
 
 ```js
 this.tap(frame.hooks.fetch.request, (context, props) => {
@@ -258,8 +276,11 @@ the raw upstream response.
 | `props.response`  | `BareResponse`         |
 
 Response caching belongs here, along with any header change that would otherwise
-affect rewriting: a `content-type` correction, or stripping a
-`content-security-policy` the site sent.
+affect rewriting, a `content-type` correction being the usual one.
+
+Do not strip security headers here. Scramjet already removes CSP, HSTS,
+`x-frame-options` and the `cross-origin-*` policies from every response on its
+own. See [site compatibility](site-compatibility.md#content-security-policy).
 
 ### `fetch.response`
 
@@ -387,8 +408,13 @@ From `$scramjetUtils`. All are `ManagedPlugin`s, so they go straight into
 - **`CatchEscapedLinksPlugin`** takes `(url: URL) => string | URL` and redirects
   navigations that would leave the proxy to whatever you return.
 - **`EventHandlerPlugin`** lets you register listeners that run _after_ the
-  page's own, including after `stopPropagation()`. Its `options.events` defaults
-  to `click`, `auxclick`, and `contextmenu`.
+  page's own, including after `stopPropagation()`. Its `options.events` is
+  documented upstream as defaulting to `click`, `auxclick` and `contextmenu`,
+  but 0.0.3 never reads the option: the captured-event list starts empty and
+  only `addEventToCapture(name)` adds to it. Call that for each event type you
+  need. The list is consulted live, but only as the page registers listeners, so
+  anything the page registered before you added the type is already missed.
+  Register your types before the frame loads a document.
 - **`LinkHandlerPlugin`** turns anchor clicks and middle-clicks into a
   `onNewTab(url)` callback instead of a navigation. Requires
   `EventHandlerPlugin` on the same frame.
