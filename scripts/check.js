@@ -711,7 +711,8 @@ const parser = await import(
 );
 const search = "https://search.brave.com/search?q=%s";
 const parserCases = [
-	["localhost:3000", "url"],
+	["localhost:3000", "blocked"],
+	["http://127.0.0.1:8080", "blocked"],
 	["crllect.dev:8080", "url"],
 	["https://crllect.dev", "url"],
 	["mailto:hello@crllect.dev", "external"],

@@ -1,6 +1,9 @@
 export const internalScheme = "ultravioletvercel:";
-const looksLikeUrl = /^(?:(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
+const looksLikeUrl = /^(?:(?:(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
 const proxyableSchemes = new Set(["http:", "https:"]);
+const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+const isLoopback = (hostname) => loopbackHosts.has(hostname.toLowerCase()) ||
+    hostname.toLowerCase().endsWith(".localhost");
 const blockedSchemes = new Set([
     "javascript:",
     "data:",
@@ -19,17 +22,24 @@ export const resolveInput = (input, searchTemplate) => {
     if (looksLikeUrl.test(text)) {
         try {
             const parsed = new URL(`https://${text}`);
+            if (isLoopback(parsed.hostname))
+                return { url: "", kind: "blocked" };
             if (!parsed.username && !parsed.password)
                 return { url: parsed.href, kind: "url" };
         }
         catch { }
+    }
+    if (isLoopback(text.split(/[:/?#]/)[0] ?? "")) {
+        return { url: "", kind: "blocked" };
     }
     if (/^[a-z][a-z0-9+.-]*:/i.test(text)) {
         try {
             const parsed = new URL(text);
             if (parsed.username ||
                 parsed.password ||
-                blockedSchemes.has(parsed.protocol)) {
+                blockedSchemes.has(parsed.protocol) ||
+                (proxyableSchemes.has(parsed.protocol) &&
+                    isLoopback(parsed.hostname))) {
                 return { url: "", kind: "blocked" };
             }
             return proxyableSchemes.has(parsed.protocol)

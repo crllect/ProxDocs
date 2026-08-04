@@ -117,7 +117,7 @@ const navigate = async (
 			return;
 
 		case "blocked":
-			setStatus("That address scheme is not allowed.");
+			setStatus("That address cannot be opened through the proxy.");
 			return;
 
 		case "external":

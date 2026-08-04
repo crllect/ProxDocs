@@ -26,8 +26,8 @@ Three lines, and it fails on all of these:
 | ------------------------- | ------------------------------------------ | ----------------------------------------- |
 | `what is 3.5mm cable`     | Navigates to `https://what is 3.5mm cable` | Searches                                  |
 | `1.5`                     | Navigates to `https://1.5`                 | Searches                                  |
-| `localhost:3000`          | Searches, because there is no dot          | Navigates to `https://localhost:3000/`    |
-| `127.0.0.1:8080`          | Navigates, the dots are IP octets          | Navigates to `https://127.0.0.1:8080/`    |
+| `localhost:3000`          | Searches, because there is no dot          | Refuses, shows a message                  |
+| `127.0.0.1:8080`          | Navigates, the dots are IP octets          | Refuses, shows a message                  |
 | `münchen.de`              | Navigates, the browser punycodes it        | Navigates to `https://xn--mnchen-3ya.de/` |
 | `httpfoo.com`             | Navigates, the dot test happens to pass    | Navigates to `https://httpfoo.com/`       |
 | `https://x.com`           | Navigates                                  | Navigates                                 |
@@ -46,12 +46,14 @@ That last point is the one with teeth. If your address bar can be populated from
 a link or a query parameter, blindly navigating a `javascript:` URL is an XSS
 vector on your own origin.
 
-One caveat on the two loopback rows. The parser correctly recognises
-`localhost:3000` as a host rather than a search, but the request is made by your
-**wisp server**, not by the browser, so it resolves to the server's own loopback
-and not the user's machine. A correctly configured server refuses it: see
-[`allow_loopback_ips`](running-a-proxy.md). Recognising the shape and refusing
-the connection are separate jobs, and this page is only about the first.
+Loopback addresses are refused rather than proxied. A proxied request is made by
+your **wisp server**, not by the browser, so `localhost` resolves to the
+server's own machine and never to the user's. A correctly configured server
+already refuses it at the transport layer (see
+[`allow_loopback_ips`](running-a-proxy.md)), and the user gets a bare TLS error
+with nothing explaining why. Catching it in the parser turns that into a
+sentence. This covers `localhost`, `*.localhost`, `127.0.0.1`, and `::1`, with
+or without a scheme.
 
 There is also a privacy failure hiding in the first row. When a URL is
 misclassified as a search, **you send it to a search engine**. Users paste URLs
@@ -60,10 +62,10 @@ forwarding those to Google is a real leak.
 
 ### A safer parser
 
-Check hostname-shaped input before the generic scheme test because
-`localhost:3000` is syntactically a URL scheme. Accept a hostname, `localhost`,
-an IP address, or an IPv6 literal; then handle explicit schemes and search
-everything else.
+Check hostname-shaped input before the generic scheme test, because
+`localhost:3000` is syntactically a URL scheme. Accept a hostname, an IP
+address, or an IPv6 literal; refuse loopback targets; then handle explicit
+schemes and search everything else.
 
 ```js
 const proxyableSchemes = new Set(["http:", "https:"]);
@@ -76,7 +78,13 @@ const blockedSchemes = new Set([
 	"filesystem:"
 ]);
 const looksLikeUrl =
-	/^(?:(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
+	/^(?:(?:(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
+
+const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+const isLoopback = hostname =>
+	loopbackHosts.has(hostname.toLowerCase()) ||
+	hostname.toLowerCase().endsWith(".localhost");
 
 export const resolveInput = (rawInput, searchTemplate) => {
 	const input = String(rawInput ?? "").trim();
@@ -85,9 +93,14 @@ export const resolveInput = (rawInput, searchTemplate) => {
 	if (looksLikeUrl.test(input)) {
 		try {
 			const url = new URL("https://" + input);
+			if (isLoopback(url.hostname)) return { url: "", kind: "blocked" };
 			if (!url.username && !url.password)
 				return { url: url.href, kind: "url" };
 		} catch {}
+	}
+
+	if (isLoopback(input.split(/[:/?#]/)[0] ?? "")) {
+		return { url: "", kind: "blocked" };
 	}
 
 	if (/^[a-z][a-z0-9+.-]*:/i.test(input)) {
@@ -96,7 +109,9 @@ export const resolveInput = (rawInput, searchTemplate) => {
 			if (
 				parsed.username ||
 				parsed.password ||
-				blockedSchemes.has(parsed.protocol)
+				blockedSchemes.has(parsed.protocol) ||
+				(proxyableSchemes.has(parsed.protocol) &&
+					isLoopback(parsed.hostname))
 			) {
 				return { url: "", kind: "blocked" };
 			}

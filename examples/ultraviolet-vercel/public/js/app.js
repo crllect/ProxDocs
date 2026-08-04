@@ -101,7 +101,7 @@ const navigate = async (input, options = {}) => {
         case "empty":
             return;
         case "blocked":
-            setStatus("That address scheme is not allowed.");
+            setStatus("That address cannot be opened through the proxy.");
             return;
         case "external":
             location.assign(url);
