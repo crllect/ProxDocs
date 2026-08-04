@@ -29,7 +29,8 @@ examples are in [`examples/react`](../../examples/react/) and
 The server has exactly two jobs, and every framework does them the same way:
 
 1. **Serve static files**. Yours, plus the engine's bundles from `node_modules`.
-2. **Route WebSocket upgrades** to the Wisp handler.
+2. **Route WebSocket upgrades** to the [Wisp](../concepts/wisp-vs-bare.md)
+   handler.
 
 Job 2 is where frameworks differ, because most of them abstract over the raw
 HTTP server and wisp needs the raw socket. The pattern below is the same

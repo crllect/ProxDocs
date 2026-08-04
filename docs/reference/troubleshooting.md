@@ -16,7 +16,7 @@ performance.getEntriesByType("resource").filter(r => r.name.includes("wasm"));
 
 For Scramjet, the first value must be `true`, the second should name your
 `sw.js`, and the third should include the
-[rewriter](../concepts/how-proxies-work.md)'s WebAssembly file.
+[rewriter](../concepts/how-proxies-work.md) WebAssembly file.
 
 ---
 
@@ -40,10 +40,11 @@ If the headers are set but isolation is still false, something between you and
 the browser is stripping them: Cloudflare, an nginx `proxy_pass`, or a hosting
 layer.
 
-**No service worker controller.** If `navigator.serviceWorker.controller` is
-`undefined`, the worker has not claimed the page. Reload once. If it stays
-undefined, look for registration errors and confirm `sw.js` is served from the
-**root** of your origin. A worker at `/js/sw.js` can never control `/~/sj/…`.
+**No service worker [controller](../guides/wiring.md).** If
+`navigator.serviceWorker.controller` is `undefined`, the worker has not claimed
+the page. Reload once. If it stays undefined, look for registration errors and
+confirm `sw.js` is served from the **root** of your origin. A worker at
+`/js/sw.js` can never control `/~/sj/…`.
 
 **A JavaScript error before the listener attached.** If your address bar does a
 full page navigation instead of loading the iframe, your `submit` handler never
@@ -147,7 +148,8 @@ const scheme = location.protocol === "https:" ? "wss:" : "ws:";
 ```
 
 **Check reverse-proxy timeouts.** nginx's default `proxy_read_timeout` is 60
-seconds, which kills idle wisp connections mid-session:
+seconds, which kills idle [wisp](../concepts/wisp-vs-bare.md) connections
+mid-session:
 
 ```nginx
 proxy_read_timeout 3600s;

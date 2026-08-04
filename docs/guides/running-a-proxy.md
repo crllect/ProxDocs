@@ -72,8 +72,9 @@ about either mechanism above, because filtering vendors are not search engines.
 
 Worth having before you need it, because you will want it in a hurry.
 
-Wisp connections are long-lived WebSockets, so per-request limiting does not
-fit. Limit **concurrent connections per IP** at the upgrade:
+[Wisp](../concepts/wisp-vs-bare.md) connections are long-lived WebSockets, so
+per-request limiting does not fit. Limit **concurrent connections per IP** at
+the upgrade:
 
 ```js
 const connectionsPerIp = new Map();
@@ -124,15 +125,18 @@ wisp.options.allow_loopback_ips = false;
 wisp.options.allow_private_ips = false;
 ```
 
-**The last two matter more than the list.** Without them, a user can point your
-proxy at `127.0.0.1` or `10.0.0.0/8` and reach services on your own machine and
-your provider's internal network, including cloud metadata endpoints, which on
-several providers hand out credentials to anything that asks. This is
-[SSRF](https://developer.mozilla.org/en-US/docs/Web/Security), and a wisp server
-is an excellent one if you leave it open.
+**The last two default to `false` in `wisp-js`, and they must stay that way.**
+Set either to `true` and a user can point your proxy at `127.0.0.1` or
+`10.0.0.0/8` and reach services on your own machine and your provider's internal
+network, including cloud metadata endpoints, which on several providers hand out
+credentials to anything that asks. That is
+[server-side request forgery](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery),
+and a wisp server makes an excellent one.
 
-Turn both off before you expose the server to anyone. This is the one item on
-this page that is a security bug rather than a preference.
+They are written explicitly above because a config file is a better place to be
+reminded of them than a changelog. If you have enabled either for local
+development, make sure it did not follow you into production. This is the one
+item on this page that is a security bug rather than a preference.
 
 ---
 

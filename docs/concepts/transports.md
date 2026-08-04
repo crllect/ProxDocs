@@ -278,13 +278,131 @@ config, and only swaps when a controller already exists.
 
 ## Writing your own
 
-Implement `request` and `connect`. Common reasons for a custom transport are:
+WOULD NOT RECOMMEND UNLESS YOU KNOW WHAT YOU ARE DOING
 
-- Routing through infrastructure you already have.
-- A different tunnel protocol.
-- Instrumentation. Logging, metrics, request rewriting.
+There are little reasons for building your own transport, but some common ones are: routing through infrastructure you already have, a different
+tunnel protocol, or instrumentation such as logging, metrics, and request
+rewriting.
 
-Before you start: the hard part of a transport is not the interface, it is HTTP
-correctness. Redirects, chunked encoding, and header edge cases are where naive
-implementations break on real sites. libcurl exists precisely because that is a
-lot of work.
+Before you start, know what the hard part is. It is not the interface, which is
+two methods. It is HTTP correctness: redirects, chunked encoding, content
+negotiation, and header edge cases are where naive implementations break on real
+sites. libcurl exists precisely because that is a lot of work.
+
+### The contract
+
+Four members, from `@mercuryworkshop/proxy-transports`:
+
+| Member    | Purpose                                                  |
+| --------- | -------------------------------------------------------- |
+| `ready`   | `false` until `init()` has finished                      |
+| `init()`  | One-time setup. Callers await it when `ready` is `false` |
+| `request` | One HTTP request, resolving to a `TransferrableResponse` |
+| `connect` | One WebSocket, returning `[send, close]`                 |
+
+`request` resolves to a plain object rather than a `Response`, because it may
+have to cross a `postMessage` boundary:
+
+```ts
+type TransferrableResponse = {
+	body: ReadableStream | ArrayBuffer | Blob | string;
+	headers: [string, string][];
+	status: number;
+	statusText: string;
+};
+```
+
+Headers are `[name, value]` pairs, not a `Headers` object, for the same reason.
+
+### An instrumenting wrapper
+
+The most useful custom transport is usually not a new one. It is a wrapper that
+delegates to a real transport and does something on the way past:
+
+```js
+class LoggingTransport {
+	#inner;
+
+	constructor(inner) {
+		this.#inner = inner;
+	}
+
+	get ready() {
+		return this.#inner.ready;
+	}
+
+	init() {
+		return this.#inner.init();
+	}
+
+	async request(remote, method, body, headers, signal) {
+		const started = performance.now();
+		const response = await this.#inner.request(
+			remote,
+			method,
+			body,
+			headers,
+			signal
+		);
+		console.log(
+			method,
+			remote.href,
+			response.status,
+			`${Math.round(performance.now() - started)}ms`
+		);
+		return response;
+	}
+
+	connect(
+		url,
+		protocols,
+		requestHeaders,
+		onopen,
+		onmessage,
+		onclose,
+		onerror
+	) {
+		return this.#inner.connect(
+			url,
+			protocols,
+			requestHeaders,
+			onopen,
+			onmessage,
+			onclose,
+			onerror
+		);
+	}
+}
+```
+
+Hand it over the same way as any other transport:
+
+```js
+const { default: LibcurlClient } = await import("/libcurl/index.mjs");
+const transport = new LoggingTransport(new LibcurlClient({ wisp: wispUrl }));
+
+const controller = new Controller({ serviceworker, transport });
+```
+
+`ready` has to be a getter rather than a copied boolean, or it goes stale the
+moment the inner transport finishes initialising.
+
+### Writing one from scratch
+
+If you are implementing the network layer yourself rather than wrapping one, the
+parts that catch people out:
+
+- **Redirects are yours to follow.** Nothing above you does it. Cap the chain,
+  20 is the conventional limit, and resolve each `location` against the URL you
+  just requested rather than the original.
+- **`body` can be a stream.** Returning a fully buffered `ArrayBuffer` works but
+  holds whole responses in memory, which is noticeable on video.
+- **`signal` must actually abort.** Frames are destroyed while requests are in
+  flight, and ignoring it leaks a request per closed tab.
+- **`connect` returns synchronously** with `[send, close]`, before the socket is
+  open. Queue anything sent before `onopen` fires.
+
+For a reference implementation at a readable size, the transports in
+[`@mercuryworkshop/proxy-transports`](https://github.com/MercuryWorkshop/proxy-transports)
+are the ones to read. Prefer wrapping over rewriting unless you genuinely need a
+different tunnel.

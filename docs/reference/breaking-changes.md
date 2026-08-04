@@ -173,9 +173,9 @@ const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
 await connection.setTransport("/libcurl/index.mjs", [{ wisp: wispUrl }]);
 ```
 
-Leaving `bare:` set while using a wisp transport is harmless but does nothing.
-The field is only read by the bare transport. Nearly every config in the wild
-still has it.
+Leaving `bare:` set while using a [wisp](../concepts/wisp-vs-bare.md) transport
+is harmless but does nothing. The field is only read by the bare transport.
+Nearly every config in the wild still has it.
 
 ---
 

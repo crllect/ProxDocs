@@ -86,9 +86,9 @@ Two tabs therefore produce different proxied URLs:
         controller  frame
 ```
 
-They share one controller, one service worker, one transport, and one wisp
-WebSocket. What is per-frame is the routing prefix and the plugin instances.
-Creating a tab is cheap.
+They share one [controller](wiring.md), one service worker, one transport, and
+one wisp WebSocket. What is per-frame is the routing prefix and the plugin
+instances. Creating a tab is cheap.
 
 Cookies are shared across frames. The controller keeps one `CookieJar` and
 synchronises it, which is what you want: two tabs on the same site should share

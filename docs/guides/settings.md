@@ -48,7 +48,7 @@ opening the menu does not.
 ## Why validation matters more here
 
 A proxy's settings are unusually dangerous compared to a normal app's. Consider
-what a wisp URL controls:
+what a [wisp](../concepts/wisp-vs-bare.md) URL controls:
 
 ```js
 const wispUrl = localStorage.getItem("wisp") || defaultWisp;

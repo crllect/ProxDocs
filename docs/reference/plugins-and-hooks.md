@@ -101,7 +101,8 @@ Two things follow from that:
 - A bare `Plugin` in that array throws on `plugin.dependencies` being
   `undefined`, because `for…of` cannot iterate it.
 - Dependencies are checked by **name against the same array**, not resolved from
-  anywhere else. It asserts load order within one frame and does no resolution.
+  anywhere else. It asserts load order within one
+  [frame](../guides/multiple-tabs.md) and does no resolution.
 
 `LinkHandlerPlugin` is the real example. It declares
 `super("link-handler", ["event-handler"])` and then looks its dependency up by
@@ -160,7 +161,7 @@ Both classes accept a `tapOrder` describing which plugins to run around:
 
 ```js
 this.tap(frame.hooks.fetch.request, callback, {
-	before: ["http-cache"],
+	before: ["scramjet-http-cache"],
 	after: ["url-watcher"]
 });
 ```
@@ -372,13 +373,13 @@ use the plugin instead of tapping it yourself.
 From `$scramjetUtils`. All are `ManagedPlugin`s, so they go straight into
 `createFrame()`.
 
-| Plugin                    | Constructor               | Name            | Depends on      |
-| ------------------------- | ------------------------- | --------------- | --------------- |
-| `HttpCachePlugin`         | `(options?)`              | `http-cache`    | nothing         |
-| `UrlWatcherPlugin`        | `(onUrlChange, options?)` | `url-watcher`   | nothing         |
-| `CatchEscapedLinksPlugin` | `(toLocation)`            | escaped links   | nothing         |
-| `EventHandlerPlugin`      | `(options?)`              | `event-handler` | nothing         |
-| `LinkHandlerPlugin`       | `(onNewTab, options?)`    | `link-handler`  | `event-handler` |
+| Plugin                    | Constructor               | Name                  | Depends on      |
+| ------------------------- | ------------------------- | --------------------- | --------------- |
+| `HttpCachePlugin`         | `(options?)`              | `scramjet-http-cache` | nothing         |
+| `UrlWatcherPlugin`        | `(onUrlChange, options?)` | `url-watcher`         | nothing         |
+| `CatchEscapedLinksPlugin` | `(toLocation)`            | `catch-escaped-links` | nothing         |
+| `EventHandlerPlugin`      | `(options?)`              | `event-handler`       | nothing         |
+| `LinkHandlerPlugin`       | `(onNewTab, options?)`    | `link-handler`        | `event-handler` |
 
 - **`HttpCachePlugin`** caches subresources so a reload does not pull every
   asset back through the tunnel.

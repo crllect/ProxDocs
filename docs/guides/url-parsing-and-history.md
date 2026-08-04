@@ -164,9 +164,9 @@ if (!addressBarFocused) {
 }
 ```
 
-Without that check, a background frame finishing a load wipes what someone is
-halfway through typing. It is the most irritating bug a proxy frontend can have,
-and it is one line to prevent.
+Without that check, a background [frame](multiple-tabs.md) finishing a load
+wipes what someone is halfway through typing. It is the most irritating bug a
+proxy frontend can have, and it is one line to prevent.
 
 ---
 

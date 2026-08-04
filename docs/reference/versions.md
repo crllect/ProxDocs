@@ -58,8 +58,8 @@ at the 1.x line, which uses a completely different API
 npm install @mercuryworkshop/scramjet@2.0.67-alpha.2
 ```
 
-Pin the Scramjet packages exactly. These are alphas and the controller API has
-changed more than once between them.
+Pin the Scramjet packages exactly. These are alphas and the
+[controller](../guides/wiring.md) API has changed more than once between them.
 
 Older guides install from a GitHub release URL:
 

@@ -28,7 +28,7 @@ that no amount of rewriting will get you past.
 
 Nothing is wrong with your proxy when this happens. Google is deciding your
 server's IP is not a person. Know that before you spend an evening debugging the
-rewriter.
+[rewriter](../concepts/how-proxies-work.md).
 
 ## DuckDuckGo
 

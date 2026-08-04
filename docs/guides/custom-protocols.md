@@ -178,7 +178,8 @@ to the shell. It just has no address.
 ## Fake origins, and why internal pages do not use them
 
 Scramjet can intercept a request before it leaves for the network and answer it
-locally. A plugin taps the frame's fetch hook and sets `props.earlyResponse`:
+locally. A plugin taps the fetch hook on a [frame](multiple-tabs.md) and sets
+`props.earlyResponse`:
 
 ```js
 const { Plugin } = globalThis.$scramjet;

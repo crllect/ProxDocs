@@ -214,8 +214,9 @@ production.
 **`captureErrors` and `cleanErrors`** work together. `captureErrors` routes
 errors thrown inside the proxied page somewhere you can see them. `cleanErrors`
 strips Scramjet's own frames from stack traces, leaving something close to what
-the site's developers would see. Upstream's dev config turns on `captureErrors`
-and leaves `cleanErrors` off.
+the site's developers would see. Upstream's own `defaultConfigDev` turns on
+`captureErrors`, `debugTrampolines`, and `debugSourceURL`, and turns
+`allowInvalidJs` off so rewrite failures surface instead of passing through.
 
 **`encapsulateWorkers`** is on by default. Turn it off and workers the page
 creates run unproxied: they fetch directly, fail on CORS, and take a site

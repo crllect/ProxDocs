@@ -42,8 +42,9 @@ bare-as-module3  (plain HTTP, no WebSocket)
 @tomphttp/bare-server-node  (running as a serverless function)
 ```
 
-Scramjet has no bare transport at all. `proxy-bootstrap` contains a stub that
-throws `"Bare transport not implemented yet"`. Do not spend time trying.
+Scramjet has no bare [transport](../concepts/transports.md) at all.
+`proxy-bootstrap` contains a stub that throws
+`"Bare transport not implemented yet"`. Do not spend time trying.
 
 ---
 

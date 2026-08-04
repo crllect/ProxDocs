@@ -35,6 +35,11 @@ sometimes does not.
 | **GitHub Pages**                              | **No**                | Static files only, no server code                   |
 | **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns   |
 
+The two **No** rows are not dead ends, they just change the engine: a serverless
+function can run Ultraviolet over Bare. That is free to start and fine at low
+traffic, and it is billed per GB of egress, which a proxy produces nothing but.
+[Ultraviolet on Vercel](ultraviolet-vercel.md) covers the tradeoff in full.
+
 If you have no platform constraint, use a VPS or another host that runs a
 long-lived Node process and supports WebSocket upgrades. It is the most capable
 option, and past very low traffic the cheapest: a proxy is almost pure
