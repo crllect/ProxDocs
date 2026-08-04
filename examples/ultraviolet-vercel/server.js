@@ -45,7 +45,9 @@ const listenWithFallback = (target, startPort, attempts = 20) => {
     target.listen(port, () => {
         target.off("error", onError);
         process.send?.({ type: "listening", port });
-        console.log(`Ultraviolet Vercel listening on http://localhost:${port}`);
+        console.log(process.env.BACKEND_ONLY
+            ? `Backend listening on http://localhost:${port}`
+            : `Ultraviolet Vercel listening on http://localhost:${port}`);
     });
 };
 if (!process.env.VERCEL) {

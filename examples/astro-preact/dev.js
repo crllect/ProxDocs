@@ -43,14 +43,10 @@ const waitForPort = (port, timeout) =>
 	});
 
 const isWindows = process.platform === "win32";
-const useIpc = !isWindows;
 
-const start = (label, command, args, env, ipc) => {
+const start = (label, command, args, env) => {
 	const child = spawn(command, args, {
-		stdio:
-			ipc && useIpc
-				? ["inherit", "inherit", "inherit", "ipc"]
-				: "inherit",
+		stdio: "inherit",
 		shell: isWindows,
 		env: { ...process.env, ...env }
 	});
@@ -84,37 +80,27 @@ for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, stop);
 const requestedPort = Number(process.env.PORT) || Number("8080");
 const backendPort = await findFreePort(requestedPort);
 
-const server = start(
+start(
 	"server",
 	"npx",
 	[
 		"tsx",
 		"server.ts"
 	],
-	{ PORT: String(backendPort) },
-	true
+	{ PORT: String(backendPort), BACKEND_ONLY: "1" }
 );
 
-const boundPort = server.channel
-	? await new Promise(resolve => {
-			const fallback = setTimeout(() => resolve(backendPort), 60000);
-			server.on("message", message => {
-				if (message?.type !== "listening") return;
-				clearTimeout(fallback);
-				resolve(message.port);
-			});
-		})
-	: backendPort;
+if (!(await waitForPort(backendPort, 60000))) {
+	console.error(
+		`Backend never started listening on port ${backendPort}. Not starting the frontend, because its proxy routes would fail.`
+	);
+	stop();
+}
+
+const boundPort = backendPort;
 
 if (boundPort !== requestedPort) {
 	console.log(`Port ${requestedPort} taken, backend is on ${boundPort}.`);
-}
-
-if (!(await waitForPort(boundPort, 60000))) {
-	console.error(
-		`Backend never started listening on port ${boundPort}. Not starting the frontend, because its proxy routes would fail.`
-	);
-	stop();
 }
 
 start(

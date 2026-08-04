@@ -79,7 +79,11 @@ const listenWithFallback = (
 	target.listen(port, () => {
 		target.off("error", onError);
 		process.send?.({ type: "listening", port });
-		console.log(`Everything listening on http://localhost:${port}`);
+		console.log(
+			process.env.BACKEND_ONLY
+				? `Backend listening on http://localhost:${port}`
+				: `Everything listening on http://localhost:${port}`
+		);
 	});
 };
 

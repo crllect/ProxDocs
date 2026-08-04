@@ -105,6 +105,10 @@ The worker must be served from `/sw.js` so its scope can cover proxied routes.
 Calling `shouldRoute()` before `route()` keeps the worker from intercepting its
 own runtime files.
 
+Generated projects add shell caching below that check, so your own bundle and
+stylesheet are served from disk instead of competing with the tunnel on every
+reload. See [the service worker cache](deployment.md#the-service-worker-cache).
+
 ### Client boot
 
 Create the controller before creating any frames:

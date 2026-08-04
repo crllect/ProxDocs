@@ -89,6 +89,9 @@ const applyTransport = async (): Promise<void> => {
 	activeTransport = signature;
 };
 
+const isDevHost = (): boolean =>
+	location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
 const registerServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
 	if (!("serviceWorker" in navigator)) {
 		throw new Error(
@@ -97,9 +100,19 @@ const registerServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
 		);
 	}
 
+	if (isDevHost()) {
+		for (const existing of await navigator.serviceWorker.getRegistrations()) {
+			if (!existing.active?.scriptURL.endsWith("/uv-sw.js")) {
+				await existing.unregister();
+			}
+		}
+	}
+
 	const registration = await navigator.serviceWorker.register("/uv-sw.js", {
-		scope: __uv$config.prefix
+		scope: __uv$config.prefix,
+		updateViaCache: "none"
 	});
+	void registration.update();
 	const worker =
 		registration.active ?? registration.installing ?? registration.waiting;
 	if (worker && worker.state !== "activated") {

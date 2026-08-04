@@ -120,16 +120,17 @@ Two more flags exist but are not part of the normal path. `--wiring manual`
 [wiring](docs/guides/wiring.md). `--host node` (default) or `vercel` targets a
 serverless function, which forces Ultraviolet over Bare.
 
-| Feature identifier | Adds                                                 |
-| ------------------ | ---------------------------------------------------- |
-| `browserControls`  | Back, forward, and reload controls                   |
-| `tabs`             | Multiple isolated proxy sessions                     |
-| `settings`         | Persisted proxy and search settings                  |
-| `transportSwitch`  | Runtime transport selection                          |
-| `history`          | Persisted browsing history                           |
-| `bookmarks`        | Persisted bookmarks                                  |
-| `cloak`            | Title, icon, and `about:blank` cloaking              |
-| `aboutPages`       | Navigable custom-protocol pages inside the proxy tab |
+| Feature identifier   | Adds                                                 |
+| -------------------- | ---------------------------------------------------- |
+| `browserControls`    | Back, forward, and reload controls                   |
+| `tabs`               | Multiple isolated proxy sessions                     |
+| `settings`           | Persisted proxy and search settings                  |
+| `transportSwitch`    | Runtime transport selection                          |
+| `history`            | Persisted browsing history                           |
+| `bookmarks`          | Persisted bookmarks                                  |
+| `cloak`              | Title, icon, and `about:blank` cloaking              |
+| `quietServiceWorker` | Silence log/info/debug inside the service worker     |
+| `aboutPages`         | Navigable custom-protocol pages inside the proxy tab |
 
 Combinations that cannot work are corrected and explained rather than generated
 broken. Framework frontends need a build step, and TypeScript needs one unless

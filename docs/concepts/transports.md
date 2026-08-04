@@ -280,9 +280,9 @@ config, and only swaps when a controller already exists.
 
 WOULD NOT RECOMMEND UNLESS YOU KNOW WHAT YOU ARE DOING
 
-There are little reasons for building your own transport, but some common ones are: routing through infrastructure you already have, a different
-tunnel protocol, or instrumentation such as logging, metrics, and request
-rewriting.
+There are little reasons for building your own transport, but some common ones
+are: routing through infrastructure you already have, a different tunnel
+protocol, or instrumentation such as logging, metrics, and request rewriting.
 
 Before you start, know what the hard part is. It is not the interface, which is
 two methods. It is HTTP correctness: redirects, chunked encoding, content

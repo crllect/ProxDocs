@@ -231,6 +231,12 @@ export const features = {
 		tagline: "about:blank, blob, and title/icon presets, each toggleable.",
 		docs: "/guides/settings#cloaking"
 	},
+	quietServiceWorker: {
+		label: "Quiet service worker",
+		tagline:
+			"Silence log, info and debug inside the worker. Warnings and errors stay.",
+		docs: "/guides/deployment#the-service-worker-cache"
+	},
 	aboutPages: {
 		label: "Custom protocols",
 		tagline: "Internal pages on your own scheme, e.g. proxy://settings.",

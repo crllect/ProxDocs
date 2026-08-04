@@ -190,6 +190,112 @@ and your server is mostly moving bytes.
 
 ---
 
+## The service worker cache
+
+The generated worker caches your own shell, meaning your HTML, CSS, JavaScript,
+and icons. Proxied content is not touched by it.
+
+This is on by default, and it is worth understanding rather than deleting.
+
+```js
+const shellCache = "my-proxy-shell-v1";
+
+const shellResponse = async request => {
+	const cache = await caches.open(shellCache);
+	const cached = await cache.match(request);
+
+	const network = fetch(request)
+		.then(response => {
+			if (response.ok) cache.put(request, response.clone());
+			return response;
+		})
+		.catch(() => cached);
+
+	return cached ?? network;
+};
+```
+
+That is stale-while-revalidate: serve the cached copy instantly if there is one,
+fetch a fresh copy in the background for next time, and fall back to the cache
+when the network fails.
+
+### Why it matters more here than on a normal site
+
+**Your shell competes with the tunnel.** Every proxied page is already pulling
+its assets through wisp and your server. Without a cache, a reload also
+re-fetches your own bundle, stylesheet, and icons over the same connection the
+user is waiting on. Serving those from disk takes them off the critical path
+entirely.
+
+**It is your bandwidth twice over.** A proxy pays for every byte in both
+directions, so shell assets you serve repeatedly to the same user are pure
+waste. Caching them is the cheapest bandwidth saving available, and it costs
+nothing at runtime.
+
+**The worker is already there.** You registered a service worker to run the
+proxy. Shell caching is a few lines in a file that has to exist anyway.
+
+**It survives a bad network.** The proxy will not work offline, but the shell
+loading and showing an error beats a browser error page with no explanation.
+
+### What it deliberately skips
+
+The route check runs first, so proxied requests never reach the cache logic.
+Beyond that, the worker skips anything that is not a same-origin `GET`, its own
+script, and the wisp endpoint. On Ultraviolet it also skips the proxy prefix and
+`/bare/`.
+
+Two exclusions exist purely to stay out of the way during development:
+
+```js
+if (url.search) return false;
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+	return false;
+```
+
+A dev server rewrites modules on every save and requests them with query
+strings, so caching those hands you a stale module and a confusing session.
+Built assets are fingerprinted in the path and carry no query, so production is
+unaffected by either rule.
+
+Never cache the worker itself. A stale worker cannot be replaced by a new
+deployment, which is why `sw.js` wants `Cache-Control: no-cache` from your
+server.
+
+### Deploying a new version
+
+The cache name carries a version, and `activate` deletes every cache that does
+not match it:
+
+```js
+caches
+	.keys()
+	.then(keys =>
+		Promise.all(
+			keys
+				.filter(key => key !== shellCache)
+				.map(key => caches.delete(key))
+		)
+	);
+```
+
+Bump `-v1` to `-v2` when you ship a breaking change to the shell. With a bundler
+this is rarely needed, because Vite fingerprints filenames and a new build
+requests new URLs, but it is the escape hatch when you need it.
+
+### Quiet service worker
+
+Off by default, available as a build option.
+
+Proxied pages log a great deal, and in a service worker all of it lands in one
+console alongside your own messages. The option replaces `log`, `info`, `debug`
+and friends with no-ops inside the worker, keeping `warn` and `error`.
+
+Leave it off while developing. Turn it on for production if worker logs are
+drowning out anything you would act on.
+
+---
+
 ## Before you go live
 
 - [ ] `crossOriginIsolated === true` in the production console

@@ -193,7 +193,11 @@ for (let attempt = 0; ; attempt++) {
 }
 
 process.send?.({ type: "listening", port });
-console.log(`{{PROJECT_TITLE}} listening on http://localhost:${port}`);
+console.log(
+	process.env.BACKEND_ONLY
+		? `Backend listening on http://localhost:${port}`
+		: `{{PROJECT_TITLE}} listening on http://localhost:${port}`
+);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	process.on(signal, () => void app.close().then(() => process.exit(0)));

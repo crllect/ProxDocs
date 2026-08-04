@@ -116,6 +116,7 @@ It also asks about the features:
 - **Bookmarks and history menus:** popup overlays or navigable custom protocol
   pages
 - **Cloaking and custom protocol pages**
+- **Quiet service worker:** silence log, info and debug inside the worker
 
 Choices that cannot work together are greyed out with the reason, rather than
 letting you pick them and quietly changing them afterwards. Picking an

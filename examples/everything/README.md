@@ -46,6 +46,7 @@ it you get an importScripts 500 and a blank page.
 - **History:** A persisted visit log, separate from per-tab back and forward.
 - **Bookmarks:** A saved list, using the same storage layer as settings.
 - **Cloaking:** about:blank, blob, and title/icon presets, each toggleable.
+- **Quiet service worker:** Silence log, info and debug inside the worker. Warnings and errors stay.
 - **Custom protocols:** Internal pages on your own scheme, e.g. proxy://settings.
 
 ## Licence

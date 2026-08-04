@@ -51,7 +51,9 @@ const listenWithFallback = (target, startPort, attempts = 20) => {
     target.listen(port, () => {
         target.off("error", onError);
         process.send?.({ type: "listening", port });
-        console.log(`Barebones listening on http://localhost:${port}`);
+        console.log(process.env.BACKEND_ONLY
+            ? `Backend listening on http://localhost:${port}`
+            : `Barebones listening on http://localhost:${port}`);
     });
 };
 const port = Number(process.env.PORT) || Number("8080");

@@ -44,6 +44,7 @@ const loadScript = (src: string): Promise<void> => {
 	return new Promise((resolve, reject) => {
 		const el = document.createElement("script");
 		el.src = src;
+		el.async = false;
 		el.onload = () => resolve();
 		el.onerror = () => reject(new Error("Failed to load " + src));
 		document.head.append(el);
@@ -51,8 +52,11 @@ const loadScript = (src: string): Promise<void> => {
 };
 
 const loadRuntimeScripts = async (): Promise<void> => {
-	for (const src of runtimeScripts) await loadScript(src);
+	await Promise.all(runtimeScripts.map(loadScript));
 };
+
+const isDevHost = (): boolean =>
+	location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
 const registerServiceWorker = async (): Promise<ServiceWorker> => {
 	if (!("serviceWorker" in navigator)) {
@@ -62,25 +66,22 @@ const registerServiceWorker = async (): Promise<ServiceWorker> => {
 		);
 	}
 
+	if (isDevHost()) {
+		for (const existing of await navigator.serviceWorker.getRegistrations()) {
+			if (!existing.active?.scriptURL.endsWith("/sw.js")) {
+				await existing.unregister();
+			}
+		}
+	}
+
 	const registration = await navigator.serviceWorker.register("/sw.js", {
 		scope: "/",
 		updateViaCache: "none"
 	});
-	await navigator.serviceWorker.ready;
+	void registration.update();
 
-	if (!navigator.serviceWorker.controller) {
-		await new Promise<void>(resolve => {
-			navigator.serviceWorker.addEventListener(
-				"controllerchange",
-				() => resolve(),
-				{
-					once: true
-				}
-			);
-		});
-	}
-
-	const worker = navigator.serviceWorker.controller ?? registration.active;
+	const ready = await navigator.serviceWorker.ready;
+	const worker = ready.active ?? navigator.serviceWorker.controller;
 	if (!worker)
 		throw new Error("Service worker registered but never became active");
 	return worker;

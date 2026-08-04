@@ -33,14 +33,24 @@ const applyTransport = async () => {
     await connection.setTransport(entry.module, entry.args);
     activeTransport = signature;
 };
+const isDevHost = () => location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const registerServiceWorker = async () => {
     if (!("serviceWorker" in navigator)) {
         throw new Error("Service workers are unavailable. The page must be served over https:// " +
             "or from a localhost secure context.");
     }
+    if (isDevHost()) {
+        for (const existing of await navigator.serviceWorker.getRegistrations()) {
+            if (!existing.active?.scriptURL.endsWith("/uv-sw.js")) {
+                await existing.unregister();
+            }
+        }
+    }
     const registration = await navigator.serviceWorker.register("/uv-sw.js", {
-        scope: __uv$config.prefix
+        scope: __uv$config.prefix,
+        updateViaCache: "none"
     });
+    void registration.update();
     const worker = registration.active ?? registration.installing ?? registration.waiting;
     if (worker && worker.state !== "activated") {
         await new Promise((resolve, reject) => {

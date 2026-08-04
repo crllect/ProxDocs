@@ -78,7 +78,11 @@ const listenWithFallback = (
 	target.listen(port, () => {
 		target.off("error", onError);
 		process.send?.({ type: "listening", port });
-		console.log(`Astro Preact listening on http://localhost:${port}`);
+		console.log(
+			process.env.BACKEND_ONLY
+				? `Backend listening on http://localhost:${port}`
+				: `Astro Preact listening on http://localhost:${port}`
+		);
 	});
 };
 
