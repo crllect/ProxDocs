@@ -62,6 +62,12 @@ src/types.ts          the engine interface, read this first
 Feature modules use that interface. Changing transports also changes server mounts,
 dependencies, service-worker files, and transport setup.
 
+It also pings the service worker every 15 seconds. That is not optional. Browsers
+terminate an idle service worker after about thirty seconds, and Scramjet keeps its
+routing table in the worker's module scope, so a cold worker cannot route and the
+first navigation after a quiet period lands on this server's 404 instead. Removing
+the interval reintroduces that bug.
+
 ## Requirements
 
 - **HTTPS in production.** Service workers do not run on plain HTTP

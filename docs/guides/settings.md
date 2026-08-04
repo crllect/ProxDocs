@@ -79,7 +79,7 @@ export const schema = {
 	searchEngine: {
 		section: "browsing",
 		label: "Search engine",
-		default: "https://search.brave.com/search?q=%s",
+		default: "https://duckduckgo.com/?q=%s",
 		validate: searchTemplate,
 		help: "Used when what you typed is not a URL. Must contain %s."
 	},

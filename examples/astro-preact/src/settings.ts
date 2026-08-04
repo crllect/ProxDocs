@@ -49,14 +49,14 @@ const searchTemplate: Validator<string> = (value, fallback) => {
 
 export const searchEngines = [
 	{
-		id: "brave",
-		label: "Brave",
-		template: "https://search.brave.com/search?q=%s"
-	},
-	{
 		id: "duckduckgo",
 		label: "DuckDuckGo",
 		template: "https://duckduckgo.com/?q=%s"
+	},
+	{
+		id: "brave",
+		label: "Brave",
+		template: "https://search.brave.com/search?q=%s"
 	},
 	{
 		id: "startpage",
@@ -84,7 +84,7 @@ export const schema = {
 	searchEngine: {
 		section: "browsing",
 		label: "Search engine",
-		default: "https://search.brave.com/search?q=%s",
+		default: "https://duckduckgo.com/?q=%s",
 		validate: searchTemplate,
 		help: "Used when what you typed is not a URL. Must contain %s."
 	},

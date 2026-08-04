@@ -26,7 +26,13 @@ app.use(express.static(staticRoot, {
         }
     }
 }));
-const bareServer = createBareServer("/bare/");
+const bareServer = createBareServer("/bare/", {
+    connectionLimiter: {
+        maxConnectionsPerIP: 2000,
+        windowDuration: 60,
+        blockDuration: 10
+    }
+});
 const handleRequest = (req, res) => {
     if (bareServer.shouldRoute(req)) {
         bareServer.routeRequest(req, res);

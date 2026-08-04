@@ -14,16 +14,24 @@ context (window, iframes, service worker) share it. Introduced in Ultraviolet
 proxy-transports. See [bare-mux and proxy-transports](../concepts/bare-mux.md).
 
 **bare-as-module3**. The Bare-protocol transport for **bare-mux**, so
-Ultraviolet only. Last published 2.2.5, October 2024. Superseded by
-`bare-transport`, below, and the confusing part is that the two are the same
-project under different names.
+Ultraviolet only. Last published 2.2.5, October 2024. The name decodes as "the
+TompHTTP **Bare** client, packaged **as a** bare-mux **module**, speaking Bare
+protocol version **3**". The `3` is the protocol version, not a package version:
+the client builds its endpoint as `/bare/v3/`, and there was never a
+`bare-as-module` or `bare-as-module2` on npm. Superseded by `bare-transport`,
+below.
 
 **bare-transport**. `@mercuryworkshop/bare-transport`. The Bare-protocol
 transport for **proxy-transports**, so usable from Scramjet 2.x. Published 1.0.0
 in December 2025. The only transport that works without a WebSocket, which makes
 it the one that lets a proxy run all-in-one on request/response serverless
-hosts. `proxy-bootstrap` cannot wire it yet. See
-[Transports](../concepts/transports.md).
+hosts. `proxy-bootstrap` cannot wire it yet.
+
+Same project as `bare-as-module3`, renamed in both places: the GitHub repository
+is now `MercuryWorkshop/bare-transport`, and the npm package is a **new name**,
+which is why it restarted at 1.0.0 while the dead one sits at 2.2.5. The rename
+happened because "as a bare-mux module" stopped being true once it was rewritten
+against `proxy-transports`. See [Transports](../concepts/transports.md#bare).
 
 **Chemical**. A meta-framework wrapping Ultraviolet, Scramjet and Rammerhead
 behind one API. Fastest path if you do not care which engine you get; less

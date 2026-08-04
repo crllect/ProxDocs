@@ -84,6 +84,12 @@ const buildTransport = async (config) => {
             return new module.default({ wisp: endpoint });
     }
 };
+const keepAliveIntervalMs = 15000; // super duper jank hopefully scramjet fixes
+const startKeepAlive = () => {
+    setInterval(() => {
+        navigator.serviceWorker.controller?.postMessage("keepalive");
+    }, keepAliveIntervalMs);
+};
 const boot = async () => {
     const [serviceworker] = await Promise.all([
         registerServiceWorker(),
@@ -100,6 +106,7 @@ const boot = async () => {
         }
     });
     await controller.wait();
+    startKeepAlive();
     return controller;
 };
 const utils = () => {

@@ -80,7 +80,7 @@ const startUrl = () => {
     return "";
 };
 const searchTemplate = () => {
-    return "https://search.brave.com/search?q=%s";
+    return "https://duckduckgo.com/?q=%s";
 };
 const navigate = async (input, options = {}) => {
     const { url, kind } = resolveInput(input, searchTemplate());

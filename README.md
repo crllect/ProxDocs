@@ -81,14 +81,14 @@ cd my-proxy && npm install && npm start
 
 ### Presets
 
-| Preset        | Frontend       | Toolchain                       | Transport | Purpose                          |
-| ------------- | -------------- | ------------------------------- | --------- | -------------------------------- |
-| `minimal`     | Vanilla        | JavaScript, no bundler          | libcurl   | Smallest readable build          |
-| `standard`    | Vanilla        | Bun, TypeScript, Vite, Tailwind | libcurl   | The recommended setup            |
-| `everything`  | Vanilla        | Bun, Vite, Tailwind CSS         | libcurl   | Every optional feature           |
-| `serverless`  | Vanilla        | JavaScript, no bundler          | bare      | Serverless, no WebSocket needed  |
-| `react`       | React          | TypeScript, Vite                | libcurl   | Hydrated React shell             |
-| `astroPreact` | Astro + Preact | TypeScript, Astro               | libcurl   | Static page with a Preact island |
+| Preset        | Frontend       | Toolchain                       | Server  | Transport | Purpose                          |
+| ------------- | -------------- | ------------------------------- | ------- | --------- | -------------------------------- |
+| `minimal`     | Vanilla        | JavaScript, no build step       | Express | libcurl   | Smallest readable build          |
+| `standard`    | Vanilla        | Bun, TypeScript, Vite, Tailwind | Fastify | libcurl   | The recommended setup            |
+| `everything`  | Vanilla        | Bun, TypeScript, Vite, Tailwind | Express | libcurl   | Every optional feature           |
+| `serverless`  | Vanilla        | JavaScript, no build step       | Express | bare      | No WebSocket needed              |
+| `react`       | React          | TypeScript, Vite                | Express | libcurl   | Hydrated React shell             |
+| `astroPreact` | Astro + Preact | TypeScript, Astro               | Express | libcurl   | Static page with a Preact island |
 
 Every preset uses Scramjet with manual wiring.
 

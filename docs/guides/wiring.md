@@ -170,6 +170,10 @@ const controller = new api.Controller({
 });
 
 await controller.wait();
+
+setInterval(() => {
+	navigator.serviceWorker.controller?.postMessage("keepalive");
+}, 15000);
 ```
 
 Those three paths have to match where you mounted the packages, because the
@@ -183,6 +187,15 @@ complete its handshake and for the wasm to be fetched, and `createFrame()`
 throws outright if you call it too early. It does **not** wait for the cookie
 jar. That loads lazily on the first proxied request, which the controller holds
 until it is ready. See [Cookies and sessions](cookies-and-sessions.md).
+
+**Do not drop the `setInterval`.** Browsers terminate an idle service worker
+after about thirty seconds, and Scramjet's worker keeps its routing table in
+module scope, so a cold worker cannot route and the first navigation after a
+quiet period lands on your own 404. The ping keeps it warm. A plain string
+payload is deliberate: both of the worker's `message` listeners return early on
+anything that is not an object, so this wakes the worker and runs no handler.
+Generated projects include it. See
+[the idle service worker bug](../reference/troubleshooting.md#cannot-get-sj-after-the-tab-has-been-sitting-idle).
 
 The load order is core, controller, then utils. To switch transports later,
 serve both modules and pass a new instance to `controller.setTransport()`.

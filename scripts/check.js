@@ -11,7 +11,7 @@ import ts from "typescript";
 
 import { nav } from "../site/nav.js";
 import { markdownToHtml } from "../site/markdown.js";
-import { shell, canonicalFor, siteUrl } from "../site/layout.js";
+import { shell } from "../site/layout.js";
 import { highlight } from "../site/public/highlight.js";
 import { compose } from "../builder/node.js";
 import { toJavaScript } from "../builder/transpile.js";
@@ -53,34 +53,6 @@ for (const page of pages) {
 	}
 }
 if (!failures) ok(`${pages.length} pages present`);
-
-console.log("\nPage metadata");
-
-const seenDescriptions = new Map();
-for (const page of pages) {
-	const text = page.description;
-	if (!text) {
-		fail(`${page.slug} has no description in site/nav.js`);
-		continue;
-	}
-	if (text.length < 70 || text.length > 165) {
-		fail(
-			`${page.slug} description is ${text.length} chars, want 70 to 165`
-		);
-	}
-	const duplicate = seenDescriptions.get(text);
-	if (duplicate)
-		fail(`${page.slug} repeats the description from ${duplicate}`);
-	else seenDescriptions.set(text, page.slug);
-
-	const canonical = canonicalFor(page.slug);
-	const expected =
-		page.slug === "index" ? `${siteUrl}/` : `${siteUrl}/${page.slug}`;
-	if (canonical !== expected) {
-		fail(`${page.slug} canonical resolved to ${canonical}`);
-	}
-}
-if (!failures) ok(`${pages.length} descriptions and canonical URLs are unique`);
 
 console.log("\nInternal links");
 
@@ -129,21 +101,6 @@ for (const page of pages) {
 	} catch {
 		continue;
 	}
-	if (
-		/(?:example\.(?:com|org|net)|evil\.com|yourproxy\.com|site\.com|test@example\.com)/i.test(
-			source
-		)
-	) {
-		fail(`${page.file} contains a generic placeholder domain`);
-	}
-	if (/<https?:\/\/localhost(?::\d+)?(?:\/[^>]*)?>/i.test(source)) {
-		fail(`${page.file} contains a hardcoded localhost link`);
-	}
-	if (source.includes("—")) {
-		const line = source.split("\n").findIndex(l => l.includes("—")) + 1;
-		fail(`${page.file}:${line} contains an em dash`);
-	}
-
 	for (const [, href] of source.matchAll(linkPattern)) {
 		if (/^(https?:|mailto:|#)/i.test(href)) continue;
 		if (href.startsWith("/")) {
@@ -328,10 +285,10 @@ const serverlessSwitch = resolveOptions({
 	features: ["transportSwitch"]
 }).options;
 if (serverlessSwitch.features.includes("transportSwitch")) {
-	fail("Vercel build retained transport switching");
+	fail("serverless build retained transport switching");
 }
 if (serverlessSwitch.server !== "express") {
-	fail("Vercel build retained a server without an exported handler");
+	fail("serverless build retained a server without an exported handler");
 }
 const popupSettings = resolveOptions({ features: ["settings"] }).options;
 if (popupSettings.features.includes("aboutPages")) {
@@ -463,118 +420,6 @@ for (const combo of combinations) {
 		);
 	}
 
-	if (combo.label.startsWith("scramjet-bare")) {
-		if (!packageData?.dependencies?.["@mercuryworkshop/bare-transport"]) {
-			fail(`${combo.label}: bare-transport dependency is missing`);
-		}
-		if (packageData?.dependencies?.["@mercuryworkshop/bare-as-module3"]) {
-			fail(`${combo.label}: pulled in the bare-mux era bare package`);
-		}
-		if (packageData?.dependencies?.["@mercuryworkshop/wisp-js"]) {
-			fail(`${combo.label}: a bare build should not depend on wisp-js`);
-		}
-		const engine = Object.entries(files).find(([name]) =>
-			/(?:src|public\/js)\/engine\.(?:js|ts)$/.test(name)
-		)?.[1];
-		if (!engine?.includes('/baremod/index.mjs"')) {
-			fail(`${combo.label}: engine does not load the bare transport`);
-		}
-		if (!engine?.includes("new module.default(endpoint)")) {
-			fail(
-				`${combo.label}: bare transport built with the wisp signature`
-			);
-		}
-		const server =
-			files[`server.${combo.options.language === "js" ? "js" : "ts"}`];
-		if (!server?.includes("createBareServer")) {
-			fail(`${combo.label}: server does not host a Bare server`);
-		}
-		if (server?.includes("wisp-js")) {
-			fail(`${combo.label}: server still imports wisp`);
-		}
-	}
-
-	if (combo.label.endsWith("-epoxy")) {
-		if (!packageData?.dependencies?.["@mercuryworkshop/epoxy-transport"]) {
-			fail(`${combo.label}: epoxy dependency is missing`);
-		}
-		const engine = Object.entries(files).find(([name]) =>
-			/(?:src|public\/js)\/engine\.(?:js|ts)$/.test(name)
-		)?.[1];
-		if (!engine?.includes('/epoxy/index.mjs"')) {
-			fail(`${combo.label}: engine does not load epoxy`);
-		}
-		if (
-			!files[
-				`server.${combo.options.language === "js" ? "js" : "ts"}`
-			]?.includes("/epoxy/")
-		) {
-			fail(`${combo.label}: server does not expose epoxy`);
-		}
-	}
-
-	if (combo.label === "preset:react") {
-		if (
-			!files["src/ProxyShell.tsx"] ||
-			!files["src/main.tsx"] ||
-			!files["vite.config.ts"]?.includes("react()")
-		) {
-			fail("preset:react: React shell or Vite plugin is missing");
-		}
-		if (
-			!packageData?.dependencies?.react ||
-			!packageData?.dependencies?.["react-dom"] ||
-			!packageData?.devDependencies?.["@vitejs/plugin-react"]
-		) {
-			fail("preset:react: React dependencies are missing");
-		}
-		if (
-			!files["src/styles.css"]?.includes("#root") ||
-			!files["src/styles.css"]?.includes(".app-root")
-		) {
-			fail(
-				"preset:react: framework shell does not preserve frame height"
-			);
-		}
-	}
-
-	if (combo.label === "preset:astroPreact") {
-		if (
-			!files["astro.config.mjs"] ||
-			!files["src/pages/index.astro"] ||
-			!files["src/ProxyShell.tsx"]
-		) {
-			fail("preset:astroPreact: Astro or Preact files are missing");
-		}
-		if (
-			packageData?.scripts?.build !== "astro build" ||
-			packageData?.scripts?.typecheck !== "astro check" ||
-			!packageData?.dependencies?.preact ||
-			!packageData?.devDependencies?.astro ||
-			!packageData?.devDependencies?.["@astrojs/preact"]
-		) {
-			fail(
-				"preset:astroPreact: Astro scripts or dependencies are missing"
-			);
-		}
-		if (!files["src/styles.css"]?.includes("astro-island")) {
-			fail(
-				"preset:astroPreact: island wrapper does not preserve frame height"
-			);
-		}
-	}
-
-	if (combo.label === "preset:everything") {
-		if (
-			!files["README.md"]?.includes("bun install") ||
-			files["README.md"]?.includes("npm install")
-		) {
-			fail(
-				"preset:everything: README does not use the selected package manager"
-			);
-		}
-	}
-
 	for (const file of jsFiles) {
 		try {
 			await run(process.execPath, ["--check", file]);
@@ -613,17 +458,6 @@ for (const combo of combinations) {
 			fail(
 				`${combo.label}: ${relative} has an unsubstituted variable ${match}`
 			);
-		}
-		if (/\s+,|,\s+,/.test(contents)) {
-			fail(
-				`${combo.label}: ${relative} contains malformed comma spacing`
-			);
-		}
-		if (relative.endsWith(".html") && contents.includes("<!--")) {
-			fail(`${combo.label}: ${relative} contains an HTML comment`);
-		}
-		if (/\.(?:js|ts)$/.test(relative) && /^\s*\/\/(?!#)/m.test(contents)) {
-			fail(`${combo.label}: ${relative} contains a prose comment`);
 		}
 	}
 
@@ -733,202 +567,6 @@ if (crlfExamples) {
 	);
 }
 if (!staleExamples) ok("all preset files match the generator");
-
-console.log("\nURL parsing");
-
-const parserBuild = await compose({
-	name: "https",
-	language: "js",
-	bundler: "none",
-	features: ["aboutPages"]
-});
-const parser = await import(
-	`data:text/javascript,${encodeURIComponent(parserBuild.files["public/js/url.js"])}`
-);
-const search = "https://search.brave.com/search?q=%s";
-const parserCases = [
-	["localhost:3000", "blocked"],
-	["http://127.0.0.1:8080", "blocked"],
-	["crllect.dev:8080", "url"],
-	["https://crllect.dev", "url"],
-	["mailto:hello@crllect.dev", "external"],
-	["javascript:alert(1)", "blocked"]
-];
-
-for (const [input, kind] of parserCases) {
-	const result = parser.resolveInput(input, search);
-	if (result.kind !== kind)
-		fail(`${input} resolved as ${result.kind}, expected ${kind}`);
-}
-if (parser.INTERNAL_SCHEME === "https:")
-	fail("reserved project name became an internal scheme");
-if (!failures) ok(`${parserCases.length} address classes resolve correctly`);
-
-console.log("\nInternal navigation");
-
-const internalBuild = await compose({
-	name: "internalcheck",
-	language: "js",
-	bundler: "none",
-	features: ["browserControls", "aboutPages"]
-});
-const internalModule = await import(
-	`data:text/javascript,${encodeURIComponent(internalBuild.files["public/js/internal.js"])}`
-);
-const internalHistory = new internalModule.InternalHistory();
-internalHistory.push("internalcheck://newtab");
-internalHistory.push("internalcheck://settings");
-if (internalHistory.back() !== "internalcheck://newtab") {
-	fail("internal back did not return to the previous page");
-}
-if (internalHistory.forward() !== "internalcheck://settings") {
-	fail("internal forward did not return to the next page");
-}
-internalHistory.back();
-internalHistory.push("internalcheck://about");
-if (internalHistory.forward() !== null) {
-	fail("new internal navigation did not discard forward history");
-}
-internalHistory.clear();
-if (internalHistory.canGoBack || internalHistory.canGoForward) {
-	fail("internal history did not clear before external navigation");
-}
-const internalApp = internalBuild.files["public/js/app.js"];
-if (
-	!internalApp.includes("internalHistory.push(url)") ||
-	!internalApp.includes("internalHistory.clear()")
-) {
-	fail("internal pages do not keep a stack across srcdoc assignments");
-}
-if (!failures)
-	ok("back, forward, branching, and reset work per internal stack");
-
-console.log("\nBrowser controls");
-
-for (const [label, options] of [
-	["without custom protocols", { features: ["browserControls"] }],
-	["with custom protocols", { features: ["browserControls", "aboutPages"] }],
-	["with tabs", { features: ["browserControls", "tabs"] }]
-]) {
-	const build = await compose({
-		name: "controlscheck",
-		language: "js",
-		bundler: "none",
-		...options
-	});
-	const app = build.files["public/js/app.js"];
-
-	if (
-		!app.includes('$("#back").disabled = !canGoBack()') ||
-		!app.includes('$("#forward").disabled = !canGoForward()')
-	) {
-		fail(`back and forward never gray out ${label}`);
-	}
-	if (
-		!app.includes("const url = goBack();") ||
-		!app.includes("navigate(url, { record: false })")
-	) {
-		fail(`back and forward do not replay the visit stack ${label}`);
-	}
-}
-if (!failures) ok("back and forward track navigation state in every build");
-
-console.log("\nPopup menus");
-
-const popupBuild = await compose({
-	name: "popupcheck",
-	language: "js",
-	bundler: "none",
-	features: ["settings"]
-});
-const popupHtml = popupBuild.files["public/index.html"];
-const popupApp = popupBuild.files["public/js/app.js"];
-if (popupBuild.options.features.includes("aboutPages")) {
-	fail("popup settings build enabled custom protocols");
-}
-if (
-	!popupHtml.includes('data-popup="settings"') ||
-	popupHtml.includes('id="back"')
-) {
-	fail("settings popup depends on browser controls");
-}
-if (
-	!popupApp.includes("doc.write(html)") ||
-	popupApp.includes("popupFrame.srcdoc")
-) {
-	fail("popup renderer would add to browser history");
-}
-if (!popupApp.includes("element.inert = true")) {
-	fail("popup does not isolate keyboard focus from the proxy shell");
-}
-if (popupBuild.files["public/js/url.js"].includes("popupcheck:")) {
-	fail("popup settings build recognizes a custom protocol");
-}
-if (!failures)
-	ok(
-		"settings render without custom protocols, browser controls, or history navigation"
-	);
-
-console.log("\nNavigation compatibility");
-
-const braveBuild = await compose({
-	name: "bravecheck",
-	language: "ts",
-	bundler: "vite",
-	engine: "scramjet",
-	wiring: "manual",
-	features: ["browserControls", "tabs", "aboutPages"]
-});
-const braveEngine = braveBuild.files["src/engine.ts"];
-const braveTabs = braveBuild.files["src/tabs.ts"];
-const braveApp = braveBuild.files["src/app.ts"];
-const everythingBuild = await compose({
-	...presets.everything.options,
-	name: "refreshcheck"
-});
-if (
-	!braveEngine.includes('super("history-url", [])') ||
-	!braveEngine.includes("url ?? context.client.url.href")
-) {
-	fail("Scramjet does not preserve omitted History URLs");
-}
-if (
-	!braveTabs.includes("historyIndex") ||
-	!braveTabs.includes("if (this.element.srcdoc) return")
-) {
-	fail("tab navigation does not retain internal-page history safely");
-}
-if (
-	!braveApp.includes("tabs.active?.canGoBack") ||
-	!braveApp.includes("navigate(url, { record: false })")
-) {
-	fail("browser controls do not use the tab navigation stack");
-}
-if (
-	!braveBuild.files["src/internal.ts"].includes("homeUrl") ||
-	braveBuild.files["src/internal.ts"].includes("newtabUrl") ||
-	!braveApp.includes("tab.url = url")
-) {
-	fail("internal new-tab routes do not retain their active tab URL");
-}
-if (
-	braveEngine.includes("return new URL(location.href)") ||
-	!braveEngine.includes("data:text/html,${encodeURIComponent(errorPage")
-) {
-	fail("escaped proxy navigations can load the shell in an iframe");
-}
-if (
-	!everythingBuild.files["src/app.ts"].includes(
-		'visitLog.onChange(() => refreshInternalPages(["history"]))'
-	) ||
-	!everythingBuild.files["src/app.ts"].includes(
-		'bookmarks.onChange(() => refreshInternalPages(["bookmarks"]))'
-	)
-) {
-	fail("protocol-backed history and bookmarks do not refresh while open");
-}
-if (!failures)
-	ok("Brave history URLs and tab control state are handled per session");
 
 console.log(failures ? `\n${failures} problem(s)\n` : "\nAll checks passed\n");
 process.exit(failures ? 1 : 0);

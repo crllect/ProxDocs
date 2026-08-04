@@ -22,6 +22,10 @@ For Scramjet, the first value must be `true`, the second should name your
 
 ## The page loads but nothing happens when I navigate
 
+If it worked a minute ago and the frame now shows `Cannot GET /~/sj/...`, skip
+to
+[the idle service worker bug](#cannot-get-sj-after-the-tab-has-been-sitting-idle).
+
 **`crossOriginIsolated === false`**. _possibly, but check the service worker
 first._ Scramjet runs without isolation; what isolation buys you is proxied
 sites being able to use `SharedArrayBuffer` themselves. If nothing at all
@@ -54,6 +58,97 @@ ran because the module threw. Check the console, and try importing it directly:
 ```js
 import("/js/app.js").then(() => "ok").catch(e => e.message);
 ```
+
+---
+
+## `Cannot GET /~/sj/...` after the tab has been sitting idle
+
+An upstream bug that affects every transport. On Wisp it is a papercut; on Bare
+it is worse. Either way it is worth recognising, because the error text points
+at your server rather than at the cause.
+
+The symptom: your proxy works, you leave the tab alone for a minute or two, then
+navigate again, or press Back, and the frame shows your server's 404 page.
+
+```text
+Cannot GET /~/sj/<controller>/<frame>/https%3A%2F%2F...
+```
+
+That text is your own web server answering. It means the **service worker did
+not intercept the request at all**, so it fell through to the network and hit
+Express or Fastify, which has no such route.
+
+### Why
+
+Browsers terminate idle service workers, usually after about thirty seconds of
+no events. Scramjet's worker keeps its list of routable frame prefixes in module
+scope, so when the browser restarts it that list is empty and `shouldRoute()`
+returns `false` for every proxied URL.
+
+Upstream anticipates this. On activation the worker posts a
+`$controller$swrevive` message to every client, and the controller is supposed
+to re-register its prefix in response. In `scramjet-controller` 0.0.14 that
+handshake does not fire in time for the navigation that woke the worker, so the
+first one after an idle period is lost.
+
+### Reproducing it
+
+1. Load your proxy and navigate to any site. It works.
+2. Leave it alone for about 75 seconds.
+3. Navigate again.
+
+Confirmed on both libcurl over Wisp and `bare-transport`, so **it is not
+transport-specific**. A busy page can mask it, because any request through the
+worker resets the idle timer; a page that goes quiet will hit it.
+
+### How bad it is, and how to recover
+
+Measured on a generated project, twice each:
+
+| After the worker has died   | Result       |
+| --------------------------- | ------------ |
+| Navigate somewhere new      | still 404    |
+| **Reload the frame**        | **recovers** |
+| Reload the whole shell page | recovers     |
+
+**Reloading the frame is the fix**, and on Wisp that makes this a papercut
+rather than a real problem: the reload button in your own browser controls
+clears it, and normal use rarely goes quiet long enough to trigger it in the
+first place. The usual way to see it at all is pressing Back after a pause.
+
+On the Bare transport it is worse. There, a full page reload is needed, so a
+user who hits it cannot recover from your in-page controls.
+
+**Generated projects already handle this.** The engine adapter pings the worker
+every 15 seconds, which keeps it from going idle in the first place:
+
+```js
+const keepAliveIntervalMs = 15000;
+
+const startKeepAlive = () => {
+	setInterval(() => {
+		navigator.serviceWorker.controller?.postMessage("keepalive");
+	}, keepAliveIntervalMs);
+};
+```
+
+The payload is a plain string on purpose. Both of the worker's `message`
+listeners bail on `typeof e.data != "object"` before doing anything, so the ping
+wakes the worker and touches no logic.
+
+Measured against a build with no keepalive, a **40-second** idle already breaks,
+so anything at or above 30 seconds is too slow to help. With the 15-second ping,
+the same project survives a 90-second idle and navigates normally.
+
+If you are writing your own client rather than generating one, copy this. Do not
+set it to something plausible-sounding like 70 seconds, which fires long after
+the worker is already gone and protects nothing.
+
+The alternative, reloading the frame when a proxied navigation lands on your own
+404, is deliberately **not** what generated projects do. It works, but it hides
+every other cause of a 404 behind an automatic reload, which turns a clear
+failure into a mystery reload loop. Keep your 404 visible and keep the worker
+alive instead.
 
 ---
 
@@ -233,17 +328,39 @@ changes that.
 [Site compatibility](site-compatibility.md) works through the categories in
 order, so you can tell which one you are hitting before spending time on it.
 
-### Brave Search becomes `/undefined`
+### Sites become `/undefined`
 
-Some Brave Search pages call `history.pushState` or `history.replaceState`
-without the optional URL argument. That is valid browser behavior: omitting the
-argument keeps the current URL. Scramjet 2.0.67 rewrites that missing argument
-as the string `"undefined"`, producing a proxied request to
-`https://search.brave.com/undefined`.
+**This affects any site, not one search engine.** Any page that calls
+`history.pushState` or `history.replaceState` with fewer than three arguments
+can hit it, and single-page apps do that constantly.
 
-The generated Scramjet adapter installs a frame-local compatibility plugin. It
-supplies the frame's current URL only when either History method omits the URL.
-It leaves real URLs, the URL watcher, and HTTP caching unchanged:
+Omitting the URL argument is valid: it keeps the current URL. Scramjet
+2.0.67-alpha.2 turns it into a navigation to `/undefined`. The cause is one
+line, and you can read it in the published bundle's own sourcemap:
+
+```js
+const url = String(ctx.args[2]);
+
+if (url || url === "") ctx.args[2] = relevantclient.rewriteUrl(url);
+```
+
+`String(undefined)` is the string `"undefined"`, which is truthy, so the guard
+on the second line passes and a missing argument gets rewritten into a real
+path. The result is a proxied request to `https://crllect.dev/undefined`.
+
+**Upstream has already fixed this**, by only stringifying when the argument is
+actually present:
+
+```js
+const url = ctx.args[2] ? String(ctx.args[2]) : undefined;
+```
+
+That is on `main` and is not in any published release, so it does not help you
+yet. Check whether it has shipped before carrying the workaround forward.
+
+Until then, the generated Scramjet adapter installs a frame-local compatibility
+plugin. It supplies the frame's current URL only when either History method
+omits the URL. It leaves real URLs, the URL watcher, and HTTP caching unchanged:
 
 ```js
 for (const method of ["pushState", "replaceState"]) {

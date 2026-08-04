@@ -223,7 +223,7 @@ const searchTemplate = (): string => {
 	//#if settings
 	return settings.get("searchEngine");
 	//#else
-	return "https://search.brave.com/search?q=%s";
+	return "https://duckduckgo.com/?q=%s";
 	//#endif
 };
 

@@ -78,7 +78,13 @@ app.use(
 );
 
 //#if transportBare
-const bareServer = createBareServer("/bare/");
+const bareServer = createBareServer("/bare/", {
+	connectionLimiter: {
+		maxConnectionsPerIP: 2000,
+		windowDuration: 60,
+		blockDuration: 10
+	}
+});
 //#endif
 
 const handleRequest = (req: http.IncomingMessage, res: http.ServerResponse) => {

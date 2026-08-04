@@ -99,9 +99,20 @@ WebAssembly, no WebSocket, and no client TLS stack.
 **Get the package name right.** The one you want is
 `@mercuryworkshop/bare-transport`. There is an older
 `@mercuryworkshop/bare-as-module3`, still on npm, which implements the bare-mux
-interface instead and which Scramjet cannot use. Same project, renamed, and the
-version numbers make it worse: the live one is `1.0.0` and the dead one is
-`2.2.5`, so the wrong answer looks newer.
+interface instead and which Scramjet cannot use.
+
+The old name decodes as "the TompHTTP **Bare** client, packaged **as a**
+bare-mux **module**, speaking Bare protocol version **3**". That `3` is the
+protocol version, not a package version, which is why the client talks to
+`/bare/v3/` and why no `bare-as-module` or `bare-as-module2` ever existed. When
+it was rewritten against `proxy-transports` the "bare-mux module" part stopped
+being true, so both the GitHub repository and the npm package were renamed to
+`bare-transport`. The repository is now
+[`MercuryWorkshop/bare-transport`](https://github.com/MercuryWorkshop/bare-transport);
+the old URL still redirects.
+
+A new npm name means a fresh version series, so the live package is **1.0.0**
+while the dead one sits at **2.2.5**. The wrong answer looks newer.
 
 `proxy-bootstrap` cannot wire it either; it ships a stub that throws
 `"Bare transport not implemented yet"`. Bare builds use
@@ -114,6 +125,11 @@ the other two:
 const { default: BareClient } = await import("/baremod/index.mjs");
 const transport = new BareClient(new URL("/bare/", location.href).href);
 ```
+
+Theres also a pretty odd bug, where searching something with brave causes a
+captcha to spawn. Bare usually fails with captchas, but navigating back, then
+forward again with browser controls causes brave to not ask for captchas
+anymore.
 
 ---
 

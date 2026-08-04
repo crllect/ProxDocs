@@ -167,6 +167,14 @@ const applyTransport = async (): Promise<void> => {
 //#endif
 //#endif
 
+const keepAliveIntervalMs = 15000; // super duper jank hopefully scramjet fixes
+
+const startKeepAlive = (): void => {
+	setInterval(() => {
+		navigator.serviceWorker.controller?.postMessage("keepalive");
+	}, keepAliveIntervalMs);
+};
+
 const boot = async (): Promise<ScramjetController> => {
 	//#if bootstrap
 	if (typeof initBootstrap !== "function") {
@@ -203,6 +211,8 @@ const boot = async (): Promise<ScramjetController> => {
 
 	await controller.wait();
 	//#endif
+
+	startKeepAlive();
 
 	return controller!;
 };

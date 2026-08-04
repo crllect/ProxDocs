@@ -27,7 +27,13 @@ const { routeRequest, routeUpgrade } = await bootstrap({
 });
 //#endif
 //#if transportBare
-const bareServer = createBareServer("/bare/");
+const bareServer = createBareServer("/bare/", {
+	connectionLimiter: {
+		maxConnectionsPerIP: 2000,
+		windowDuration: 60,
+		blockDuration: 10
+	}
+});
 //#endif
 
 const app = Fastify({
