@@ -270,7 +270,7 @@ void engine.setTransport({ kind: settings.get("transport") });
 await engine.init();
 ```
 
-That requires `setTransport` to be callable before `init()` — it stores the
+That requires `setTransport` to be callable before `init()`, it stores the
 config, and only swaps when a controller already exists.
 
 ---

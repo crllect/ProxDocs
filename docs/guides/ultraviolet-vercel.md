@@ -21,7 +21,7 @@ Vercel Functions use a request/response lifecycle and cannot keep Wisp's
 WebSocket open between requests.
 
 [Wisp](../concepts/wisp-vs-bare.md) is a single persistent WebSocket carrying
-every stream. That is fundamentally incompatible. It is not a configuration
+every stream. The two models cannot be reconciled. It is not a configuration
 problem and there is no flag to set.
 
 [Bare](../concepts/wisp-vs-bare.md) is ordinary HTTP: one request in, one

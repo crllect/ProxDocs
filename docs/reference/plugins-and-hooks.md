@@ -1,0 +1,429 @@
+# Plugins and hooks
+
+Plugins are how you change what Scramjet does without forking it. A plugin
+registers callbacks on **hooks**, which are named points in the request and page
+lifecycle where Scramjet stops and asks whether anyone wants to intervene.
+
+That is the whole extension surface of Scramjet 2.x. Anything the shipped
+plugins do (caching, URL watching, catching escaped links) you can do yourself
+with the same API.
+
+Verified against `@mercuryworkshop/scramjet` 2.0.67-alpha.2 and
+`@mercuryworkshop/scramjet-controller` 0.0.14. See the
+[version matrix](versions.md).
+
+---
+
+## Reading Scramjet's exports
+
+Start here. Getting this wrong produces an error that points nowhere near the
+line that caused it.
+
+Scramjet ships as a classic script that assigns a `$scramjet` global. The npm
+package's `main`, `module`, and `exports["."]` all point at
+`dist/scramjet-external.mjs`. That file is not the library. Its entire body is a
+re-export of the global:
+
+```js
+const __external = globalThis.$scramjet;
+export const { BareResponse, CookieJar, Plugin, Tap /* … */ } = __external;
+```
+
+That destructuring runs at **module evaluation time**. If the module graph
+evaluates before the classic script has run, `globalThis.$scramjet` is still
+`undefined` and you get:
+
+```text
+Cannot destructure property 'BareResponse' of 'globalThis.$scramjet' as it is undefined
+```
+
+Under a bundler's dev server the ordering is not guaranteed either way. ESM
+module-graph evaluation is not sequenced against `<script defer>` tags, so the
+same code can work in a production build and fail in dev, or work on one machine
+and fail on another.
+
+**Read the globals at call time instead**, inside a constructor or method:
+
+```js
+const scramjet = () => globalThis.$scramjet;
+const utils = () => globalThis.$scramjetUtils;
+
+class MyPlugin extends utils().ManagedPlugin {
+	install(frame) {
+		const { BareResponse } = scramjet();
+	}
+}
+```
+
+The same applies to `@mercuryworkshop/scramjet-utils`. Its source imports
+`@mercuryworkshop/scramjet` at the top level, so importing it from your page
+code drags the stub into your module graph and reintroduces the problem.
+
+Type-only imports are always safe, because they are erased before the code runs:
+
+```ts
+import type { BareResponse } from "@mercuryworkshop/scramjet";
+```
+
+The globals become available once `scramjet.js` and `controller.api.js` have
+loaded. If you follow [manual wiring](../guides/wiring.md), that is inside
+`boot()`, before anything else touches them.
+
+---
+
+## Two plugin base classes
+
+There are two, they are not interchangeable, and picking the wrong one produces
+a confusing failure.
+
+| Class           | From             | Constructor            | Use for                             |
+| --------------- | ---------------- | ---------------------- | ----------------------------------- |
+| `Plugin`        | `$scramjet`      | `(name, tapOrder?)`    | Tapping a hook on an existing frame |
+| `ManagedPlugin` | `$scramjetUtils` | `(name, dependencies)` | Anything passed to `createFrame()`  |
+
+`ManagedPlugin` extends `Plugin` and adds two things: a `dependencies` array and
+an `install(frame)` method.
+
+When you pass plugins to `createFrame()`, the `Frame` constructor does this:
+
+```js
+for (const plugin of this.plugins) {
+	for (const dependency of plugin.dependencies) {
+		const found = this.plugins.find(p => p.name === dependency);
+		if (!found) throw new Error(`Dependency ${dependency} not found …`);
+	}
+	plugin.install(this);
+}
+```
+
+Two things follow from that:
+
+- A bare `Plugin` in that array throws on `plugin.dependencies` being
+  `undefined`, because `for…of` cannot iterate it.
+- Dependencies are checked by **name against the same array**, not resolved from
+  anywhere else. It asserts load order within one frame and does no resolution.
+
+`LinkHandlerPlugin` is the real example. It declares
+`super("link-handler", ["event-handler"])` and then looks its dependency up by
+name at install time:
+
+```js
+const eventHandler = frame.plugins.find(p => p.name === "event-handler");
+```
+
+So passing `LinkHandlerPlugin` without also passing `EventHandlerPlugin` throws
+`Dependency event-handler not found for plugin link-handler` before the frame is
+usable. The mechanism is doing its job there: a missing dependency fails loudly
+at construction instead of silently doing nothing later.
+
+### Writing one
+
+```js
+class TitlePlugin extends globalThis.$scramjetUtils.ManagedPlugin {
+	#onTitle;
+
+	constructor(onTitle) {
+		super("title-watcher", []);
+		this.#onTitle = onTitle;
+	}
+
+	install(frame) {
+		this.tap(frame.hooks.init.post, context => {
+			if (!context.isTopLevel) return;
+			const doc = context.window.document;
+			this.#onTitle(doc.title);
+			new MutationObserver(() => this.#onTitle(doc.title)).observe(
+				doc.querySelector("title") ?? doc.head,
+				{ childList: true, subtree: true, characterData: true }
+			);
+		});
+	}
+}
+```
+
+What that shape is obeying:
+
+1. **Pass both constructor arguments.** `dependencies` has no default.
+2. **Tap inside `install`, not in the constructor.** The frame does not exist
+   yet when the constructor runs, and hooks live on the frame.
+3. **One instance per frame.** `install(frame)` stores `this.frame`, so sharing
+   an instance across frames leaves it pointing at whichever installed last. The
+   class can be shared; the instance cannot.
+
+> A `MutationObserver` watches for DOM changes and fires a callback
+> ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)). It
+> is used here because Scramjet has no title event.
+
+### Ordering between plugins
+
+Both classes accept a `tapOrder` describing which plugins to run around:
+
+```js
+this.tap(frame.hooks.fetch.request, callback, {
+	before: ["http-cache"],
+	after: ["url-watcher"]
+});
+```
+
+Names refer to other plugins' `name` values. Use it when two taps on the same
+hook would otherwise fight. An early-response tap has to run before a caching
+tap, or the cache stores a response that was never fetched.
+
+---
+
+## The hooks
+
+Hooks live in three places. **Fetch hooks** fire per request. **Frame hooks**
+fire on the frame. **Client hooks** live on the proxied page's own Scramjet
+client and are only reachable once a document exists.
+
+```text
+frame.hooks.fetch.intercept     ─┐
+frame.hooks.fetch.request        │  per request
+frame.hooks.fetch.preresponse    │
+frame.hooks.fetch.response      ─┘
+
+frame.hooks.init.pre            ─┐  per proxied document,
+frame.hooks.init.post           ─┘  including subframes
+
+frame.hooks.error.request        ─   per failed request
+
+context.client.hooks.lifecycle.navigate  ─┐  reached from inside
+context.client.hooks.rewriter.html       ─┘  an init hook
+```
+
+Every callback has the same signature:
+
+```js
+(context, props) => {};
+```
+
+`context` is read-only information about what is happening. `props` is the part
+you mutate to change the outcome. Callbacks may be async; Scramjet awaits them.
+
+### `fetch.intercept`
+
+Fires first, before Scramjet has decided anything. Set `props.response` to
+answer the request without any of Scramjet's normal handling.
+
+| Field             | Type                    |
+| ----------------- | ----------------------- |
+| `context.request` | `ScramjetFetchRequest`  |
+| `context.parsed`  | `ScramjetFetchParsed`   |
+| `props.response`  | `ScramjetFetchResponse` |
+
+Use it to block a request outright, or to serve something Scramjet should not
+touch. It is the earliest and bluntest of the four.
+
+### `fetch.request`
+
+Fires after parsing, before the transport is called. Most of what you write will
+go here.
+
+| Field                 | Type                   |
+| --------------------- | ---------------------- |
+| `context.request`     | `ScramjetFetchRequest` |
+| `context.parsed`      | `ScramjetFetchParsed`  |
+| `context.client`      | `BareCompatibleClient` |
+| `props.init`          | `BareRequestInit`      |
+| `props.url`           | `URL`                  |
+| `props.earlyResponse` | `BareResponse`         |
+
+- Rewrite `props.url` to send the request somewhere else.
+- Mutate `props.init` to change method, headers, or body.
+- Set `props.earlyResponse` to answer locally and skip the network entirely.
+
+`earlyResponse` is what makes [fake origins](../guides/custom-protocols.md) work
+work: you invent an origin, match on `context.parsed.url.origin`, and hand back
+a `Response` for a site that has no server.
+
+```js
+this.tap(frame.hooks.fetch.request, (context, props) => {
+	if (blocklist.has(props.url.hostname)) {
+		props.earlyResponse = new Response("Blocked", { status: 403 });
+	}
+});
+```
+
+### `fetch.preresponse`
+
+Fires after the transport returns, before Scramjet rewrites the body. You get
+the raw upstream response.
+
+| Field             | Type                   |
+| ----------------- | ---------------------- |
+| `context.request` | `ScramjetFetchRequest` |
+| `context.parsed`  | `ScramjetFetchParsed`  |
+| `props.response`  | `BareResponse`         |
+
+Response caching belongs here, along with any header change that would otherwise
+affect rewriting: a `content-type` correction, or stripping a
+`content-security-policy` the site sent.
+
+### `fetch.response`
+
+Fires after rewriting, immediately before the response reaches the page.
+
+| Field             | Type                    |
+| ----------------- | ----------------------- |
+| `context.request` | `ScramjetFetchRequest`  |
+| `context.parsed`  | `ScramjetFetchParsed`   |
+| `props.response`  | `ScramjetFetchResponse` |
+
+Use it for logging and metrics. Rewriting the body here means undoing work
+Scramjet just did, so prefer `preresponse` for content changes.
+
+### `init.pre` and `init.post`
+
+Fire once per proxied document as its environment is built. `pre` runs before
+Scramjet's own patches are applied, `post` runs after.
+
+| Field                | Type             |
+| -------------------- | ---------------- |
+| `context.window`     | `Window`         |
+| `context.client`     | `ScramjetClient` |
+| `context.isTopLevel` | `boolean`        |
+
+`props` is empty. You are here to touch `context.window`.
+
+**`isTopLevel` matters more than it looks.** These hooks fire for every
+document, including nested iframes the proxied site created. A plugin that
+patches `history` or reads `document.title` without checking `isTopLevel` will
+also do it inside every ad frame on the page.
+
+```js
+this.tap(frame.hooks.init.post, context => {
+	if (!context.isTopLevel) return;
+	context.window.addEventListener("beforeunload", () => this.save());
+});
+```
+
+Use `pre` when you need to install something before the site's own code can see
+Scramjet's patches. Use `post` for almost everything else.
+
+### `error.request`
+
+Fires when a request fails. This is how you serve an error page instead of a
+blank frame.
+
+| Field                 | Type               |
+| --------------------- | ------------------ |
+| `context.rawrequest`  | `TransferRequest`  |
+| `context.error`       | `unknown`          |
+| `props.setResponse`   | `TransferResponse` |
+| `props.suppressError` | `boolean`          |
+
+Set both: `suppressError` stops Scramjet from propagating the failure, and
+`setResponse` supplies what to show instead. Setting only `setResponse` still
+lets the error surface.
+
+```js
+this.tap(frame.hooks.error.request, (context, props) => {
+	if (context.error?.name === "AbortError") return;
+	if (context.rawrequest?.destination !== "document") return;
+
+	props.suppressError = true;
+	props.setResponse = {
+		body: "<h1>Could not load</h1>",
+		headers: [["content-type", "text/html; charset=utf-8"]],
+		status: 502,
+		statusText: "Bad Gateway"
+	};
+});
+```
+
+Both filters matter. `AbortError` fires whenever someone navigates away
+mid-load, so without that check every fast click shows an error page. The
+`destination` check stops a failed image or tracking pixel from replacing the
+whole document.
+
+`TransferResponse` is a plain object rather than a `Response`. It has to cross a
+`postMessage` boundary to the service worker, and a `Response` is not
+[structured-cloneable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
+
+### `client.hooks.lifecycle.navigate`
+
+Not on the frame. It lives on the proxied page's own client, so you reach it
+through an init hook:
+
+```js
+this.tap(frame.hooks.init.post, context => {
+	if (!context.isTopLevel) return;
+	this.tap(context.client.hooks.lifecycle.navigate, (context, props) => {
+		console.log(context.type, props.url);
+	});
+});
+```
+
+| Field          | Type                                      |
+| -------------- | ----------------------------------------- |
+| `context.type` | `"location" \| "history" \| "hashchange"` |
+| `props.url`    | `string`                                  |
+
+This fires for in-page navigation (`history.pushState`, hash changes, `location`
+assignments) which `init.post` misses, because no new document gets created.
+`UrlWatcherPlugin` wraps this same pattern, so unless you need `context.type`
+use the plugin instead of tapping it yourself.
+
+---
+
+## The plugins you get for free
+
+From `$scramjetUtils`. All are `ManagedPlugin`s, so they go straight into
+`createFrame()`.
+
+| Plugin                    | Constructor               | Name            | Depends on      |
+| ------------------------- | ------------------------- | --------------- | --------------- |
+| `HttpCachePlugin`         | `(options?)`              | `http-cache`    | nothing         |
+| `UrlWatcherPlugin`        | `(onUrlChange, options?)` | `url-watcher`   | nothing         |
+| `CatchEscapedLinksPlugin` | `(toLocation)`            | escaped links   | nothing         |
+| `EventHandlerPlugin`      | `(options?)`              | `event-handler` | nothing         |
+| `LinkHandlerPlugin`       | `(onNewTab, options?)`    | `link-handler`  | `event-handler` |
+
+- **`HttpCachePlugin`** caches subresources so a reload does not pull every
+  asset back through the tunnel.
+- **`UrlWatcherPlugin`** calls back with the frame's URL on every change.
+- **`CatchEscapedLinksPlugin`** takes `(url: URL) => string | URL` and redirects
+  navigations that would leave the proxy to whatever you return.
+- **`EventHandlerPlugin`** lets you register listeners that run _after_ the
+  page's own, including after `stopPropagation()`. Its `options.events` defaults
+  to `click`, `auxclick`, and `contextmenu`.
+- **`LinkHandlerPlugin`** turns anchor clicks and middle-clicks into a
+  `onNewTab(url)` callback instead of a navigation. Requires
+  `EventHandlerPlugin` on the same frame.
+
+```js
+const utils = globalThis.$scramjetUtils;
+
+const frame = controller.createFrame(iframe, {
+	plugins: [
+		new utils.HttpCachePlugin(),
+		new utils.UrlWatcherPlugin(url => (address.value = url)),
+		new utils.CatchEscapedLinksPlugin(url => new URL("/", location.origin))
+	]
+});
+```
+
+**You almost certainly want `UrlWatcherPlugin`.** Scramjet 2.x has no
+`urlchange` event, so it is the only reliable way to know where a frame went. It
+fires on real navigations, hash changes, and `history.pushState`. See
+[URL parsing and history](../guides/url-parsing-and-history.md).
+
+**`CatchEscapedLinksPlugin` takes a function that returns a URL**, and that URL
+is where the escaping navigation gets sent instead. Returning
+`new URL(location.href)` cancels it in place; returning a `data:` URL shows a
+message; routing back through your own shell lets you open it in a new tab.
+
+---
+
+## Where to go next
+
+- [Config and flags](scramjet-config.md). The other half of controlling
+  Scramjet, and the one that decides how the rewriter behaves.
+- [Custom protocols](../guides/custom-protocols.md). `fetch.request` and
+  `earlyResponse` applied to internal pages.
+- [Cookies and sessions](../guides/cookies-and-sessions.md). What the controller
+  owns, and why plugins should not manage cookies themselves.
+- [`packages/utils/src/`](https://github.com/MercuryWorkshop/scramjet/tree/main/packages/utils/src)
+  upstream is five readable plugins, and the best templates you will find. When
+  this page and that source disagree, the source wins.

@@ -204,19 +204,35 @@ for (const src of [
 }
 
 const api = window.$scramjetController;
-api.config.scramjetPath = "/scram/scramjet.js";
-api.config.wasmPath = "/scram/scramjet.wasm";
-api.config.injectPath = "/controller/controller.inject.js";
 
 const { default: LibcurlClient } = await import("/libcurl/index.mjs");
 const scheme = location.protocol === "https:" ? "wss:" : "ws:";
 const transport = new LibcurlClient({
 	wisp: `${scheme}//${location.host}/wisp/`
 });
-const controller = new api.Controller({ serviceworker, transport });
+
+const controller = new api.Controller({
+	serviceworker,
+	transport,
+	config: {
+		scramjetPath: "/scram/scramjet.js",
+		wasmPath: "/scram/scramjet.wasm",
+		injectPath: "/controller/controller.inject.js"
+	}
+});
 
 await controller.wait();
 ```
+
+Those three paths have to match where you mounted the packages, because the
+defaults assume a different layout. You will also see them written as
+`api.config.wasmPath = …` before construction; both work, but passing `config`
+does not mutate shared global state. Every option is listed in
+[Config and flags](../reference/scramjet-config.md).
+
+Do not skip `await controller.wait()`. It waits for the wasm rewriter to compile
+and the cookie jar to load, so a frame created before it resolves gets a first
+page load with no cookies. See [Cookies and sessions](cookies-and-sessions.md).
 
 The load order is core, controller, then utils. To switch transports later,
 serve both modules and pass a new instance to `controller.setTransport()`.
@@ -225,8 +241,7 @@ Register the service worker once, here, and construct one controller for the
 whole page. Frames come from `controller.createFrame()`, so a second
 registration or a second controller buys nothing and costs a duplicate wisp
 connection. For the same reason, `setTransport()` belongs on an actual transport
-change and not on every navigation — see
-[Transports](../concepts/transports.md).
+change and not on every navigation. See [Transports](../concepts/transports.md).
 
 ## Which one
 

@@ -45,7 +45,7 @@ opening the menu does not.
 
 ---
 
-## Why validation is not optional here
+## Why validation matters more here
 
 A proxy's settings are unusually dangerous compared to a normal app's. Consider
 what a wisp URL controls:
@@ -252,7 +252,7 @@ export const write = (name, value) => {
 };
 ```
 
-Three things earn their place here:
+Three things that module does:
 
 **Every access is wrapped in try/catch.** `localStorage` can throw when storage
 is blocked or over quota. A settings read must never take down the app.
@@ -316,11 +316,11 @@ whether it worked.
 
 Note what that listener does: `onChange` fires for **every** setting, so
 changing the home page or the search engine runs `applyTransportSettings` too.
-That is the right shape for the call site — it stays one line and can never go
-stale as the schema grows — but only because the engine treats a repeat of the
-current transport as a no-op. If yours rebuilds unconditionally, editing an
-unrelated field constructs a second WebAssembly client and swaps it under every
-open frame. See
+That is the right shape for the call site, since it stays one line and can never
+go stale as the schema grows, but it works only because the engine treats a
+repeat of the current transport as a no-op. If yours rebuilds unconditionally,
+editing an unrelated field constructs a second WebAssembly client and swaps it
+under every open frame. See
 [Switch only when the choice actually changed](../concepts/transports.md).
 
 Apply stored settings once at boot too, or a saved choice silently reverts to

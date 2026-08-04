@@ -75,6 +75,11 @@ export const nav = [
 				title: "Custom protocols"
 			},
 			{
+				slug: "guides/cookies-and-sessions",
+				file: "guides/cookies-and-sessions.md",
+				title: "Cookies and sessions"
+			},
+			{
 				slug: "guides/search-engines",
 				file: "guides/search-engines.md",
 				title: "Search engines"
@@ -100,6 +105,11 @@ export const nav = [
 				title: "Deployment"
 			},
 			{
+				slug: "guides/running-a-proxy",
+				file: "guides/running-a-proxy.md",
+				title: "Running a proxy"
+			},
+			{
 				slug: "guides/site-best-practices",
 				file: "guides/site-best-practices.md",
 				title: "Practices worth knowing"
@@ -109,6 +119,21 @@ export const nav = [
 	{
 		title: "Reference",
 		items: [
+			{
+				slug: "reference/scramjet-config",
+				file: "reference/scramjet-config.md",
+				title: "Config and flags"
+			},
+			{
+				slug: "reference/plugins-and-hooks",
+				file: "reference/plugins-and-hooks.md",
+				title: "Plugins and hooks"
+			},
+			{
+				slug: "reference/site-compatibility",
+				file: "reference/site-compatibility.md",
+				title: "Site compatibility"
+			},
 			{
 				slug: "reference/versions",
 				file: "reference/versions.md",

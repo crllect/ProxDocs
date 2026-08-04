@@ -27,8 +27,8 @@ and you start getting consent walls, interstitials, and eventually a CAPTCHA
 that no amount of rewriting will get you past.
 
 Nothing is wrong with your proxy when this happens. Google is deciding your
-server's IP is not a person. It is worth knowing before you spend an evening
-debugging the rewriter.
+server's IP is not a person. Know that before you spend an evening debugging the
+rewriter.
 
 ## DuckDuckGo
 

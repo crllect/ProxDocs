@@ -331,6 +331,6 @@ config.codec = { encode, decode };
 Two constraints: the output must be path-safe, and **encode/decode must be
 byte-for-byte inverses** for every input including unicode and already-encoded
 sequences. A codec that round-trips imperfectly produces failures that look like
-rewriter bugs and are miserable to trace.
+rewriter bugs and are very hard to trace.
 
 Do not tell users a codec hides their browsing. It does not.

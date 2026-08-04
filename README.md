@@ -262,8 +262,7 @@ Ultraviolet 3.x ultraviolet ^3.2.10 + bare-mux ^2.1.9
                 libcurl ^1  epoxy ^2   (bare-mux generation)
 ```
 
-Mixing the transport generations is the most common cause of a proxy that
-installs cleanly and then does nothing. See
+Mixing the transport generations causes your proxy to shit itself. See
 [the version matrix](docs/reference/versions.md).
 
 Note that `npm install @mercuryworkshop/scramjet` gives you **1.1.0**, 2.x is

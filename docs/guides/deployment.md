@@ -42,8 +42,8 @@ long-lived Node process and supports WebSocket upgrades.
 
 ## HTTPS
 
-Not optional. Without it there is no service worker, and without a service
-worker there is no proxy.
+Required. Without it there is no service worker, and without a service worker
+there is no proxy.
 
 **On a VPS**, put Caddy in front. It gets and renews certificates automatically
 and proxies WebSockets correctly with no extra configuration:
@@ -56,8 +56,8 @@ proxy.crllect.dev {
 
 Caddy handles ACME, HTTP/2, and WebSocket upgrades with that config.
 
-With nginx you must be explicit, and forgetting this is the most common
-"WebSockets don't work in production" cause:
+With nginx you must be explicit, and forgetting this is the most common culprit
+of "WebSockets don't work in production":
 
 ```nginx
 location / {
@@ -76,16 +76,8 @@ location / {
 
 ### Cloudflare
 
-Cloudflare proxying works with WebSockets, but check two things:
-
-- **Do not enable "Rocket Loader" or HTML minification.** They rewrite your HTML
-  and can break the proxy shell.
-- **Confirm COOP/COEP survive.** Cloudflare features can add or alter response
-  headers. Verify `crossOriginIsolated === true` in production, not just
-  locally.
-
-Also be aware Cloudflare's terms of service cover running proxies, and enabling
-their proxy puts your traffic through them.
+You can run the backend on workers, and the frontend on pages. But its some bs
+and I wouldn't recommend it.
 
 ---
 
@@ -240,8 +232,12 @@ Public proxies attract abuse, and hosts respond to complaints. Expect:
   `noindex` only asks search engines not to index a page; it does not prevent
   filtering vendors from discovering it.
 - **Abuse reports.** Your IP is the source of whatever users do. Rate limiting
-  and a blocklist for abusive destinations are worth having before you need
+  and a blocklist for abusive destinations should be in place before you need
   them.
+
+[Running a proxy](running-a-proxy.md) covers all three in depth, with the
+bandwidth arithmetic, a rate limiter, and the wisp options that stop your server
+being used to reach its own internal network.
 
 [Practices worth knowing](site-best-practices.md) covers storage, disclosure,
 performance, and accessibility.

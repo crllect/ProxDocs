@@ -8,8 +8,7 @@ which is what the generator uses.
 
 ## Pick a row and use everything in it
 
-The single most common cause of a proxy that installs cleanly and then does
-nothing is mixing generations. These are the two that work:
+Here are two working mixing generations:
 
 ### Scramjet 2.x, current architecture
 

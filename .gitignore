@@ -30,6 +30,9 @@ coverage/
 .prettier-cache
 .vercel/
 
+/TODO.md
+/references/
+
 /.generated/
 /functions/_generated/
 .wrangler/

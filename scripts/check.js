@@ -15,6 +15,7 @@ import { shell } from "../site/layout.js";
 import { highlight } from "../site/public/highlight.js";
 import { compose } from "../builder/node.js";
 import { toJavaScript } from "../builder/transpile.js";
+import { versions, verifiedOn } from "../builder/versions.js";
 import {
 	presets,
 	features,
@@ -106,6 +107,60 @@ for (const page of pages) {
 }
 
 if (!brokenLinks) ok(`${linkCount} relative links resolve`);
+
+console.log("\nVersion pins");
+
+const pinnedPackages = {
+	"@mercuryworkshop/scramjet": versions.scramjet,
+	"@mercuryworkshop/scramjet-controller": versions.scramjetController,
+	"@mercuryworkshop/scramjet-utils": versions.scramjetUtils,
+	"@mercuryworkshop/proxy-bootstrap": versions.proxyBootstrap,
+	"@mercuryworkshop/libcurl-transport": versions.libcurlTransport,
+	"@mercuryworkshop/epoxy-transport": versions.epoxyTransport,
+	"@mercuryworkshop/proxy-transports": versions.proxyTransports,
+	"@mercuryworkshop/bare-mux": versions.bareMux,
+	"@mercuryworkshop/wisp-js": versions.wispJs,
+	"@titaniumnetwork-dev/ultraviolet": versions.ultraviolet
+};
+
+let pinCount = 0;
+let stalePins = 0;
+
+const bareVersion = value => value.replace(/^[\^~]/, "");
+
+for (const page of pages) {
+	let source;
+	try {
+		source = await readFile(path.join(docsDir, page.file), "utf8");
+	} catch {
+		continue;
+	}
+
+	for (const [name, expected] of Object.entries(pinnedPackages)) {
+		const escaped = name.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
+		const pattern = new RegExp(`${escaped}@([\\w.^~-]+)`, "g");
+
+		for (const [, found] of source.matchAll(pattern)) {
+			pinCount++;
+			if (bareVersion(found) === bareVersion(expected)) continue;
+			fail(
+				`${page.file} pins ${name}@${found}, but builder/versions.js says ${expected}`
+			);
+			stalePins++;
+		}
+	}
+
+	if (page.slug === "reference/versions" && !source.includes(verifiedOn)) {
+		fail(
+			`${page.file} does not carry the verifiedOn date from builder/versions.js (${verifiedOn})`
+		);
+		stalePins++;
+	}
+}
+
+if (!stalePins) {
+	ok(`${pinCount} version pins match builder/versions.js`);
+}
 
 console.log("\nMarkdown rendering");
 
@@ -312,7 +367,7 @@ for (const combo of combinations) {
 	try {
 		({ files } = await compose({ name: "checkapp", ...combo.options }));
 	} catch (error) {
-		fail(`${combo.label}: compose threw — ${error.message}`);
+		fail(`${combo.label}: compose threw - ${error.message}`);
 		continue;
 	}
 
@@ -341,7 +396,7 @@ for (const combo of combinations) {
 		packageData = JSON.parse(files["package.json"]);
 	} catch (error) {
 		fail(
-			`${combo.label}: package.json is not valid JSON — ${error.message}`
+			`${combo.label}: package.json is not valid JSON - ${error.message}`
 		);
 	}
 
@@ -461,7 +516,7 @@ for (const combo of combinations) {
 			await run(process.execPath, ["--check", file]);
 		} catch (error) {
 			fail(
-				`${combo.label}: ${path.relative(dir, file)} — ${String(error.stderr).split("\n")[0]}`
+				`${combo.label}: ${path.relative(dir, file)} - ${String(error.stderr).split("\n")[0]}`
 			);
 		}
 	}
@@ -471,7 +526,7 @@ for (const combo of combinations) {
 			await toJavaScript(contents, relative);
 		} catch (error) {
 			fail(
-				`${combo.label}: ${relative} — ${error.message.split("\n")[0]}`
+				`${combo.label}: ${relative} - ${error.message.split("\n")[0]}`
 			);
 		}
 	}
@@ -571,7 +626,7 @@ for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
 				? ""
 				: `:${diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start).line + 1}`)
 		: (owner?.label ?? "generator");
-	fail(`${owner?.label ?? "generator"}: ${where} — ${message}`);
+	fail(`${owner?.label ?? "generator"}: ${where} - ${message}`);
 }
 
 await rm(tmp, { recursive: true, force: true, maxRetries: 3 });

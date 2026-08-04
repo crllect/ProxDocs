@@ -120,7 +120,7 @@ The transport probably failed to construct **inside the SharedWorker**, and
 SharedWorker errors do not appear in the page console.
 
 Open `chrome://inspect/#workers` (or Firefox's `about:debugging`) and inspect
-the worker directly. This is the single most useful bare-mux debugging trick and
+the worker directly. It is the best bare-mux debugging trick there is, and
 almost nobody knows it.
 
 ---
@@ -164,7 +164,7 @@ In this order:
 
 1. **Try the other transport.** libcurl and epoxy use different HTTP/TLS
    implementations, so a site may work with one and not the other. This is why
-   [transport switching](../concepts/transports.md) is worth shipping.
+   ship [transport switching](../concepts/transports.md).
 2. **Try Scramjet if you are on Ultraviolet.** UV's JavaScript rewriter breaks
    on more sites, and it is archived, so those breakages are permanent.
 3. **Check whether the site needs WebSockets.** If you are on a Bare deployment,

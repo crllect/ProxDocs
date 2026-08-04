@@ -72,7 +72,7 @@ Three things are happening:
 1. **`bootstrap()`** downloads the Scramjet packages and returns two routers. It
    serves the Scramjet bundle, the wasm rewriter, the controller,
    scramjet-utils, the transport client, `/sw.js`, and `/bootstrap-init.js`.
-2. **The COOP/COEP headers** are not optional. Scramjet's rewriter needs
+2. **The COOP/COEP headers** have to be there. Scramjet's rewriter needs
    `SharedArrayBuffer`, which browsers withhold from pages that are not
    cross-origin isolated. Remove them and the app loads and then quietly fails.
    See [Cross-origin isolation](../concepts/cross-origin-isolation.md).
@@ -99,7 +99,7 @@ frame.go("https://crllect.dev");
 service worker, loads every bundle, builds the transport, and hands back a ready
 `Controller`.
 
-The plugins are worth knowing:
+What the three plugins do:
 
 - **`HttpCachePlugin`** caches subresources so a reload does not pull every
   asset back through the tunnel.
@@ -154,8 +154,8 @@ Run this in the browser console first:
 crossOriginIsolated;
 ```
 
-`false` means the headers are missing or you are not on `https://` or
-`localhost`. That is the single most common failure.
+`false` means the headers are missing, or, you aren't on `https://` or
+`localhost`.
 
 Then check whether the service worker took control:
 

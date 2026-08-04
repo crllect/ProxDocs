@@ -227,10 +227,10 @@ const doc = tab.element.contentDocument;
 const title = doc?.title;
 ```
 
-This works, the frame is on your origin, but it is unreliable in a way worth
-knowing: it is only correct _after_ the document has parsed its `<head>`, and
-single-page apps change the title later without any navigation event. Reading it
-on the `load` event catches most cases and misses SPA updates.
+This works, since the frame is on your origin, but it is unreliable in a
+specific way: it is only correct _after_ the document has parsed its `<head>`,
+and single-page apps change the title later without any navigation event.
+Reading it on the `load` event catches most cases and misses SPA updates.
 
 A `MutationObserver` on the proxied `<title>` element handles SPAs, at the cost
 of holding a reference into another document that may navigate away. The
@@ -265,7 +265,7 @@ eagerly reintroduces exactly the problem that keeping frames mounted solves.
 For this to actually free anything, `destroy()` has to unregister the frame from
 the controller. `controller.createFrame()` pushes onto `controller.frames` and
 Scramjet 2.x has no matching remove, so dropping the iframe alone leaves the
-`Frame` — its fetch handler, plugins, and hooks — reachable for the life of the
+`Frame`, its fetch handler, plugins, and hooks, reachable for the life of the
 page. Every close and every discard adds one, and `setTransport()` then walks
 them all. Take it out yourself:
 

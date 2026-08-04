@@ -154,18 +154,18 @@ const boot = async (): Promise<ScramjetController> => {
 		window as never as {
 			$scramjetController: {
 				Controller: new (init: object) => ScramjetController;
-				config: Record<string, string>;
 			};
 		}
 	).$scramjetController;
 
-	api.config.scramjetPath = "/scram/scramjet.js";
-	api.config.wasmPath = "/scram/scramjet.wasm";
-	api.config.injectPath = "/controller/controller.inject.js";
-
 	controller = new api.Controller({
 		serviceworker,
-		transport: await buildTransport(currentTransport)
+		transport: await buildTransport(currentTransport),
+		config: {
+			scramjetPath: "/scram/scramjet.js",
+			wasmPath: "/scram/scramjet.wasm",
+			injectPath: "/controller/controller.inject.js"
+		}
 	});
 
 	await controller.wait();

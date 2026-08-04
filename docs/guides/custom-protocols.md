@@ -2,7 +2,7 @@
 
 Browsers give their own pages a private scheme: `chrome://settings`,
 `about:config`, `edge://flags`. You can do the same, `myproxy://settings`, and
-it is worth doing for a concrete reason, not just aesthetics.
+there are concrete reasons to, beyond it looking nice.
 
 ---
 
@@ -181,7 +181,7 @@ Scramjet can intercept a request before it leaves for the network and answer it
 locally. A plugin taps the frame's fetch hook and sets `props.earlyResponse`:
 
 ```js
-import { Plugin } from "@mercuryworkshop/scramjet";
+const { Plugin } = globalThis.$scramjet;
 
 const plugin = new Plugin("internal-pages");
 
@@ -193,16 +193,21 @@ plugin.tap(frame.hooks.fetch.request, (context, props) => {
 });
 ```
 
+`Plugin` is read off `globalThis.$scramjet` rather than imported. Importing it
+from `@mercuryworkshop/scramjet` at the top of a module breaks in ways that look
+unrelated; see [Reading Scramjet's exports](../reference/plugins-and-hooks.md).
+This is a bare `Plugin`, which taps a hook on a frame that already exists,
+different from a `ManagedPlugin`, which is what you pass to `createFrame()`.
+
 Nothing is fetched. Scramjet renders a site that has no server behind it, on an
 origin you invented. Scramjet's own demo playground does exactly this, which is
 where the placeholder name `fakeorigin.com` comes from; it is a domain in an
 example, not an API.
 
-**This is an excellent tool, and it is worth knowing about.** Serving a whole
-origin from a plugin covers offline pages, blocklist interstitials, injected
-homepages, and stubbing a real site so you can test against it without touching
-the network. The other three taps, `intercept`, `preresponse`, and `response`,
-let you rewrite real responses on the way back.
+**Learn this one.** Serving a whole origin from a plugin covers offline pages,
+blocklist interstitials, injected homepages, and stubbing a real site so you can
+test against it without touching the network. The other three taps, `intercept`,
+`preresponse`, and `response`, let you rewrite real responses on the way back.
 
 It would also, on the face of it, be a better fit for internal pages than
 `srcdoc`. The pages would have real URLs, so native history would work and the

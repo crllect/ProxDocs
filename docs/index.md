@@ -59,14 +59,22 @@ question. You use Scramjet _over_ wisp.
 | [Settings](guides/settings.md)                               | Validated, persisted settings that cannot brick your app |
 | [URL parsing and history](guides/url-parsing-and-history.md) | An address bar that behaves like a browser's             |
 | [Custom protocols](guides/custom-protocols.md)               | Internal pages on your own scheme                        |
+| [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break         |
 | [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev   |
 | [Bootstrap or manual](guides/wiring.md)                      | The two ways to serve the engine, and what each costs    |
 | [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | An all-in-one deployment over Bare                       |
 | [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun     |
 | [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                      |
+| [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch    |
 | [Practices worth knowing](guides/site-best-practices.md)     | Shared storage, performance, accessibility               |
 
 ### Reference
+
+| Page                                                  | What it answers                                    |
+| ----------------------------------------------------- | -------------------------------------------------- |
+| [Config and flags](reference/scramjet-config.md)      | Every Scramjet option, what it does, what breaks   |
+| [Plugins and hooks](reference/plugins-and-hooks.md)   | The extension surface, and how to write against it |
+| [Site compatibility](reference/site-compatibility.md) | Why a given site fails, and whether you can fix it |
 
 [Version matrix](reference/versions.md) ·
 [Breaking changes](reference/breaking-changes.md) ·
