@@ -13,9 +13,9 @@ Cross-Origin-Embedder-Policy: require-corp
 
 ## Why it is needed
 
-Scramjet's rewriter is WebAssembly, and it uses **`SharedArrayBuffer`** to move
-data between JavaScript and wasm without copying, necessary when you are
-rewriting megabytes of JavaScript per page load.
+Scramjet's [rewriter](how-proxies-work.md) is WebAssembly, and it uses
+**`SharedArrayBuffer`** to move data between JavaScript and wasm without
+copying, necessary when you are rewriting megabytes of JavaScript per page load.
 
 To use `SharedArrayBuffer`, the page must be **cross-origin isolated**. That
 means proving no untrusted cross-origin content shares your process. You prove

@@ -17,10 +17,10 @@ to become tab destinations. The builder supports two modes:
 Without custom protocols, the menu renders the selected page into a separate
 dialog iframe. The active proxy iframe stays mounted underneath it. The popup
 writes into that iframe's existing document rather than assigning `srcdoc`,
-because a child-frame navigation would still add to the browser's joint session
-history. Opening, saving, and closing the dialog never calls `navigate()`,
-`session.go()`, `back()`, or `forward()`, so the current URL and both history
-stacks stay where they were.
+because a child [frame](multiple-tabs.md) navigation would still add to the
+browser's joint session history. Opening, saving, and closing the dialog never
+calls `navigate()`, `session.go()`, `back()`, or `forward()`, so the current URL
+and both history stacks stay where they were.
 
 ```js
 const openPopup = name => {

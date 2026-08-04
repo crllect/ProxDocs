@@ -3,6 +3,9 @@
 The stack has four layers. Identifying the layer responsible for a URL, login,
 or WebSocket problem narrows down where to debug it.
 
+Unfamiliar term? The [glossary](../reference/glossary.md) defines every one of
+them in a line, with a link to the page that goes deeper.
+
 ---
 
 ## The problem being solved
@@ -59,7 +62,7 @@ generation different from old server-side proxies:
 
 The rewriter is why `https://crllect.dev/foo` becomes
 `https://proxy.crllect.dev/~/sj/<controller>/<frame>/https%3A%2F%2Fcrllect.dev%2Ffoo`
-in a Scramjet 2 frame.
+in a Scramjet 2 [frame](../guides/multiple-tabs.md).
 
 > **Why a service worker?** It is the only browser API that lets you intercept
 > and synthesise responses for requests you did not initiate, on your own

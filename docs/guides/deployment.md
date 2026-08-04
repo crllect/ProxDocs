@@ -36,9 +36,9 @@ sometimes does not.
 | **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns   |
 
 If you have no platform constraint, use a VPS or another host that runs a
-long-lived Node process and supports WebSocket upgrades. It is the cheapest
-option as well as the most capable: a proxy is almost pure bandwidth, and a VPS
-sells that at a flat rate while serverless bills it per GB.
+long-lived Node process and supports WebSocket upgrades. It is the most capable
+option, and past very low traffic the cheapest: a proxy is almost pure
+bandwidth, and a VPS sells that at a flat rate while serverless bills it per GB.
 
 ---
 

@@ -10,14 +10,14 @@ node builder/cli.js --out ./astro-proxy --preset astroPreact
 ```
 
 The React preset renders the browser shell from `src/ProxyShell.tsx` and starts
-the proxy controller from a React effect after the shell commits. The Astro
-preset renders the same component as a hydrated Preact island from
+the proxy [controller](wiring.md) from a React effect after the shell commits.
+The Astro preset renders the same component as a hydrated Preact island from
 `src/pages/index.astro`.
 
 Both keep proxy sessions outside framework state. React or Preact owns the
 stable controls and containers; `app.ts` owns iframe creation, navigation, tabs,
-and popup documents. This avoids rerendering an active proxy frame when UI state
-changes.
+and popup documents. This avoids rerendering an active proxy
+[frame](multiple-tabs.md) when UI state changes.
 
 Use React when the rest of your client already uses React. Use Astro + Preact
 when you want a static page with only the proxy shell hydrated. The generated

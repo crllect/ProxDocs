@@ -12,8 +12,9 @@ defeats simple substring matching.
 
 **`about:blank` cloaking hides the URL from someone looking at the screen.** It
 adds no network privacy. A client-side network observer normally sees the proxy
-endpoint, while the Wisp or Bare server sees the destination. A managed-browser
-extension can inspect the page before transport encryption.
+endpoint, while the [Wisp](../concepts/wisp-vs-bare.md) or Bare server sees the
+destination. A managed-browser extension can inspect the page before
+[transport](../concepts/transports.md) encryption.
 
 **Over bare, you can read everything.** TLS terminates on your server. If you
 run a bare deployment, say so.

@@ -55,6 +55,9 @@ with nothing explaining why. Catching it in the parser turns that into a
 sentence. This covers `localhost`, `*.localhost`, `127.0.0.1`, and `::1`, with
 or without a scheme.
 
+Which engine you send those searches to matters too, and not every engine
+survives a proxy: see [Search engines](search-engines.md).
+
 There is also a privacy failure hiding in the first row. When a URL is
 misclassified as a search, **you send it to a search engine**. Users paste URLs
 containing session tokens, password-reset links, and invite codes. Silently

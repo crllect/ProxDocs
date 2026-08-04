@@ -107,7 +107,8 @@ Two things it has to satisfy:
 1. **Output must be path-safe.** It goes in a URL path segment.
 2. **`decode(encode(x)) === x` for every input**, including unicode and strings
    that are already percent-encoded. A codec that round-trips imperfectly
-   produces failures that look like rewriter bugs and are very hard to trace.
+   produces failures that look like [rewriter](../concepts/how-proxies-work.md)
+   bugs and are very hard to trace.
 
 **A codec is obfuscation, not encryption.** The implementation ships in your
 client bundle, so anyone can decode it. It defeats naive substring matching on

@@ -5,12 +5,14 @@ Wisp because its persistent WebSocket outlives a function request. An all-in-one
 Vercel build therefore uses **Ultraviolet over Bare**. Wisp may instead run on a
 separate WebSocket-capable host.
 
-**This is a testing and small-scale option, not a destination.** It works, and
-it is the only way to put a whole proxy on a serverless host, but the tradeoffs
-below are severe and the bill grows with every user. Read them before you
-commit. For anything you expect to keep running, a cheap VPS is both better and
-cheaper. My first ever proxy landed me an $600 monthly bill because I was using
-vercel pro, don't make that mistake.
+This works, and for a lot of projects it is the right call. If you have no
+server, no budget, and a handful of users, serverless is the only way to put a
+whole proxy somewhere for free, and the costs below never come due at that size.
+
+What it is not is a path that scales. Read the tradeoffs before you commit, so
+that if the project grows the move is planned rather than forced. My first ever
+proxy landed me an $600 monthly bill because I was using vercel pro, don't make
+that mistake.
 
 ```bash
 node builder/cli.js --out ./my-proxy --preset staticHost
@@ -184,10 +186,14 @@ changes something UV gets wrong, it stays wrong.
 
 ### It gets expensive faster than anything else here
 
-The one that ends most serverless proxies. Every byte of every proxied page
-crosses the function twice, in from the target and out to the user, and
-serverless egress is billed at a premium rate per GB. A proxy is nothing but
-egress.
+Every byte of every proxied page crosses the function twice, in from the target
+and out to the user, and serverless egress is billed at a premium rate per GB. A
+proxy is nothing but egress.
+
+At low traffic this genuinely does not matter, which is why plenty of small
+proxies run this way without trouble. It matters once traffic grows, and it
+grows faster than people expect: one person watching an hour of video can move
+several GB.
 
 A VPS with a few TB of included transfer costs a few dollars a month and does
 not surprise you. Serverless has no equivalent ceiling. Compare your provider's

@@ -21,7 +21,7 @@ needs to reach the network.
 Without coordination each context builds its own transport. That means:
 
 - **Several TLS stacks in memory.** Each wasm instance is megabytes.
-- **Several Wisp WebSockets** to your server, per user.
+- **Several [Wisp](wisp-vs-bare.md) WebSockets** to your server, per user.
 - **Split state.** Connection reuse, cookies, and settings do not line up
   between contexts.
 - **Nothing to switch.** Changing transports would mean rebuilding it

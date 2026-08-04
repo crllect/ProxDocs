@@ -15,7 +15,8 @@ performance.getEntriesByType("resource").filter(r => r.name.includes("wasm"));
 ```
 
 For Scramjet, the first value must be `true`, the second should name your
-`sw.js`, and the third should include the rewriter's WebAssembly file.
+`sw.js`, and the third should include the
+[rewriter](../concepts/how-proxies-work.md)'s WebAssembly file.
 
 ---
 
@@ -163,8 +164,8 @@ And confirm the upgrade headers are forwarded, see
 In this order:
 
 1. **Try the other transport.** libcurl and epoxy use different HTTP/TLS
-   implementations, so a site may work with one and not the other. This is why
-   ship [transport switching](../concepts/transports.md).
+   implementations, so a site may work with one and not the other. Shipping
+   [transport switching](../concepts/transports.md) gives users that fallback.
 2. **Try Scramjet if you are on Ultraviolet.** UV's JavaScript rewriter breaks
    on more sites, and it is archived, so those breakages are permanent.
 3. **Check whether the site needs WebSockets.** If you are on a Bare deployment,
@@ -176,6 +177,9 @@ In this order:
 Some sites will not work. Heavy anti-bot protection, aggressive integrity
 checking, and DRM video are the usual categories, and no amount of configuration
 changes that.
+
+[Site compatibility](site-compatibility.md) works through the categories in
+order, so you can tell which one you are hitting before spending time on it.
 
 ### Brave Search becomes `/undefined`
 

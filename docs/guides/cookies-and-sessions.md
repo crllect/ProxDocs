@@ -27,7 +27,7 @@ keeps its own.
 
 ## The `CookieJar`
 
-The controller owns a single `CookieJar`:
+The [controller](wiring.md) owns a single `CookieJar`:
 
 ```js
 controller.cookieJar;

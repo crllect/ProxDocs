@@ -109,6 +109,10 @@ What the three plugins do:
 - **`CatchEscapedLinksPlugin`** catches `window.open` and `target="_blank"`,
   which would otherwise escape the proxy entirely.
 
+Five plugins ship with `scramjet-utils`, and you can write your own against the
+same hooks. [Plugins and hooks](../reference/plugins-and-hooks.md) documents the
+full surface.
+
 > **`frame.go()` is synchronous.** It rewrites the URL and assigns `iframe.src`.
 > Awaiting it does nothing useful. The real "it loaded" signal is the
 > `UrlWatcherPlugin` callback. Some examples in the wild `await` it, which is
@@ -166,7 +170,8 @@ navigator.serviceWorker.controller?.scriptURL;
 `undefined` means it has not claimed the page yet, reload once. If it stays
 undefined, look for registration errors in the console.
 
-Full list: [Troubleshooting](../reference/troubleshooting.md).
+Full list: [Troubleshooting](../reference/troubleshooting.md). Unfamiliar
+terminology: [Glossary](../reference/glossary.md).
 
 ---
 

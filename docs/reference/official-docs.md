@@ -6,10 +6,10 @@ upstream, upstream is right.
 ## Licensing, first
 
 This repository and its generated projects are **AGPL-3.0-only**. The dependency
-licenses are mixed: current Scramjet, controller, epoxy-transport, and
-libcurl-transport packages are AGPL, while Ultraviolet and proxy-transports are
-MIT. Check every installed package's current license before distributing a
-project.
+licenses are mixed: current Scramjet, [controller](../guides/wiring.md),
+epoxy-[transport](../concepts/transports.md), and libcurl-transport packages are
+AGPL, while Ultraviolet and proxy-transports are MIT. Check every installed
+package's current license before distributing a project.
 
 The AGPL is not the MIT licence. The part that catches people:
 

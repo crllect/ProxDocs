@@ -1,8 +1,8 @@
 # Wiring Scramjet
 
 Scramjet needs browser files from the core, controller, utils, and transport
-packages. It also needs a service worker and a Wisp endpoint. Wiring is how
-those get served.
+packages. It also needs a service worker and a
+[Wisp](../concepts/wisp-vs-bare.md) endpoint. Wiring is how those get served.
 
 **Do it manually.** You install the packages and serve five static directories.
 That is the whole job, and everything else on this site assumes it.

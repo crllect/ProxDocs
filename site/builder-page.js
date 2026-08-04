@@ -99,7 +99,7 @@ export const buildPage = ({ nav }) => {
               <input type="checkbox" name="serverless" value="vercel">
               <span class="choice__body">
                 <span class="choice__label">Include Vercel config</span>
-                <span class="choice__tagline">Adds vercel.json. Workable for testing, but bandwidth costs add up fast.</span>
+                <span class="choice__tagline">Adds vercel.json. Forces Ultraviolet over Bare, which serverless requires.</span>
               </span>
             </label>
           </div>

@@ -86,7 +86,7 @@ cd my-proxy && npm install && npm start
 | `barebones`   | Vanilla        | JavaScript, no bundler  | Scramjet with bootstrap | Smallest readable build          |
 | `standard`    | Vanilla        | TypeScript, Vite, SCSS  | Scramjet                | Most browser features            |
 | `everything`  | Vanilla        | Bun, Vite, Tailwind CSS | Scramjet                | Every optional feature           |
-| `staticHost`  | Vanilla        | JavaScript, no bundler  | Ultraviolet over Bare   | All-in-one Vercel deployment     |
+| `staticHost`  | Vanilla        | JavaScript, no bundler  | Ultraviolet over Bare   | Serverless, no server to run     |
 | `react`       | React          | TypeScript, Vite        | Scramjet                | Hydrated React shell             |
 | `astroPreact` | Astro + Preact | TypeScript, Astro       | Scramjet                | Static page with a Preact island |
 
@@ -96,7 +96,7 @@ Or answer the questions yourself:
 node builder/cli.js --out ./my-proxy \
     --language ts --runtime bun --server express \
     --frontend react --bundler vite --styling tailwind \
-    --engine scramjet --wiring manual --transport libcurl \
+    --engine scramjet --transport libcurl \
     --features browserControls,tabs,settings,transportSwitch,history,bookmarks
 ```
 
@@ -112,10 +112,13 @@ node builder/cli.js --out ./my-proxy \
 | `--bundler`         | `vite`, `none`                             |
 | `--styling`         | `plain`, `scss`, `tailwind`                |
 | `--engine`          | `scramjet`, `ultraviolet`                  |
-| `--wiring`          | `manual`, `bootstrap`                      |
 | `--transport`       | `libcurl`, `epoxy`, `bare`                 |
-| `--host`            | `node`, `vercel`                           |
 | `--features`        | Comma-separated feature identifiers below. |
+
+Two more flags exist but are not part of the normal path. `--wiring manual`
+(default) or `bootstrap` picks how Scramjet's browser files are served; see
+[wiring](docs/guides/wiring.md). `--host node` (default) or `vercel` targets a
+serverless function, which forces Ultraviolet over Bare.
 
 | Feature identifier | Adds                                                 |
 | ------------------ | ---------------------------------------------------- |
@@ -129,11 +132,16 @@ node builder/cli.js --out ./my-proxy \
 | `aboutPages`       | Navigable custom-protocol pages inside the proxy tab |
 
 Combinations that cannot work are corrected and explained rather than generated
-broken. Framework frontends and TypeScript require a build step. The all-in-one
-Vercel build uses Ultraviolet over Bare because Vercel Functions cannot host
-Wisp's persistent WebSocket. A Scramjet client can be served by Vercel when Wisp
-is hosted separately. Fastify on Bun falls back to Express because
-`@fastify/static` serves empty bodies there.
+broken. Framework frontends need a build step, and TypeScript needs one unless
+you are happy shipping it uncompiled. Tailwind without a build step loads from
+the Tailwind CDN. Fastify on Bun falls back to Express because `@fastify/static`
+serves empty bodies there.
+
+Serverless hosting forces Ultraviolet over Bare, because Vercel Functions cannot
+hold Wisp's persistent WebSocket open. It works, and it is a reasonable choice
+if you have no server and no budget. A proxy is almost pure egress though, and
+serverless bills egress per GB, so the economics stop working as traffic grows.
+A Scramjet client can still be served from Vercel when Wisp runs elsewhere.
 
 Run `node builder/cli.js --help` for the full list.
 

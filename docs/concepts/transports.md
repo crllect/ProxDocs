@@ -1,8 +1,9 @@
 # Transports
 
-A **transport** is the client-side code that performs a request. The rewriter
-hands it "GET `https://crllect.dev/`, with these headers" and expects a response
-back. How it gets one is the transport's business.
+A **transport** is the client-side code that performs a request. The
+[rewriter](how-proxies-work.md) hands it "GET `https://crllect.dev/`, with these
+headers" and expects a response back. How it gets one is the transport's
+business.
 
 That indirection is the point: the rewriter does not care whether the bytes came
 over wisp, over bare, or from somewhere else entirely.

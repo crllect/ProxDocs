@@ -28,9 +28,9 @@ Does any site work?
 ```
 
 Open the **frame's** console, not the top page's. In Chrome devtools that is the
-context dropdown at the top of the console panel; pick the proxied frame. Errors
-inside a proxied page do not appear in the parent console, and people spend
-hours looking at the wrong one.
+context dropdown at the top of the console panel; pick the proxied
+[frame](../guides/multiple-tabs.md). Errors inside a proxied page do not appear
+in the parent console, and people spend hours looking at the wrong one.
 
 ---
 

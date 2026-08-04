@@ -15,7 +15,8 @@ The official documentation site currently documents the **Scramjet 1.x** API.
 
 The repository's `main` branch has moved to a different architecture: separate
 `scramjet-controller` and `scramjet-utils` packages, a `Controller` class,
-plugin-based frames, and `proxy-transports` instead of bare-mux.
+[plugin](plugins-and-hooks.md)-based frames, and `proxy-transports` instead of
+bare-mux.
 
 Both are real. 1.x is the npm `latest` and what most community code uses; 2.x is
 where development happens. Neither is wrong. Just check which one a given guide
@@ -100,8 +101,9 @@ are on Ultraviolet. See the [version matrix](versions.md).
 | `scramjet-controller` | Window-side API, service worker | `$scramjetController` |
 | `scramjet-utils`      | Official plugins                | `$scramjetUtils`      |
 
-All three must be served and loaded **in that order**. The controller expects
-`$scramjet` to exist, and utils expects the controller.
+All three must be served and loaded **in that order**. The
+[controller](../guides/wiring.md) expects `$scramjet` to exist, and utils
+expects the controller.
 
 ```js
 const runtimeScripts = [
@@ -164,7 +166,7 @@ self.addEventListener("fetch", event => {
 
 Before 3.0, UV talked to a bare server directly and `__uv$config.bare` was the
 whole configuration. From 3.0 the request layer goes through bare-mux, so you
-must set a transport before anything works:
+must set a [transport](../concepts/transports.md) before anything works:
 
 ```js
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js");

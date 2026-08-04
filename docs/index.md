@@ -62,7 +62,7 @@ question. You use Scramjet _over_ wisp.
 | [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break         |
 | [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev   |
 | [Wiring Scramjet](guides/wiring.md)                          | Serving the engine, its service worker, and Wisp         |
-| [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | Serverless, for testing and small scale only             |
+| [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | An all-in-one deployment over Bare, and what it costs    |
 | [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun     |
 | [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                      |
 | [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch    |
@@ -164,10 +164,11 @@ local-site functionality.
 - `about:blank` cloaking hides a URL from someone looking at your screen. It
   adds no network privacy. What an observer sees depends on whether the proxy
   uses Wisp or Bare; a managed-browser extension can still inspect the page.
-- Scramjet handles more sites. Serverless hosting needs Ultraviolet over Bare,
-  which is workable for testing but gets expensive quickly, since every proxied
-  byte is billed egress. A small VPS is cheaper and better. Vercel can still
-  serve a Scramjet client when Wisp runs elsewhere.
+- Scramjet handles more sites, so prefer it where you have the choice.
+  Serverless hosting does not give you that choice: it needs Ultraviolet over
+  Bare. That combination is free to start and fine at small scale, but every
+  proxied byte is billed egress, so it stops adding up as traffic grows. Vercel
+  can still serve a Scramjet client when Wisp runs elsewhere.
 - The published Scramjet docs currently describe the 1.x API while the
   repository has moved on. [Breaking changes](reference/breaking-changes.md)
   tracks the difference.
