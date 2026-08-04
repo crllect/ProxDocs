@@ -5,9 +5,12 @@ Wisp because its persistent WebSocket outlives a function request. An all-in-one
 Vercel build therefore uses **Ultraviolet over Bare**. Wisp may instead run on a
 separate WebSocket-capable host.
 
-Read [the tradeoffs](#what-you-are-giving-up) before you commit to it. They are
-significant, and "move to a host that supports WebSockets" is often the better
-answer.
+**This is a testing and small-scale option, not a destination.** It works, and
+it is the only way to put a whole proxy on a serverless host, but the tradeoffs
+below are severe and the bill grows with every user. Read them before you
+commit. For anything you expect to keep running, a cheap VPS is both better and
+cheaper. My first ever proxy landed me an $600 monthly bill because I was using
+vercel pro, don't make that mistake.
 
 ```bash
 node builder/cli.js --out ./my-proxy --preset staticHost
@@ -178,6 +181,19 @@ a bad thing to be quiet about.
 Ultraviolet's JavaScript rewriter breaks on more sites than Scramjet's Rust/WASM
 one, and it is [archived](../concepts/scramjet-vs-ultraviolet.md), when a site
 changes something UV gets wrong, it stays wrong.
+
+### It gets expensive faster than anything else here
+
+The one that ends most serverless proxies. Every byte of every proxied page
+crosses the function twice, in from the target and out to the user, and
+serverless egress is billed at a premium rate per GB. A proxy is nothing but
+egress.
+
+A VPS with a few TB of included transfer costs a few dollars a month and does
+not surprise you. Serverless has no equivalent ceiling. Compare your provider's
+per-GB egress price against a VPS bandwidth allowance before you deploy this
+somewhere the public can reach. Though in complete honesty, I would recommend
+using unlimited bandwidth VPSs exclusively unless your project is really small.
 
 ### Execution limits and cold starts
 

@@ -182,14 +182,20 @@ if (form) {
 			engine: data.get("engine"),
 			wiring: data.get("wiring"),
 			transport: data.get("transport"),
-			host: data.get("host"),
+			host:
+				data.get("engine") === "ultraviolet" &&
+				form.querySelector('[name="serverless"]')?.checked
+					? "vercel"
+					: "node",
 			features: data.getAll("features")
 		};
 	};
 
 	const applyPreset = options => {
+		const serverless = form.querySelector('[name="serverless"]');
+		if (serverless) serverless.checked = options.host === "vercel";
 		for (const [key, value] of Object.entries(options)) {
-			if (key === "features") continue;
+			if (key === "features" || key === "host") continue;
 			const input = form.querySelector(
 				`[name="${key}"][value="${value}"]`
 			);
@@ -214,33 +220,42 @@ if (form) {
 		});
 
 		if (!response.ok) return;
-		const { files, options, notes, blocked } = await response.json();
+		const { files, options, notes, blocked, consequence } =
+			await response.json();
 
 		currentFiles = files;
 
 		for (const [field, reasons] of Object.entries(blocked ?? {})) {
-			const name = field === "features" ? "features" : field;
-			for (const input of form.querySelectorAll(`[name="${name}"]`)) {
+			for (const input of form.querySelectorAll(`[name="${field}"]`)) {
 				const reason = reasons[input.value];
-				input.disabled = Boolean(reason) && !input.checked;
+				const note = consequence?.[field]?.[input.value];
+				const unavailable = Boolean(reason) && !input.checked;
+
+				input.disabled = unavailable;
 				const label = input.closest(".choice");
 				if (!label) continue;
+
+				label.classList.toggle("choice--blocked", unavailable);
 				label.classList.toggle(
-					"choice--blocked",
-					Boolean(reason) && !input.checked
+					"choice--adjusts",
+					!unavailable && Boolean(note)
 				);
-				if (reason) label.title = reason;
+
+				const title = reason ?? note;
+				if (title) label.title = title;
 				else label.removeAttribute("title");
 			}
 		}
 
 		for (const [key, value] of Object.entries(options)) {
-			if (key === "features") continue;
+			if (key === "features" || key === "host") continue;
 			const input = form.querySelector(
 				`[name="${key}"][value="${value}"]`
 			);
 			if (input) input.checked = true;
 		}
+		const serverless = form.querySelector('[name="serverless"]');
+		if (serverless) serverless.checked = options.host === "vercel";
 		for (const box of form.querySelectorAll('[name="features"]')) {
 			box.checked = options.features.includes(box.value);
 		}
@@ -330,6 +345,20 @@ if (form) {
 		clearTimeout(debounce);
 		debounce = setTimeout(refresh, 150);
 	});
+
+	const setAllFeatures = checked => {
+		for (const box of form.querySelectorAll('[name="features"]')) {
+			if (!box.disabled) box.checked = checked;
+		}
+		refresh();
+	};
+
+	document
+		.querySelector("#features-all")
+		?.addEventListener("click", () => setAllFeatures(true));
+	document
+		.querySelector("#features-none")
+		?.addEventListener("click", () => setAllFeatures(false));
 
 	for (const button of document.querySelectorAll("[data-preset]")) {
 		button.addEventListener("click", async () => {

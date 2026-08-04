@@ -113,7 +113,8 @@ export const styling = {
 	tailwind: {
 		label: "Tailwind",
 		tagline: "Utility classes.",
-		needsBundler: true
+		detail: "With no build step it loads from the Tailwind CDN instead.",
+		needsBundler: false
 	}
 };
 
@@ -376,9 +377,9 @@ export const exampleNames = {
 export const defaults = {
 	name: "my-proxy",
 	language: "ts",
-	packageManager: "npm",
+	packageManager: "bun",
 	runtime: "node",
-	server: "express",
+	server: "fastify",
 	frontend: "vanilla",
 	bundler: "vite",
 	styling: "plain",
@@ -386,7 +387,7 @@ export const defaults = {
 	wiring: "manual",
 	transport: "libcurl",
 	host: "node",
-	features: ["browserControls"]
+	features: ["browserControls", "tabs"]
 };
 
 export const incompatibilities = opts => {
@@ -426,8 +427,6 @@ export const incompatibilities = opts => {
 			break;
 		default:
 			out.transport.bare = "Scramjet has no bare transport.";
-			out.host.vercel =
-				"Scramjet needs a WebSocket, which serverless hosts cannot hold open.";
 	}
 
 	if (opts.wiring === "bootstrap") {
@@ -452,7 +451,6 @@ export const incompatibilities = opts => {
 		out.language.ts =
 			"The browser cannot run TypeScript without a build step.";
 		out.styling.scss = "SCSS has to be compiled.";
-		out.styling.tailwind = "Tailwind has to be compiled.";
 	}
 
 	for (const [id, def] of Object.entries(servers)) {
@@ -629,6 +627,75 @@ export const resolve = (raw = {}) => {
 	opts.transportBackend = transports[opts.transport].backend;
 
 	return { options: opts, notes };
+};
+
+/**
+ * Splits every choice into two buckets by asking the resolver what actually
+ * happens if you pick it.
+ *
+ *   blocked      the value cannot be applied at all, so the UI disables it
+ *   consequence  the value applies but adjusts something else, so the UI keeps
+ *                it clickable and explains what will change
+ *
+ * Deriving this from resolve() rather than a second hand-written table means
+ * the two can never disagree, which is how "greyed out but it would have
+ * worked" bugs got in.
+ */
+export const availability = opts => {
+	const reasons = incompatibilities(opts);
+	const tables = {
+		language: languages,
+		runtime: runtimes,
+		server: servers,
+		frontend: frontends,
+		bundler: bundlers,
+		styling: styling,
+		engine: engines,
+		transport: transports,
+		host: hosts
+	};
+
+	const blocked = {};
+	const consequence = {};
+
+	for (const [field, table] of Object.entries(tables)) {
+		blocked[field] = {};
+		consequence[field] = {};
+
+		for (const value of Object.keys(table)) {
+			if (value === opts[field]) continue;
+
+			const attempt = resolve({ ...opts, [field]: value });
+			const applied = attempt.options[field] === value;
+			const reason = reasons[field]?.[value];
+
+			if (!applied) {
+				blocked[field][value] =
+					reason ?? `${value} cannot be used with these choices.`;
+			} else if (attempt.notes.length) {
+				consequence[field][value] = attempt.notes.join(" ");
+			}
+		}
+	}
+
+	blocked.features = {};
+	consequence.features = {};
+	for (const key of Object.keys(features)) {
+		if (opts.features.includes(key)) continue;
+		const attempt = resolve({
+			...opts,
+			features: [...opts.features, key]
+		});
+		if (!attempt.options.features.includes(key)) {
+			blocked.features[key] =
+				reasons.features?.[key] ??
+				`${key} cannot be used with these choices.`;
+		} else if (attempt.notes.length) {
+			consequence.features[key] = attempt.notes.join(" ");
+		}
+	}
+
+	return { blocked, consequence };
 };
 
 export const has = (opts, feature) => opts.features.includes(feature);

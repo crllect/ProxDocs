@@ -63,9 +63,11 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		...options.features
 	]);
 
+	if (!isVite && options.styling === "tailwind") flags.add("tailwindCdn");
 	if (isScramjet && !isBootstrap) flags.add("scramjetManual");
 	if (isFramework) flags.add("frameworkFrontend");
-	if (isReact || options.styling === "tailwind") flags.add("vitePlugins");
+	if (isReact || (isVite && options.styling === "tailwind"))
+		flags.add("vitePlugins");
 	if (hasMenuPages) flags.add("menuPages");
 	if (hasMenuPages && !options.features.includes("aboutPages"))
 		flags.add("popupMenus");

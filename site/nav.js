@@ -119,9 +119,9 @@ export const nav = [
 			{
 				slug: "guides/wiring",
 				file: "guides/wiring.md",
-				title: "Bootstrap or manual",
+				title: "Wiring Scramjet",
 				description:
-					"The two ways to serve Scramjet: proxy-bootstrap at runtime, or manual wiring with pinned packages."
+					"How to serve Scramjet's browser files, service worker, and Wisp endpoint, with pinned package versions."
 			},
 			{
 				slug: "guides/ultraviolet-vercel",

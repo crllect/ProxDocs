@@ -1,74 +1,15 @@
-# Bootstrap or manual wiring
+# Wiring Scramjet
 
 Scramjet needs browser files from the core, controller, utils, and transport
-packages. It also needs a service worker and a Wisp endpoint. Manual wiring
-installs those packages and serves them as static directories. Bootstrap skips
-the install and builds the same routes at runtime.
+packages. It also needs a service worker and a Wisp endpoint. Wiring is how
+those get served.
 
-## Bootstrap
+**Do it manually.** You install the packages and serve five static directories.
+That is the whole job, and everything else on this site assumes it.
 
-Install the server and bootstrap package:
-
-```bash
-npm install express @mercuryworkshop/proxy-bootstrap@0.0.5
-```
-
-Create `server.mjs` so Node treats the file as an ES module:
-
-```js
-import http from "node:http";
-import express from "express";
-import { bootstrap } from "@mercuryworkshop/proxy-bootstrap";
-
-const app = express();
-const { routeRequest, routeUpgrade } = await bootstrap({
-	transport: "libcurl"
-});
-
-app.use((_req, res, next) => {
-	res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-	res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-	next();
-});
-
-app.use((req, res, next) => {
-	if (routeRequest(req, res)) return;
-	next();
-});
-
-app.use(express.static("public"));
-
-const server = http.createServer(app);
-server.on("upgrade", (req, socket, head) => {
-	if (routeUpgrade(req, socket, head)) return;
-	socket.end();
-});
-
-server.listen(8080);
-```
-
-Run it with `node server.mjs`.
-
-Load the bootstrap client before your module in `public/index.html`:
-
-```html
-<script src="/bootstrap-init.js"></script>
-<script type="module" src="/js/app.js"></script>
-```
-
-The client setup is one call:
-
-```js
-const controller = await initBootstrap();
-```
-
-`bootstrap()` resolves and caches its runtime package set, serves the browser
-assets and service worker, and handles Wisp upgrades. Those runtime packages do
-not appear in your application's lockfile. A fresh deployment or replacement
-container may need npm access while the cache is rebuilt.
-
-`proxy-bootstrap@0.0.5` should be used with libcurl; its epoxy client route is
-broken. Use manual wiring to serve epoxy or to switch transports.
+There is a second way, `proxy-bootstrap`, which fetches and serves the same
+files at runtime. Upstream's `create-proxy-app` scaffolds with it, so it is
+covered at the bottom.
 
 ## Manual wiring
 
@@ -243,19 +184,90 @@ registration or a second controller buys nothing and costs a duplicate wisp
 connection. For the same reason, `setTransport()` belongs on an actual transport
 change and not on every navigation. See [Transports](../concepts/transports.md).
 
-## Which one
+## proxy-bootstrap
 
-| Capability                        | Bootstrap | Manual                   |
-| --------------------------------- | --------- | ------------------------ |
-| Server setup                      | One call  | One install, five mounts |
-| Runtime transport switching       | No        | Yes                      |
-| Runtime packages in your lockfile | No        | Yes                      |
-| npm access needed on a fresh boot | Yes       | No                       |
-| Service worker maintained by you  | No        | Yes                      |
+The other path. Upstream's `create-proxy-app` uses it, so plenty of projects
+start here even though manual wiring is the better place to end up.
 
-Manual wiring is the better default, and it is what every preset except
-barebones uses. The extra work is an `npm install` and five `express.static`
-lines, and it buys you pinned versions in your lockfile, startup with no network
-access, custom paths, and transport switching. Reach for bootstrap when you want
-the shortest possible server file and none of that matters. The builder emits
-both versions from the same feature set.
+Install the server and bootstrap package:
+
+```bash
+npm install express @mercuryworkshop/proxy-bootstrap@0.0.5
+```
+
+Create `server.mjs` so Node treats the file as an ES module:
+
+```js
+import http from "node:http";
+import express from "express";
+import { bootstrap } from "@mercuryworkshop/proxy-bootstrap";
+
+const app = express();
+const { routeRequest, routeUpgrade } = await bootstrap({
+	transport: "libcurl"
+});
+
+app.use((_req, res, next) => {
+	res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+	res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+	next();
+});
+
+app.use((req, res, next) => {
+	if (routeRequest(req, res)) return;
+	next();
+});
+
+app.use(express.static("public"));
+
+const server = http.createServer(app);
+server.on("upgrade", (req, socket, head) => {
+	if (routeUpgrade(req, socket, head)) return;
+	socket.end();
+});
+
+server.listen(8080);
+```
+
+Run it with `node server.mjs`.
+
+Load the bootstrap client before your module in `public/index.html`:
+
+```html
+<script src="/bootstrap-init.js"></script>
+<script type="module" src="/js/app.js"></script>
+```
+
+The client setup is one call:
+
+```js
+const controller = await initBootstrap();
+```
+
+`bootstrap()` resolves and caches its runtime package set, serves the browser
+assets and service worker, and handles Wisp upgrades. Those runtime packages do
+not appear in your application's lockfile. A fresh deployment or replacement
+container may need npm access while the cache is rebuilt.
+
+`proxy-bootstrap@0.0.5` should be used with libcurl; its epoxy client route is
+broken. Use manual wiring to serve epoxy or to switch transports.
+
+## What bootstrap gives up
+
+| Capability                        | Manual                   | Bootstrap |
+| --------------------------------- | ------------------------ | --------- |
+| Server setup                      | One install, five mounts | One call  |
+| Runtime packages in your lockfile | Yes                      | No        |
+| Starts with no network access     | Yes                      | No        |
+| Runtime transport switching       | Yes                      | No        |
+| Works with Ultraviolet            | Yes                      | No        |
+| Service worker maintained by you  | Yes                      | No        |
+
+The row that matters most is the lockfile. Bootstrap resolves its runtime
+packages when the server boots, so an upstream release can change what your
+deployed app runs without you touching anything. Every other row follows from
+that same design.
+
+Bootstrap is a fine way to see a proxy working in two minutes, and that is what
+the barebones preset uses it for. For anything you intend to keep running, take
+the `npm install` and the five `express.static` lines.

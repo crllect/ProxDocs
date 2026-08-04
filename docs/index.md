@@ -61,8 +61,8 @@ question. You use Scramjet _over_ wisp.
 | [Custom protocols](guides/custom-protocols.md)               | Internal pages on your own scheme                        |
 | [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break         |
 | [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev   |
-| [Bootstrap or manual](guides/wiring.md)                      | The two ways to serve the engine, and what each costs    |
-| [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | An all-in-one deployment over Bare                       |
+| [Wiring Scramjet](guides/wiring.md)                          | Serving the engine, its service worker, and Wisp         |
+| [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | Serverless, for testing and small scale only             |
 | [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun     |
 | [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                      |
 | [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch    |
@@ -92,17 +92,17 @@ you did not ask for and fills in a few names.
 
 It asks about the stack:
 
-| Question          | Options                                            |
-| ----------------- | -------------------------------------------------- |
-| Language          | TypeScript or JavaScript                           |
-| Package manager   | npm, pnpm, yarn, bun                               |
-| Runtime           | Node or Bun                                        |
-| Server framework  | Express or Fastify                                 |
-| Frontend          | Vanilla, React, or Astro + Preact                  |
-| Build step        | Vite, or none at all                               |
-| Styling           | Plain CSS, SCSS, or Tailwind                       |
-| Proxy engine      | Scramjet, or Ultraviolet for all-in-one serverless |
-| Default transport | libcurl, epoxy, or bare                            |
+| Question          | Options                                         |
+| ----------------- | ----------------------------------------------- |
+| Language          | TypeScript or JavaScript                        |
+| Package manager   | npm, pnpm, yarn, bun                            |
+| Runtime           | Node or Bun                                     |
+| Server framework  | Express or Fastify                              |
+| Frontend          | Vanilla, React, or Astro + Preact               |
+| Build step        | Vite, or none at all                            |
+| Styling           | Plain CSS, SCSS, or Tailwind                    |
+| Proxy engine      | Scramjet, or Ultraviolet if you need serverless |
+| Default transport | libcurl, epoxy, or bare                         |
 
 It also asks about the features:
 
@@ -164,8 +164,10 @@ local-site functionality.
 - `about:blank` cloaking hides a URL from someone looking at your screen. It
   adds no network privacy. What an observer sees depends on whether the proxy
   uses Wisp or Bare; a managed-browser extension can still inspect the page.
-- Scramjet handles more sites. An all-in-one Vercel deployment uses Ultraviolet
-  over Bare; Vercel can serve a Scramjet client when Wisp is hosted separately.
+- Scramjet handles more sites. Serverless hosting needs Ultraviolet over Bare,
+  which is workable for testing but gets expensive quickly, since every proxied
+  byte is billed egress. A small VPS is cheaper and better. Vercel can still
+  serve a Scramjet client when Wisp runs elsewhere.
 - The published Scramjet docs currently describe the 1.x API while the
   repository has moved on. [Breaking changes](reference/breaking-changes.md)
   tracks the difference.

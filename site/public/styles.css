@@ -892,3 +892,39 @@ pre.filepreview {
 .choice--blocked:hover {
 	border-color: var(--border);
 }
+
+.legend-actions {
+	margin-left: 0.75rem;
+	font-weight: 400;
+}
+
+.linkish {
+	background: none;
+	border: 0;
+	padding: 0 0.35rem;
+	font: inherit;
+	font-size: 0.8125rem;
+	color: var(--accent, #6ea8fe);
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.linkish:hover {
+	opacity: 0.8;
+}
+
+.choice--adjusts .choice__label::after {
+	content: "adjusts other choices";
+	margin-left: 0.5rem;
+	font-size: 0.6875rem;
+	font-weight: 400;
+	opacity: 0.65;
+}
+
+.choice--compact {
+	align-items: center;
+}
+
+.choice--compact .choice__body {
+	gap: 0;
+}

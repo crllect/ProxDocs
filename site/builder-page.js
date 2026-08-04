@@ -9,10 +9,9 @@ import {
 	bundlers,
 	styling,
 	engines,
-	wirings,
 	transports,
-	hosts,
-	features
+	features,
+	defaults
 } from "../builder/options.js";
 
 const choice = (type, name, id, def, checked) => `
@@ -85,24 +84,45 @@ export const buildPage = ({ nav }) => {
           <input type="text" name="name" value="my-proxy" class="text-input" pattern="[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?" maxlength="60">
         </fieldset>
 
-        ${group("Language", radios("language", languages, "ts"))}
-        ${group("Package manager", radios("packageManager", packageManagers, "npm"))}
-        ${group("Runtime", radios("runtime", runtimes, "node"))}
-        ${group("Server framework", radios("server", servers, "express"))}
-        ${group("Frontend", radios("frontend", frontends, "vanilla"))}
-        ${group("Build step", radios("bundler", bundlers, "vite"))}
-        ${group("Styling", radios("styling", styling, "plain"))}
-        ${group("Where will you host it?", radios("host", hosts, "node"))}
-        ${group("Proxy engine", radios("engine", engines, "scramjet"))}
-        ${group("Wiring", radios("wiring", wirings, "manual"), 'data-when-engine="scramjet"')}
-        ${group("Default transport", radios("transport", transports, "libcurl"))}
+        ${group("Language", radios("language", languages, defaults.language))}
+        ${group("Package manager", radios("packageManager", packageManagers, defaults.packageManager))}
+        ${group("Runtime", radios("runtime", runtimes, defaults.runtime))}
+        ${group("Server framework", radios("server", servers, defaults.server))}
+        ${group("Frontend", radios("frontend", frontends, defaults.frontend))}
+        ${group("Build step", radios("bundler", bundlers, defaults.bundler))}
+        ${group("Styling", radios("styling", styling, defaults.styling))}
+        ${group("Proxy engine", radios("engine", engines, defaults.engine))}
+        <fieldset data-when-engine="ultraviolet">
+          <legend>Serverless</legend>
+          <div class="choices">
+            <label class="choice choice--compact">
+              <input type="checkbox" name="serverless" value="vercel">
+              <span class="choice__body">
+                <span class="choice__label">Include Vercel config</span>
+                <span class="choice__tagline">Adds vercel.json. Workable for testing, but bandwidth costs add up fast.</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+        ${group("Default transport", radios("transport", transports, defaults.transport))}
 
         <fieldset>
-          <legend>Features</legend>
+          <legend>Features
+            <span class="legend-actions">
+              <button type="button" id="features-all" class="linkish">Select all</button>
+              <button type="button" id="features-none" class="linkish">Clear</button>
+            </span>
+          </legend>
           <div class="choices">
             ${Object.entries(features)
 				.map(([id, def]) =>
-					choice("checkbox", "features", id, def, false)
+					choice(
+						"checkbox",
+						"features",
+						id,
+						def,
+						defaults.features.includes(id)
+					)
 				)
 				.join("")}
           </div>

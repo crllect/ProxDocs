@@ -22,20 +22,36 @@ up with a regex, people copied it, and it stuck.
 
 Three lines, and it fails on all of these:
 
-| Input                     | What it does                               | What it should do       |
-| ------------------------- | ------------------------------------------ | ----------------------- |
-| `localhost:3000`          | Searches for it, no dot                    | Navigate                |
-| `what is 3.5mm cable`     | Navigates to `https://what is 3.5mm cable` | Search                  |
-| `1.5`                     | Navigates to `https://1.5`                 | Search                  |
-| `https://x.com`           | Fine                                       | Fine                    |
-| `httpfoo.com`             | Fine by luck                               | Navigate                |
-| `mailto:user@crllect.dev` | Prepends `https://`                        | Hand off to the browser |
-| `javascript:alert(1)`     | Prepends `https://`                        | Refuse                  |
-| `münchen.de`              | Works by accident                          | Navigate                |
+| Input                     | The three-line version                     | The parser below                          |
+| ------------------------- | ------------------------------------------ | ----------------------------------------- |
+| `what is 3.5mm cable`     | Navigates to `https://what is 3.5mm cable` | Searches                                  |
+| `1.5`                     | Navigates to `https://1.5`                 | Searches                                  |
+| `localhost:3000`          | Searches, because there is no dot          | Navigates to `https://localhost:3000/`    |
+| `127.0.0.1:8080`          | Navigates, the dots are IP octets          | Navigates to `https://127.0.0.1:8080/`    |
+| `münchen.de`              | Navigates, the browser punycodes it        | Navigates to `https://xn--mnchen-3ya.de/` |
+| `httpfoo.com`             | Navigates, the dot test happens to pass    | Navigates to `https://httpfoo.com/`       |
+| `https://x.com`           | Navigates                                  | Navigates                                 |
+| `mailto:user@crllect.dev` | Navigates to `https://mailto:user@…`       | Hands off to the browser                  |
+| `ftp://ftp.gnu.org/`      | Navigates to `https://ftp://ftp.gnu.org/`  | Hands off to the browser                  |
+| `javascript:alert(1)`     | Navigates to `https://javascript:alert(1)` | Refuses, shows a message                  |
+| `data:text/html,x`        | Navigates to `https://data:text/html,x`    | Refuses, shows a message                  |
 
-The `javascript:` row matters. If your address bar can be populated from a link
-or a query parameter, blindly navigating a `javascript:` URL is an XSS vector on
-your own origin.
+The last four rows are the ones people miss. A scheme the proxy cannot carry is
+not an error and not a search: `mailto:` and `tel:` get handed to the browser
+with `location.assign()`, which opens the user's mail or dial handler the way a
+normal link would. `javascript:` and `data:` are refused outright, because both
+execute on **your** origin.
+
+That last point is the one with teeth. If your address bar can be populated from
+a link or a query parameter, blindly navigating a `javascript:` URL is an XSS
+vector on your own origin.
+
+One caveat on the two loopback rows. The parser correctly recognises
+`localhost:3000` as a host rather than a search, but the request is made by your
+**wisp server**, not by the browser, so it resolves to the server's own loopback
+and not the user's machine. A correctly configured server refuses it: see
+[`allow_loopback_ips`](running-a-proxy.md). Recognising the shape and refusing
+the connection are separate jobs, and this page is only about the first.
 
 There is also a privacy failure hiding in the first row. When a URL is
 misclassified as a search, **you send it to a search engine**. Users paste URLs
