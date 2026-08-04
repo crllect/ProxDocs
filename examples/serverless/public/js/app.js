@@ -233,14 +233,18 @@ $("#reload").addEventListener("click", () => {
 });
 const menu = $("#menu");
 const menuToggle = $("#menu-toggle");
+const menuRoot = menu;
+const closeMenu = () => {
+    menu.hidden = true;
+    menuToggle.setAttribute("aria-expanded", "false");
+};
 menuToggle.addEventListener("click", () => {
     menu.hidden = !menu.hidden;
     menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
 });
-for (const button of menu.querySelectorAll("[data-open]")) {
+for (const button of menuRoot.querySelectorAll("[data-open]")) {
     button.addEventListener("click", () => {
-        menu.hidden = true;
-        menuToggle.setAttribute("aria-expanded", "false");
+        closeMenu();
         void navigate(button.dataset.open);
     });
 }

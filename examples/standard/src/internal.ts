@@ -1,4 +1,4 @@
-import cssText from "./styles.scss?inline";
+import cssText from "./styles.css?inline";
 
 export type InternalPage = {
 	title: string;
@@ -58,6 +58,7 @@ export const listPages = () =>
 		url: `standard://${name}`
 	}));
 
+export const scheme = "standard";
 export const homeUrl = `standard://home`;
 
 export const pageName = (rawUrl: string): string | null => {

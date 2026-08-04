@@ -41,12 +41,10 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	const staticRoot = isVite ? "dist" : "public";
 	const appEntry = isVite ? `/src/app.${ext}` : "/js/app.js";
 	const styleExt = options.styling === "scss" ? "scss" : "css";
-	const hasMenuPages = [
-		"settings",
-		"history",
-		"bookmarks",
-		"aboutPages"
-	].some(feature => options.features.includes(feature));
+	const menuItems = ["settings", "history", "bookmarks", "aboutPages"].filter(
+		feature => options.features.includes(feature)
+	);
+	const hasMenuPages = menuItems.length > 0;
 
 	const flags = new Set([
 		options.engine,
@@ -69,6 +67,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	if (isReact || (isVite && options.styling === "tailwind"))
 		flags.add("vitePlugins");
 	if (hasMenuPages) flags.add("menuPages");
+	if (menuItems.length === 1) flags.add("menuSingle");
 	if (hasMenuPages && !options.features.includes("aboutPages"))
 		flags.add("popupMenus");
 	if (engines[options.engine].requiresIsolation)
@@ -105,10 +104,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		STORAGE_NAMESPACE: options.name,
 		INTERNAL_SCHEME: internalScheme(options.name),
 		SCRAMJET_VERSION: versions.scramjet,
-		ENGINE_VERSION:
-			options.engine === "scramjet"
-				? versions.scramjet
-				: versions.ultraviolet.replace(/^[^\d]*/, ""),
+		ENGINE_VERSION: versions.scramjet,
 		ENGINE_LABEL: engines[options.engine].label,
 		DEFAULT_TRANSPORT: options.transport,
 		TRANSPORT_IDS: transportOptions
@@ -159,10 +155,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	if (isTs) await emitSource("client/types.ts", `${srcDir}/types`);
 	await emitSource("client/app.ts", `${srcDir}/app`);
 	await emitSource("client/url.ts", `${srcDir}/url`);
-	await emitSource(
-		isScramjet ? "engine/scramjet.ts" : "engine/ultraviolet.ts",
-		`${srcDir}/engine`
-	);
+	await emitSource("engine/scramjet.ts", `${srcDir}/engine`);
 
 	if (options.needsStorage)
 		await emitSource("client/storage.ts", `${srcDir}/storage`);
@@ -205,12 +198,8 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		files["public/styles.css"] = css;
 	}
 
-	if (isScramjet && !isBootstrap) {
+	if (!isBootstrap) {
 		await emitRaw("raw/sw-scramjet.js", "public/sw.js");
-	}
-	if (!isScramjet) {
-		await emitRaw("raw/uv-sw.js", "public/uv-sw.js");
-		await emitRaw("raw/uv.config.js", "public/uv-config.js");
 	}
 
 	await emitSource(`server/${options.server}.ts`, "server");
@@ -263,9 +252,10 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 				config: {
 					includeFiles: [
 						`${staticRoot}/**`,
-						"node_modules/@titaniumnetwork-dev/ultraviolet/**",
-						"node_modules/@mercuryworkshop/bare-mux/**",
-						"node_modules/@mercuryworkshop/bare-as-module3/**"
+						"node_modules/@mercuryworkshop/scramjet/**",
+						"node_modules/@mercuryworkshop/scramjet-controller/**",
+						"node_modules/@mercuryworkshop/scramjet-utils/**",
+						"node_modules/@mercuryworkshop/bare-transport/**"
 					]
 				}
 			}
@@ -369,17 +359,14 @@ const viteProxyConfig = options => {
 				http(p);
 		} else {
 			for (const p of ["/scram", "/utils", "/controller"]) http(p);
-			if (options.transport === "libcurl" || switches) http("/libcurl");
-			if (options.transport === "epoxy" || switches) http("/epoxy");
-		}
-	} else {
-		for (const p of ["/uv", "/baremux"]) http(p);
-		if (options.transportBackend === "wisp") {
-			if (options.transport === "libcurl" || switches) http("/libcurl");
-			if (options.transport === "epoxy" || switches) http("/epoxy");
-		} else {
-			http("/baremod");
-			http("/bare");
+			if (options.transportBackend === "bare") {
+				http("/baremod");
+				http("/bare");
+			} else {
+				if (options.transport === "libcurl" || switches)
+					http("/libcurl");
+				if (options.transport === "epoxy" || switches) http("/epoxy");
+			}
 		}
 	}
 
@@ -479,45 +466,28 @@ const packageJson = (
 			deps["@mercuryworkshop/proxy-bootstrap"] = versions.proxyBootstrap;
 		} else {
 			Object.assign(deps, scramjetSpecifiers);
-			if (
-				options.transport === "libcurl" ||
-				options.features.includes("transportSwitch")
-			) {
-				deps["@mercuryworkshop/libcurl-transport"] =
-					versions.libcurlTransport;
-			}
-			if (
-				options.transport === "epoxy" ||
-				options.features.includes("transportSwitch")
-			) {
-				deps["@mercuryworkshop/epoxy-transport"] =
-					versions.epoxyTransport;
-			}
-			deps["@mercuryworkshop/wisp-js"] = versions.wispJs;
-		}
-	} else {
-		deps["@titaniumnetwork-dev/ultraviolet"] = versions.ultraviolet;
-		deps["@mercuryworkshop/bare-mux"] = versions.bareMux;
 
-		if (options.transportBackend === "wisp") {
-			if (
-				options.transport === "libcurl" ||
-				options.features.includes("transportSwitch")
-			) {
-				deps["@mercuryworkshop/libcurl-transport"] =
-					versions.libcurlTransportLegacy;
+			if (options.transportBackend === "bare") {
+				deps["@mercuryworkshop/bare-transport"] =
+					versions.bareTransport;
+				deps["@tomphttp/bare-server-node"] = versions.bareServerNode;
+			} else {
+				if (
+					options.transport === "libcurl" ||
+					options.features.includes("transportSwitch")
+				) {
+					deps["@mercuryworkshop/libcurl-transport"] =
+						versions.libcurlTransport;
+				}
+				if (
+					options.transport === "epoxy" ||
+					options.features.includes("transportSwitch")
+				) {
+					deps["@mercuryworkshop/epoxy-transport"] =
+						versions.epoxyTransport;
+				}
+				deps["@mercuryworkshop/wisp-js"] = versions.wispJs;
 			}
-			if (
-				options.transport === "epoxy" ||
-				options.features.includes("transportSwitch")
-			) {
-				deps["@mercuryworkshop/epoxy-transport"] =
-					versions.epoxyTransportLegacy;
-			}
-			deps["@mercuryworkshop/wisp-js"] = versions.wispJs;
-		} else {
-			deps["@mercuryworkshop/bare-as-module3"] = versions.bareAsModule3;
-			deps["@tomphttp/bare-server-node"] = versions.bareServerNode;
 		}
 	}
 
@@ -652,7 +622,7 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 							`- **${features[f].label}:** ${features[f].tagline}`
 					)
 					.join("\n")
-			: "_None. This is the barebones build._",
+			: "_None. This is the minimal build._",
 		""
 	);
 
@@ -688,7 +658,7 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 		"```",
 		"",
 		`\`engine.${e}\` implements a small interface (\`init\`, \`createSession\`, \`setTransport\`).`,
-		"Feature modules use that interface. Changing engines also changes server mounts,",
+		"Feature modules use that interface. Changing transports also changes server mounts,",
 		"dependencies, service-worker files, and transport setup.",
 		""
 	);
@@ -700,12 +670,20 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 			"- **HTTPS in production.** Service workers do not run on plain HTTP",
 			"  (localhost is exempt).",
 			"- **Cross-origin isolation.** The server sets `Cross-Origin-Opener-Policy`",
-			"  and `Cross-Origin-Embedder-Policy`. Scramjet's wasm rewriter needs",
-			"  `SharedArrayBuffer`, which browsers withhold without them.",
-			"- **WebSockets.** The Wisp tunnel is a long-lived WebSocket, so serverless",
-			"  hosts will not work. Use a VPS, Render, Fly, Railway, or similar.",
-			""
+			"  and `Cross-Origin-Embedder-Policy`. The engine does not need these to",
+			"  run, but it re-sends them onto proxied responses, which is what lets a",
+			"  proxied site use `SharedArrayBuffer`. Drop them and any site that needs",
+			"  it breaks from inside its own code. Keep them."
 		);
+
+		if (options.transportBackend === "wisp") {
+			lines.push(
+				"- **WebSockets.** The Wisp tunnel is a long-lived WebSocket, so serverless",
+				"  hosts will not work. Use a VPS, Render, Fly, Railway, or similar."
+			);
+		}
+
+		lines.push("");
 	}
 
 	if (options.host === "vercel") {

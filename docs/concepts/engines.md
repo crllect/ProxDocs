@@ -1,20 +1,14 @@
-# Scramjet vs Ultraviolet
+# Proxy engines
 
-Short version: **use Scramjet**. For an all-in-one deployment whose backend
-cannot hold a WebSocket open, use Ultraviolet over Bare instead.
+An **engine** is the part that rewrites the web. It takes HTML, CSS and
+JavaScript on the way back from a site and edits it so every URL and every
+trapped global points back through your proxy instead of out to the real
+internet. Everything else in the stack, the transport, the service worker, your
+UI, exists to feed the engine or to display what it produces.
 
-Scramjet supports more current sites, while Ultraviolet supports a serverless
-Bare deployment. Hosting constraints determine which tradeoff is available.
-
----
-
-## They solve the same problem differently
-
-Both are interception proxies: a service worker on your origin catches requests
-from a proxied page and rewrites the response so the page stays inside the
-proxy. See [How a proxy works](how-proxies-work.md).
-
-The main implementation difference is how they rewrite JavaScript.
+This site documents **Scramjet**, and the builder generates Scramjet projects
+only. This page explains why, and what the other names you will run into
+actually were, so that reading someone else's proxy does not leave you guessing.
 
 ---
 
@@ -34,7 +28,7 @@ document.cookie = "session=abc";
 ```
 
 None of these are URLs in the source you can find and replace. They are
-_expressions_ that produce URLs at runtime. To handle them you must:
+_expressions_ that produce URLs at runtime. To handle them an engine must:
 
 1. Parse the JavaScript into a syntax tree.
 2. Find every reference to a trapped global. `location`, `fetch`, `parent`,
@@ -43,38 +37,22 @@ _expressions_ that produce URLs at runtime. To handle them you must:
 4. Emit valid JavaScript, preserving semantics exactly.
 5. Do all of that fast enough that pages do not visibly stall.
 
-Step 5 is where the engines diverge. **Every large site ships megabytes of
-JavaScript**, and all of it goes through this on every load.
-
-### Ultraviolet's approach
-
-A JavaScript rewriter using `meriyah` to parse and `astring` to generate code.
-Response rewriting usually runs in the service worker rather than on the page's
-main thread.
-
-Large bundles still require more JavaScript work, and some syntax and semantic
-edge cases are not handled. Test the sites you need on both engines.
-
-### Scramjet's approach
-
-The rewriter is written in **Rust and compiled to WebAssembly**. Scramjet traps
-more globals and handles more current syntax and runtime cases than the archived
-Ultraviolet release.
-
-Ultraviolet's README points at Scramjet as its successor.
+Step 5 is where engines have historically diverged. **Every large site ships
+megabytes of JavaScript**, and all of it goes through this on every load.
 
 ---
 
-## What Scramjet gives you beyond the rewriter
+## Scramjet
 
-**A larger client API.** Ultraviolet primarily gives the client an encoded URL
-to assign to `iframe.src`. Navigation tracking, error pages, and caching need
-separate code.
+The current generation, from Mercury Workshop. Its rewriter is written in **Rust
+and compiled to WebAssembly**, which is what lets it do the work above at a
+speed a JavaScript rewriter cannot match on large bundles.
 
-Scramjet 2.x has:
+What you get beyond the rewriter:
 
 - **Frames.** `controller.createFrame(element, { plugins })`, each with its own
-  URL prefix for [multiple tabs](../guides/multiple-tabs.md).
+  URL prefix, which is what makes [multiple tabs](../guides/multiple-tabs.md)
+  cheap.
 - **Plugins and hooks.** Tap into page init, request errors, and navigation.
   This is how you get URL-change events, HTTP caching, and custom error pages
   without hacking around the engine. The fetch hooks can also answer a request
@@ -85,120 +63,80 @@ Scramjet 2.x has:
 - **Escaped-link interception**, so `window.open` and `target="_blank"` stay
   inside your proxy.
 
-With Ultraviolet you reimplement each of these. The generated Ultraviolet
-adapter in this repo polls `iframe.contentWindow.location` on a timer to detect
-navigation, because there is no event to listen to. It works; it is not nice.
+It runs over [Wisp](wisp-vs-bare.md) by default, and over
+[Bare](wisp-vs-bare.md) when your host cannot hold a WebSocket open. See
+[Serverless deployment](../guides/serverless.md).
+
+The costs, stated plainly: the rewriter wasm is **203 KB gzipped** on top of an
+88 KB bundle, so roughly 291 KB before your own code. And 2.x ships under the
+`alpha` dist-tag, with an API that has changed between patch releases. Pin your
+versions. See [the version matrix](../reference/versions.md).
 
 ---
 
-## What Ultraviolet still has
+## The engines you will see referenced
 
-**It supports an all-in-one request/response deployment.** Ultraviolet can use
-Bare without Wisp.
+You will run into these in other people's code, in old guides, and in Discord
+answers. None of them are documented here as a path to build on, and the builder
+will not generate them. This is only so you can recognise what you are looking
+at.
 
-Scramjet requires:
+### Ultraviolet
 
-- `SharedArrayBuffer`, therefore
-  [cross-origin isolation](cross-origin-isolation.md), therefore COOP/COEP
-  headers on every response and HTTPS.
-- [Wisp](wisp-vs-bare.md), therefore a persistent WebSocket, therefore a host
-  that can hold one open.
+TitaniumNetwork's engine, and the one every proxy ran before Scramjet. A
+JavaScript rewriter using `meriyah` to parse and `astring` to generate.
 
-Ultraviolet requires none of that. Its rewriter is plain JavaScript, so no
-`SharedArrayBuffer` and no isolation headers. And because it can use a
-[bare](wisp-vs-bare.md) transport over ordinary HTTP, an all-in-one build can
-deploy to request/response platforms such as Vercel Functions. Vercel can still
-serve a Scramjet client when Wisp is hosted separately.
+**It is dead.** Last release 3.2.10 in October 2024, README pointing at Scramjet
+as its successor, and an ecosystem that has largely moved on and would like the
+copy-pasted UV forks to stop appearing. Its one remaining virtue is being about
+**126 KB gzipped** against Scramjet's 291 KB, which is not a good enough reason
+to build on an engine nobody is fixing.
 
-Ultraviolet over Bare avoids the rewriter WebAssembly and client TLS stack.
-Ultraviolet over libcurl or epoxy still downloads a WebAssembly TLS stack.
+You are here because you know UV and want to know what the Scramjet equivalent
+is. Roughly:
 
----
+| Ultraviolet                                   | Scramjet 2.x                                         |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `__uv$config` global                          | `config` and `scramjetConfig` passed to `Controller` |
+| `__uv$config.prefix`, one global              | `frame.prefix`, one per frame                        |
+| `Ultraviolet.codec.xor`                       | `config.codec`, `encodeURIComponent` by default      |
+| `iframe.src = prefix + encodeUrl(url)`        | `frame.go(url)`                                      |
+| Poll `contentWindow.location` for the URL     | `UrlWatcherPlugin`                                   |
+| No hooks; fork the engine                     | `frame.hooks.*` and plugins                          |
+| One shared iframe namespace                   | A `Frame` per tab, routed independently              |
+| bare-mux, `connection.setTransport(path, [])` | `controller.setTransport(new Transport({ wisp }))`   |
+| `__uv$config.bare`                            | Nothing. It was already dead weight in UV 3.x        |
 
-## The comparison
+The short version: everything UV made you build by hand, Scramjet has an API
+for. Start at [wiring](../guides/wiring.md), then
+[plugins and hooks](../reference/plugins-and-hooks.md).
 
-|                              | Scramjet 2.x               | Ultraviolet 3.x                        |
-| ---------------------------- | -------------------------- | -------------------------------------- |
-| Rewriter                     | Rust → WebAssembly         | JavaScript                             |
-| Site compatibility           | Handles more current sites | Breaks on more current sites           |
-| Rewriter runtime             | WebAssembly                | JavaScript                             |
-| Client API                   | Frames, plugins, hooks     | Set `iframe.src`                       |
-| URL change events            | `UrlWatcherPlugin`         | None; poll for it                      |
-| Per-frame isolation          | Yes, own prefix per frame  | No, one shared prefix                  |
-| Requires `SharedArrayBuffer` | Yes                        | No                                     |
-| Requires COOP/COEP           | Yes                        | No                                     |
-| Requires HTTPS               | Yes (service worker)       | Yes (service worker)                   |
-| Requires WebSockets          | Yes (Wisp only)            | No (Bare works)                        |
-| All-in-one on Vercel         | **No**                     | **Yes**, over Bare                     |
-| Initial download             | Rewriter wasm + TLS stack  | Lighter over Bare; TLS stack over Wisp |
-| Maintained                   | Yes, actively              | **No**, archived Oct 2024              |
+Version-specific gotchas, if you are reading old UV code, are in
+[breaking changes](../reference/breaking-changes.md).
 
----
+### Rammerhead
 
-## Choosing
+A different design entirely: server-side and session-based rather than
+service-worker-based. It rewrites on the server and keeps per-session state
+there. Occasionally works on sites where interception proxies do not, and fails
+on things they handle easily. Worth knowing it exists; not comparable
+feature-for-feature.
 
-```text
-Can your host hold a WebSocket open?
-│
-├── Yes  → Scramjet. Better rewriting, better API, still maintained.
-│
-└── No   → Can you move hosts?
-           │
-           ├── Yes → Move to a long-running Node host or VPS.
-           │
-           └── No  → Ultraviolet over bare.
-                     Accept: worse compatibility, no WebSocket sites, and your
-                     server can inspect target request and response data.
-```
+### Chemical
 
-If an all-in-one serverless deployment is not required, a long-running Node host
-supports the maintained engine and WebSocket sites.
-[Deployment](../guides/deployment.md) covers the options.
+Not an engine. A meta-framework that wraps Ultraviolet, Scramjet and Rammerhead
+behind one API. It is the fastest way to get something running if you do not
+care what is underneath, which is precisely the opposite of what this site is
+for. If you want to understand your own proxy, do not start here.
 
 ---
 
-## On Ultraviolet being archived
+## Where to go next
 
-Archived does not mean broken. UV 3.2.10 works today, is deployed on a large
-number of live sites, and will keep working as long as browsers do not change
-underneath it.
-
-What it means is:
-
-- **No fixes.** When a site changes something UV's rewriter gets wrong, it stays
-  wrong.
-- **No security patches.** Consider that carefully if you run a public site.
-- **No new browser support.** If a future browser change breaks it, that is
-  permanent.
-
-Building something new on Ultraviolet is a reasonable choice for an all-in-one
-serverless constraint. If you can host Wisp separately, that constraint does not
-require Ultraviolet.
-
----
-
-## Can I support both?
-
-The generator can produce either engine. Its client feature modules use a small
-interface implemented by an engine adapter:
-
-```js
-await engine.init();
-const session = await engine.createSession(iframeElement, handlers);
-await engine.setTransport(config);
-
-session.go(url);
-session.back();
-session.forward();
-session.reload();
-session.destroy();
-```
-
-Tabs, history, settings, and bookmarks are written against that interface, so
-their code works with either adapter. Changing engines also requires the
-matching dependencies, server mounts, service worker, classic scripts, and
-transport generation; regenerate the project rather than replacing one file.
-
-Because Ultraviolet has no navigation events, the shared interface reports URL
-changes on a 250 ms poll rather than instantly. Abstractions over uneven
-capabilities always cost something; here the cost is small and worth it.
+- [How a proxy works](how-proxies-work.md). The four layers and one request
+  traced through all of them.
+- [Transports](transports.md). The other half of the stack, chosen independently
+  of the engine.
+- [Wiring Scramjet](../guides/wiring.md). Actually serving it.
+- [Config and flags](../reference/scramjet-config.md). Everything you can change
+  about the rewriter.

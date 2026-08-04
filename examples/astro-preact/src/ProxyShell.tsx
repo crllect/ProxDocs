@@ -47,20 +47,10 @@ const ProxyShell = () => {
 				</form>
 
 				<div className="toolbar__right">
-					<button
-						id="menu-toggle"
-						type="button"
-						aria-expanded="false"
-					>
-						menu
+					<button data-popup="settings" type="button">
+						settings
 					</button>
 				</div>
-			</div>
-
-			<div id="menu" className="menu" hidden>
-				<button data-popup="settings" type="button">
-					settings
-				</button>
 			</div>
 
 			<div id="popup" className="popup" hidden>

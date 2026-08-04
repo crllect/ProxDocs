@@ -130,7 +130,7 @@ strip work normally. They do need a per-tab internal history stack because
 successive `srcdoc` assignments do not give the custom URLs useful native
 history entries. Clear that stack in `tab.go()` before handing an HTTP URL to
 the proxy engine. See
-[URL parsing and history](url-parsing-and-history.md#internal-srcdoc-pages-are-the-exception).
+[URL parsing and history](url-parsing-and-history.md#document-history-the-engine-owns-this).
 
 ### Keep data-backed pages live
 
@@ -220,17 +220,16 @@ The generated builds still use `srcdoc`, for two reasons.
 
 **Fetch hooks are Scramjet-only.** Ultraviolet has no equivalent, so internal
 pages built this way would not exist in an Ultraviolet build. `srcdoc` is an
-iframe attribute; it works the same under either engine, which is why custom
+iframe attribute; it does not depend on the engine at all, which is why custom
 protocols are offered as a feature independent of your engine choice.
 
 **It fails when Scramjet does** A fake-origin response is produced inside the
 service worker, by a plugin tapped onto a frame that `controller.createFrame()`
-returned, after `initBootstrap()` registered the service worker, loaded every
-bundle, and built the transport, on a page whose COOP/COEP headers let the wasm
-rewriter have `SharedArrayBuffer`. If any of that is broken, the fake origin
-cannot be served. That is the failure an error page exists to explain, so the
-mechanism that renders your error page must not depend on the machinery that
-just failed. `srcdoc` depends on none of it.
+returned, after the shell registered the service worker, loaded every bundle,
+and built the transport. If any of that is broken, the fake origin cannot be
+served. That is the failure an error page exists to explain, so the mechanism
+that renders your error page must not depend on the machinery that just failed.
+`srcdoc` depends on none of it.
 
 There is also an isolation difference. `earlyResponse` short-circuits the
 transport and returns straight to the service worker; there is no CORS layer in

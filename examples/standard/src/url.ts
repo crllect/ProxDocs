@@ -1,7 +1,5 @@
 import type { ResolvedInput } from "./types.ts";
 
-export const internalScheme = "standard:";
-
 const looksLikeUrl =
 	/^(?:(?:(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
 
@@ -28,10 +26,6 @@ export const resolveInput = (
 	const text = String(input ?? "").trim();
 
 	if (!text) return { url: "", kind: "empty" };
-
-	if (text.slice(0, internalScheme.length).toLowerCase() === internalScheme) {
-		return { url: text, kind: "internal" };
-	}
 
 	if (looksLikeUrl.test(text)) {
 		try {
@@ -76,7 +70,6 @@ export const resolveInput = (
 export const formatForDisplay = (url: string): string => {
 	try {
 		const parsed = new URL(url);
-		if (parsed.protocol === internalScheme) return parsed.href;
 		const host = parsed.host.replace(/^www\./, "");
 		const rest = parsed.pathname === "/" ? "" : parsed.pathname;
 		return host + rest + parsed.search + parsed.hash;

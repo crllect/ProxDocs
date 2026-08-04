@@ -12,6 +12,7 @@ import { sitemapXml, robotsTxt } from "./seo.js";
 import { compose } from "../builder/node.js";
 import {
 	presets,
+	visible,
 	engines,
 	wirings,
 	features,
@@ -31,7 +32,7 @@ const searchIndexJson = JSON.stringify(await buildSearchIndex(docsDir));
 const optionsJson = JSON.stringify({
 	presets,
 	engines,
-	wirings,
+	wirings: visible(wirings),
 	features,
 	servers,
 	hosts

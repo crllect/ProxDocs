@@ -300,16 +300,21 @@ $("#reload").addEventListener("click", () => {
 
 const menu = $<HTMLElement>("#menu");
 const menuToggle = $<HTMLButtonElement>("#menu-toggle");
+const menuRoot: ParentNode = menu;
+
+const closeMenu = () => {
+	menu.hidden = true;
+	menuToggle.setAttribute("aria-expanded", "false");
+};
 
 menuToggle.addEventListener("click", () => {
 	menu.hidden = !menu.hidden;
 	menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
 });
 
-for (const button of menu.querySelectorAll<HTMLElement>("[data-open]")) {
+for (const button of menuRoot.querySelectorAll<HTMLElement>("[data-open]")) {
 	button.addEventListener("click", () => {
-		menu.hidden = true;
-		menuToggle.setAttribute("aria-expanded", "false");
+		closeMenu();
 		void navigate(button.dataset.open!);
 	});
 }

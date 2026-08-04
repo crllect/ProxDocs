@@ -102,13 +102,59 @@ config: {
 }
 ```
 
-Two things it has to satisfy:
+Three things it has to satisfy:
 
-1. **Output must be path-safe.** It goes in a URL path segment.
-2. **`decode(encode(x)) === x` for every input**, including unicode and strings
+1. **`decode(encode(x)) === x` for every input**, including unicode and strings
    that are already percent-encoded. A codec that round-trips imperfectly
    produces failures that look like [rewriter](../concepts/how-proxies-work.md)
    bugs and are very hard to trace.
+2. **Output must never contain `?` or `#`.** This is the one that bites. See
+   below.
+3. **`encode("")` must return something falsy.** It is called with the empty
+   string whenever a URL has no fragment.
+
+### What Scramjet builds around your codec
+
+A proxied URL is not just `prefix + encode(url)`. The real shape is:
+
+```text
+<prefix><encode(url without hash)>?<scramjet's own params>#<encode(hash)>
+```
+
+Three consequences, none of them obvious:
+
+**The fragment is encoded by a separate call.** Scramjet strips the hash, calls
+`encode()` on it _without_ the leading `#`, and re-appends it after everything
+else. Your codec sees the fragment as its own independent input, never as part
+of the URL string. That is also why `encode("")` has to stay empty. The default
+codec guards with `if (!url) return url` for exactly this reason.
+
+**Scramjet appends its own query string.** After your encoded URL it adds
+`$`-prefixed parameters carrying request metadata: `$rfp` for referrer policy,
+`$module`, `$tf` and `$pf` for the top and parent frame, `$iframe`, `$mode`,
+`$cred`, `$dest`, `$io` for the initiating origin, and a few more. You will see
+them in the address bar and in devtools. They are not junk, and stripping them
+breaks referrer handling and `sec-fetch-*` behaviour.
+
+**Decoding relies on `?` and `#` being structural.** `unrewriteUrl` recovers the
+destination by slicing off the prefix and then clearing `search` and `hash`
+wholesale before calling `decode()`. So if your codec's output contains a `?`,
+everything after it is discarded as query parameters; if it contains a `#`, the
+rest is treated as the fragment and fed to `decode()` on its own. Either way the
+URL is silently truncated, and it will look like a rewriter bug.
+
+Percent-encoding and base64url both satisfy this. Raw base64 does not, and
+neither does anything emitting raw bytes certainly does not.
+
+### What never reaches your codec
+
+These bypass it entirely, so do not expect to see them: `mailto:` and `about:`
+URLs pass through untouched, as does any non-`http(s)` scheme, so custom
+protocols can still hand off to an installed app. `javascript:` URLs get their
+body rewritten as JavaScript instead. `blob:` and `data:` URLs are prefixed
+verbatim rather than encoded, and a `data:` URL close to the 2 MB mark is
+converted to a blob first, because Chrome will not accept a service worker
+request with a URL that long.
 
 **A codec is obfuscation, not encryption.** The implementation ships in your
 client bundle, so anyone can decode it. It defeats naive substring matching on
@@ -174,7 +220,7 @@ Thirteen booleans. These are the defaults upstream ships.
 
 | Flag                    | Default | Effect                                                         |
 | ----------------------- | ------- | -------------------------------------------------------------- |
-| `sourcemaps`            | `true`  | Emit source maps so stack traces point at original source      |
+| `sourcemaps`            | `true`  | Make `Function.prototype.toString` return the original source  |
 | `destructureRewrites`   | `true`  | Rewrite destructuring patterns in catch clauses and parameters |
 | `allowInvalidJs`        | `true`  | On rewrite failure, pass the original script through unchanged |
 | `encapsulateWorkers`    | `true`  | Wrap workers so they get a proxied environment too             |
@@ -196,10 +242,23 @@ Thirteen booleans. These are the defaults upstream ships.
 
 ### The ones you will actually change
 
-**`sourcemaps`** is on by default and should stay that way. Without it, every
-error inside a proxied page has a stack trace pointing into rewritten code full
-of `$scramjet$wrap` calls. Turn it off only after measuring that map generation
-is costing you something.
+**`sourcemaps`** is badly named and is not what it sounds like. It has nothing
+to do with `.map` files or stack traces. What it does is record the rewriter's
+edit list for every script, then patch `Function.prototype.toString` so that
+calling it on rewritten code returns the **original** source instead of the
+rewritten source.
+
+That matters for two reasons, and both are correctness rather than convenience:
+
+- Without it, `fn.toString()` hands the page Scramjet's internals. Any site that
+  re-evaluates its own source, and plenty do, then gets that rewritten output
+  fed back through the rewriter a second time. Upstream's comment on the hook
+  says it plainly: double rewrites, which are bad.
+- Sites that hash or fingerprint their own functions see code they did not
+  write, and behave accordingly.
+
+Leave it on. It is on by default. The flag you want for stack traces is
+`cleanErrors`.
 
 **`allowInvalidJs`** is on by default, and it is why a site with one malformed
 script still mostly works. Turning it off makes rewrite failures throw, which
@@ -220,10 +279,12 @@ production.
 
 **`captureErrors` and `cleanErrors`** work together. `captureErrors` routes
 errors thrown inside the proxied page somewhere you can see them. `cleanErrors`
-strips Scramjet's own frames from stack traces, leaving something close to what
-the site's developers would see. Upstream's own `defaultConfigDev` turns on
-`captureErrors`, `debugTrampolines`, and `debugSourceURL`, and turns
-`allowInvalidJs` off so rewrite failures surface instead of passing through.
+walks each stack trace and drops any frame whose file matches one of your
+`maskedfiles`, leaving something close to what the site's developers would see.
+It is **V8-only**: it hangs off `Error.prepareStackTrace`, so it does nothing in
+Firefox or Safari. Upstream's own `defaultConfigDev` turns on `captureErrors`,
+`debugTrampolines`, and `debugSourceURL`, and turns `allowInvalidJs` off so
+rewrite failures surface instead of passing through.
 
 **`encapsulateWorkers`** is on by default. Turn it off and workers the page
 creates run unproxied: they fetch directly, fail on CORS, and take a site

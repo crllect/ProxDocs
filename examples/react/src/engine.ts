@@ -93,24 +93,37 @@ const transportModules: Partial<Record<string, string>> = {
 
 let currentTransport: TransportConfig = {
 	kind: "libcurl",
-	wisp: ""
+	wisp: "",
+	bare: ""
 };
 
 const resolveTransport = (
 	config: TransportConfig
-): { path: string; wisp: string } => ({
-	path:
-		transportModules[config.kind] ??
-		transportModules["libcurl"]!,
-	wisp: config.wisp || defaultWispUrl()
-});
+): { path: string; kind: string; endpoint: string } => {
+	const kind = transportModules[config.kind]
+		? config.kind
+		: "libcurl";
+
+	switch (kind) {
+		default:
+			return {
+				path: transportModules[kind]!,
+				kind,
+				endpoint: config.wisp || defaultWispUrl()
+			};
+	}
+};
 
 const buildTransport = async (config: TransportConfig): Promise<unknown> => {
-	const { path, wisp } = resolveTransport(config);
+	const { path, kind, endpoint } = resolveTransport(config);
 	const module = (await import(/* @vite-ignore */ path)) as {
-		default: new (o: object) => unknown;
+		default: new (o: object | string) => unknown;
 	};
-	return new module.default({ wisp });
+
+	switch (kind) {
+		default:
+			return new module.default({ wisp: endpoint });
+	}
 };
 
 const boot = async (): Promise<ScramjetController> => {
@@ -324,7 +337,6 @@ export const engine: ProxyEngine = {
 	id: "scramjet",
 	label: "Scramjet",
 	supportsTransportSwitch: false,
-	requiresIsolation: true,
 
 	async init() {
 		ready ??= boot();

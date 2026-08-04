@@ -89,37 +89,50 @@ const registerServiceWorker = async (): Promise<ServiceWorker> => {
 
 const transportModules: Partial<Record<string, string>> = {
 	libcurl: "/libcurl/index.mjs",
-	epoxy: "/epoxy/index.mjs"
+	epoxy: "/epoxy/index.mjs",
 };
 
 let currentTransport: TransportConfig = {
 	kind: "libcurl",
-	wisp: ""
+	wisp: "",
+	bare: ""
 };
 
 let activeTransport = "";
 
 const resolveTransport = (
 	config: TransportConfig
-): { path: string; wisp: string } => ({
-	path:
-		transportModules[config.kind] ??
-		transportModules["libcurl"]!,
-	wisp: config.wisp || defaultWispUrl()
-});
+): { path: string; kind: string; endpoint: string } => {
+	const kind = transportModules[config.kind]
+		? config.kind
+		: "libcurl";
+
+	switch (kind) {
+		default:
+			return {
+				path: transportModules[kind]!,
+				kind,
+				endpoint: config.wisp || defaultWispUrl()
+			};
+	}
+};
 
 const buildTransport = async (config: TransportConfig): Promise<unknown> => {
-	const { path, wisp } = resolveTransport(config);
+	const { path, kind, endpoint } = resolveTransport(config);
 	const module = (await import(/* @vite-ignore */ path)) as {
-		default: new (o: object) => unknown;
+		default: new (o: object | string) => unknown;
 	};
-	activeTransport = JSON.stringify([path, wisp]);
-	return new module.default({ wisp });
+	activeTransport = JSON.stringify([path, endpoint]);
+
+	switch (kind) {
+		default:
+			return new module.default({ wisp: endpoint });
+	}
 };
 
 const applyTransport = async (): Promise<void> => {
-	const { path, wisp } = resolveTransport(currentTransport);
-	if (JSON.stringify([path, wisp]) === activeTransport) return;
+	const { path, endpoint } = resolveTransport(currentTransport);
+	if (JSON.stringify([path, endpoint]) === activeTransport) return;
 	controller!.setTransport(await buildTransport(currentTransport));
 };
 
@@ -334,7 +347,6 @@ export const engine: ProxyEngine = {
 	id: "scramjet",
 	label: "Scramjet",
 	supportsTransportSwitch: true,
-	requiresIsolation: true,
 
 	async init() {
 		ready ??= boot();

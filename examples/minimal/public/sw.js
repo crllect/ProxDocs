@@ -1,10 +1,6 @@
-importScripts("/uv/uv.bundle.js");
-importScripts("/uv-config.js");
-importScripts(__uv$config.sw || "/uv/uv.sw.js");
+importScripts("/controller/controller.sw.js");
 
-const uv = new UVServiceWorker();
-
-const shellCache = "ultraviolet-vercel-shell-v1";
+const shellCache = "minimal-shell-v1";
 
 const isShellRequest = request => {
 	if (request.method !== "GET") return false;
@@ -14,10 +10,8 @@ const isShellRequest = request => {
 	if (url.search) return false;
 	if (location.hostname === "localhost" || location.hostname === "127.0.0.1")
 		return false;
-	if (url.pathname === "/uv-sw.js") return false;
-	if (url.pathname.startsWith(__uv$config.prefix)) return false;
+	if (url.pathname === "/sw.js") return false;
 	if (url.pathname.startsWith("/wisp")) return false;
-	if (url.pathname.startsWith("/bare")) return false;
 
 	return true;
 };
@@ -37,17 +31,14 @@ const shellResponse = async request => {
 };
 
 self.addEventListener("fetch", event => {
-	event.respondWith(
-		(async () => {
-			if (uv.route(event)) {
-				return await uv.fetch(event);
-			}
-			if (isShellRequest(event.request)) {
-				return await shellResponse(event.request);
-			}
-			return await fetch(event.request);
-		})()
-	);
+	if ($scramjetController.shouldRoute(event)) {
+		event.respondWith($scramjetController.route(event));
+		return;
+	}
+
+	if (isShellRequest(event.request)) {
+		event.respondWith(shellResponse(event.request));
+	}
 });
 
 self.addEventListener("install", () => self.skipWaiting());

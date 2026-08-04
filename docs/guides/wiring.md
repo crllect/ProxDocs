@@ -67,7 +67,10 @@ app.use(express.static("public"));
 
 const server = http.createServer(app);
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url ?? "/", "https://myproxy.com").pathname === "/wisp/") {
+	if (
+		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
+		"/wisp/"
+	) {
 		wisp.routeRequest(req, socket, head);
 		return;
 	}
@@ -175,9 +178,11 @@ defaults assume a different layout. You will also see them written as
 does not mutate shared global state. Every option is listed in
 [Config and flags](../reference/scramjet-config.md).
 
-Do not skip `await controller.wait()`. It waits for the wasm rewriter to compile
-and the cookie jar to load, so a frame created before it resolves gets a first
-page load with no cookies. See [Cookies and sessions](cookies-and-sessions.md).
+Do not skip `await controller.wait()`. It waits for the service worker to
+complete its handshake and for the wasm to be fetched, and `createFrame()`
+throws outright if you call it too early. It does **not** wait for the cookie
+jar. That loads lazily on the first proxied request, which the controller holds
+until it is ready. See [Cookies and sessions](cookies-and-sessions.md).
 
 The load order is core, controller, then utils. To switch transports later,
 serve both modules and pass a new instance to `controller.setTransport()`.
@@ -192,6 +197,17 @@ change and not on every navigation. See [Transports](../concepts/transports.md).
 
 The other path. Upstream's `create-proxy-app` uses it, so plenty of projects
 start here even though manual wiring is the better place to end up.
+
+> **The generator will not build this for you from the web builder**, and no
+> preset or example uses it. It is documented because you will meet it in other
+> people's projects and because it is genuinely the shortest path to something
+> running. If you want one anyway:
+>
+> ```bash
+> node builder/cli.js --out ./my-proxy --wiring bootstrap
+> ```
+>
+> Read [what bootstrap gives up](#what-bootstrap-gives-up) before you do.
 
 Install the server and bootstrap package:
 
@@ -264,7 +280,6 @@ broken. Use manual wiring to serve epoxy or to switch transports.
 | Runtime packages in your lockfile | Yes                      | No        |
 | Starts with no network access     | Yes                      | No        |
 | Runtime transport switching       | Yes                      | No        |
-| Works with Ultraviolet            | Yes                      | No        |
 | Service worker maintained by you  | Yes                      | No        |
 
 The row that matters most is the lockfile. Bootstrap resolves its runtime
@@ -273,5 +288,5 @@ deployed app runs without you touching anything. Every other row follows from
 that same design.
 
 Bootstrap is a fine way to see a proxy working in two minutes, and that is what
-the barebones preset uses it for. For anything you intend to keep running, take
-the `npm install` and the five `express.static` lines.
+a throwaway experiment might use it for. For anything you intend to keep
+running, take the `npm install` and the five `express.static` lines.

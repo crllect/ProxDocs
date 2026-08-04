@@ -55,12 +55,14 @@ handling in a plugin, you are almost certainly reimplementing this.
 ## Persistence
 
 The jar is written to **IndexedDB**, in a database named
-`__scramjet_controller`, store `state`, under the key `cookies`. It is loaded
-once when the controller boots, as part of what `controller.wait()` waits for.
+`__scramjet_controller`, store `state`, under the key `cookies`.
 
-That is why `await controller.wait()` matters before you create frames. A frame
-created before the jar has loaded issues its first requests with an empty jar,
-and a site that would have recognised you serves you the logged-out page.
+**Loading it is lazy, and you do not have to sequence it.** `controller.wait()`
+does _not_ wait for the jar. It waits for the service worker handshake and the
+wasm fetch. The jar loads on the first proxied request instead, and the
+controller holds that request until the load finishes. So a frame created before
+the jar is in memory still issues its first request with the right cookies; you
+cannot race it.
 
 The persisted record is small:
 

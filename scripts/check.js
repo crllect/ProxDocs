@@ -88,6 +88,40 @@ const linkPattern = /\[[^\]]*\]\(([^)]+)\)/g;
 let linkCount = 0;
 let brokenLinks = 0;
 
+const headingIds = new Map();
+
+const anchorsFor = source => {
+	const ids = new Set();
+	const seen = new Map();
+	let fenced = false;
+	let first = true;
+
+	for (const line of source.split("\n")) {
+		if (/^\s*```/.test(line)) fenced = !fenced;
+		if (fenced) continue;
+
+		const heading = /^(#{1,6})\s+(.+?)\s*$/.exec(line);
+		if (!heading) continue;
+		if (heading[1].length === 1 && first) {
+			first = false;
+			continue;
+		}
+
+		const base =
+			heading[2]
+				.toLowerCase()
+				.replace(/`/g, "")
+				.replace(/[^\w\s-]/g, "")
+				.trim()
+				.replace(/\s+/g, "-") || "section";
+		const count = seen.get(base) ?? 0;
+		seen.set(base, count + 1);
+		ids.add(count ? `${base}-${count}` : base);
+	}
+
+	return ids;
+};
+
 for (const page of pages) {
 	let source;
 	try {
@@ -105,6 +139,10 @@ for (const page of pages) {
 	if (/<https?:\/\/localhost(?::\d+)?(?:\/[^>]*)?>/i.test(source)) {
 		fail(`${page.file} contains a hardcoded localhost link`);
 	}
+	if (source.includes("—")) {
+		const line = source.split("\n").findIndex(l => l.includes("—")) + 1;
+		fail(`${page.file}:${line} contains an em dash`);
+	}
 
 	for (const [, href] of source.matchAll(linkPattern)) {
 		if (/^(https?:|mailto:|#)/i.test(href)) continue;
@@ -118,7 +156,7 @@ for (const page of pages) {
 		}
 
 		linkCount++;
-		const [target] = href.split("#");
+		const [target, anchor] = href.split("#");
 		if (!target) continue;
 
 		const resolved = path.resolve(
@@ -130,11 +168,24 @@ for (const page of pages) {
 		} catch {
 			fail(`${page.file} → ${href}`);
 			brokenLinks++;
+			continue;
+		}
+
+		if (!anchor) continue;
+		if (!headingIds.has(resolved)) {
+			headingIds.set(
+				resolved,
+				anchorsFor(await readFile(resolved, "utf8"))
+			);
+		}
+		if (!headingIds.get(resolved).has(anchor)) {
+			fail(`${page.file} → ${href} (no such heading)`);
+			brokenLinks++;
 		}
 	}
 }
 
-if (!brokenLinks) ok(`${linkCount} relative links resolve`);
+if (!brokenLinks) ok(`${linkCount} relative links and anchors resolve`);
 
 console.log("\nVersion pins");
 
@@ -146,9 +197,7 @@ const pinnedPackages = {
 	"@mercuryworkshop/libcurl-transport": versions.libcurlTransport,
 	"@mercuryworkshop/epoxy-transport": versions.epoxyTransport,
 	"@mercuryworkshop/proxy-transports": versions.proxyTransports,
-	"@mercuryworkshop/bare-mux": versions.bareMux,
-	"@mercuryworkshop/wisp-js": versions.wispJs,
-	"@titaniumnetwork-dev/ultraviolet": versions.ultraviolet
+	"@mercuryworkshop/wisp-js": versions.wispJs
 };
 
 let pinCount = 0;
@@ -343,14 +392,6 @@ const combinations = [
 	},
 
 	{
-		label: "uv-wisp",
-		options: {
-			engine: "ultraviolet",
-			transport: "libcurl",
-			features: ["browserControls", "tabs", "settings", "transportSwitch"]
-		}
-	},
-	{
 		label: "scramjet-epoxy",
 		options: {
 			engine: "scramjet",
@@ -360,28 +401,22 @@ const combinations = [
 		}
 	},
 	{
-		label: "uv-epoxy",
+		label: "scramjet-bare",
 		options: {
-			engine: "ultraviolet",
-			transport: "epoxy",
-			features: ["browserControls"]
+			engine: "scramjet",
+			wiring: "manual",
+			transport: "bare",
+			features: ["browserControls", "tabs"]
 		}
 	},
 	{
-		label: "uv-bare-vercel",
+		label: "scramjet-bare-vercel",
 		options: {
-			engine: "ultraviolet",
+			engine: "scramjet",
+			wiring: "manual",
 			transport: "bare",
 			host: "vercel",
-			features: ["browserControls", "settings", "history"]
-		}
-	},
-	{
-		label: "uv-all",
-		options: {
-			engine: "ultraviolet",
-			transport: "libcurl",
-			features: Object.keys(features)
+			features: ["browserControls"]
 		}
 	}
 ];
@@ -428,6 +463,37 @@ for (const combo of combinations) {
 		);
 	}
 
+	if (combo.label.startsWith("scramjet-bare")) {
+		if (!packageData?.dependencies?.["@mercuryworkshop/bare-transport"]) {
+			fail(`${combo.label}: bare-transport dependency is missing`);
+		}
+		if (packageData?.dependencies?.["@mercuryworkshop/bare-as-module3"]) {
+			fail(`${combo.label}: pulled in the bare-mux era bare package`);
+		}
+		if (packageData?.dependencies?.["@mercuryworkshop/wisp-js"]) {
+			fail(`${combo.label}: a bare build should not depend on wisp-js`);
+		}
+		const engine = Object.entries(files).find(([name]) =>
+			/(?:src|public\/js)\/engine\.(?:js|ts)$/.test(name)
+		)?.[1];
+		if (!engine?.includes('/baremod/index.mjs"')) {
+			fail(`${combo.label}: engine does not load the bare transport`);
+		}
+		if (!engine?.includes("new module.default(endpoint)")) {
+			fail(
+				`${combo.label}: bare transport built with the wisp signature`
+			);
+		}
+		const server =
+			files[`server.${combo.options.language === "js" ? "js" : "ts"}`];
+		if (!server?.includes("createBareServer")) {
+			fail(`${combo.label}: server does not host a Bare server`);
+		}
+		if (server?.includes("wisp-js")) {
+			fail(`${combo.label}: server still imports wisp`);
+		}
+	}
+
 	if (combo.label.endsWith("-epoxy")) {
 		if (!packageData?.dependencies?.["@mercuryworkshop/epoxy-transport"]) {
 			fail(`${combo.label}: epoxy dependency is missing`);
@@ -444,36 +510,6 @@ for (const combo of combinations) {
 			]?.includes("/epoxy/")
 		) {
 			fail(`${combo.label}: server does not expose epoxy`);
-		}
-	}
-
-	if (combo.label === "uv-bare-vercel") {
-		const config = JSON.parse(files["vercel.json"]);
-		const includeFiles = config.builds?.[0]?.config?.includeFiles ?? [];
-		if (!includeFiles.includes("dist/**")) {
-			fail("uv-bare-vercel: Vercel function omits built client assets");
-		}
-		if (
-			!config.builds?.some(build => build.use === "@vercel/static-build")
-		) {
-			fail("uv-bare-vercel: Vercel does not build the Vite client");
-		}
-		if (config.routes?.[0]?.handle !== "filesystem") {
-			fail("uv-bare-vercel: Vercel does not serve the built client");
-		}
-		const server = files["server.ts"];
-		if (!server.includes("export default handleRequest")) {
-			fail("uv-bare-vercel: server does not export a Vercel handler");
-		}
-		if (!server.includes("if (!process.env.VERCEL)")) {
-			fail("uv-bare-vercel: server cannot run locally");
-		}
-		const engine = files["src/engine.ts"];
-		if (
-			engine.indexOf("registration.active") >
-			engine.indexOf("registration.installing")
-		) {
-			fail("uv-bare-vercel: active service worker is not preferred");
 		}
 	}
 

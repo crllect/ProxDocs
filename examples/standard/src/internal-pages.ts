@@ -1,8 +1,6 @@
 import { definePage, escapeHtml, listPages } from "./internal.ts";
 import { engine } from "./engine.ts";
 import * as settings from "./settings.ts";
-import * as visitLog from "./history.ts";
-import * as bookmarks from "./bookmarks.ts";
 
 const transportOptions = [
 	{ id: "libcurl", label: "libcurl", detail: "Widest compatibility, heavier to start." },
@@ -68,61 +66,6 @@ const control = (name: string, def: { default: unknown }, value: unknown) => {
 };
 
 export const registerInternalPages = () => {
-	definePage("home", {
-		title: "new tab",
-		render: () => `
-      <main class="internal">
-        <h1>Standard</h1>
-        <p>type an address above</p>
-        <ul>
-          ${listPages()
-				.filter(page => page.name !== "home")
-				.map(
-					page =>
-						`<li><a href="#" data-open="${page.url}">${escapeHtml(page.url)}</a></li>`
-				)
-				.join("")}
-        </ul>
-      </main>`
-	});
-
-	definePage("about", {
-		title: "about",
-		render: () => {
-			const sj = (
-				window as never as {
-					$scramjet?: { versionInfo?: { version?: string } };
-				}
-			).$scramjet;
-			const facts: [string, string][] = [
-				["engine", "Scramjet"],
-				["version", sj?.versionInfo?.version ?? "2.0.67-alpha.2"],
-				[
-					"transport",
-					engine.getTransport?.().kind ?? "libcurl"
-				],
-				["cross-origin isolated", crossOriginIsolated ? "yes" : "no"],
-				[
-					"service worker",
-					navigator.serviceWorker?.controller?.scriptURL ??
-						"not controlling"
-				]
-			];
-
-			return `
-      <main class="internal">
-        <h1>about</h1>
-        <ul>
-          ${facts
-				.map(
-					([k, v]) =>
-						`<li>${escapeHtml(k)}: <span class="dim">${escapeHtml(v)}</span></li>`
-				)
-				.join("")}
-        </ul>
-      </main>`;
-		}
-	});
 
 	definePage("settings", {
 		title: "settings",
@@ -161,62 +104,4 @@ export const registerInternalPages = () => {
 		}
 	});
 
-	definePage("history", {
-		title: "history",
-		render: () => {
-			const groups = visitLog.grouped();
-
-			if (!groups.length) {
-				return `<main class="internal"><h1>history</h1><p>empty</p></main>`;
-			}
-
-			return `
-        <main class="internal">
-          <h1>history</h1>
-          <div class="actions"><button type="button" data-action="clear-history">clear</button></div>
-          ${groups
-				.map(
-					group => `
-            <h2>${escapeHtml(group.day)}</h2>
-            <ul>
-              ${group.items
-					.map(
-						entry =>
-							`<li><a href="#" data-open="${escapeHtml(entry.url)}">${escapeHtml(
-								entry.title || entry.url
-							)}</a> <span class="dim">${escapeHtml(entry.url)}</span></li>`
-					)
-					.join("")}
-            </ul>`
-				)
-				.join("")}
-        </main>`;
-		}
-	});
-
-	definePage("bookmarks", {
-		title: "bookmarks",
-		render: () => {
-			const items = bookmarks.all();
-
-			if (!items.length) {
-				return `<main class="internal"><h1>bookmarks</h1><p>use the bookmark button to add one</p></main>`;
-			}
-
-			return `
-        <main class="internal">
-          <h1>bookmarks</h1>
-          <ul>
-            ${items
-				.map(
-					item =>
-						`<li><a href="#" data-open="${escapeHtml(item.url)}">${escapeHtml(
-							item.title
-						)}</a> <span class="dim">${escapeHtml(item.url)}</span></li>`
-				)
-				.join("")}
-          </ul>
-        </main>`;
-		}
-	});
 };

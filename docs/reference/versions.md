@@ -8,9 +8,9 @@ which is what the generator uses.
 
 ## Pick a row and use everything in it
 
-Do not mix generations. Here are two sets that work:
+Do not mix generations.
 
-### Scramjet 2.x, current architecture
+### Scramjet 2.x, what you should be installing
 
 ```json
 {
@@ -25,7 +25,17 @@ Do not mix generations. Here are two sets that work:
 
 Or let `@mercuryworkshop/proxy-bootstrap@0.0.5` fetch all of it at runtime.
 
-### Ultraviolet 3.x. For hosts that cannot hold a WebSocket
+Add `"@mercuryworkshop/bare-transport": "^1.0.0"` and a Bare server instead of
+`wisp-js` if you want Scramjet without a WebSocket. **Not** `bare-as-module3`,
+which is the bare-mux-era package and will not work here. See
+[the two Bare packages](../concepts/transports.md#bare).
+
+### Ultraviolet 3.x, for reference only
+
+Not a recommendation. This is here so you can tell at a glance whether a
+codebase you have inherited is on the old generation, and so you do not
+accidentally install half of it alongside Scramjet. See
+[proxy engines](../concepts/engines.md#ultraviolet).
 
 ```json
 {
@@ -40,7 +50,9 @@ Or let `@mercuryworkshop/proxy-bootstrap@0.0.5` fetch all of it at runtime.
 }
 ```
 
-The last two are only needed for a bare deployment.
+Note the transport majors: `libcurl ^1` and `epoxy ^2`, against Scramjet's `^2`
+and `^3`. That is the mismatch that bites people who copy one line out of an old
+`package.json`.
 
 ---
 
@@ -96,6 +108,7 @@ Which packages export a helper for serving their browser assets:
 | `@mercuryworkshop/bare-mux`        | `baremuxPath`    | `@mercuryworkshop/bare-mux/node` |
 | `@titaniumnetwork-dev/ultraviolet` | `uvPath`         | package root                     |
 | `@mercuryworkshop/bare-as-module3` | `bareModulePath` | package root                     |
+| `@mercuryworkshop/bare-transport`  | `bareModulePath` | resolve manually                 |
 | `libcurl-transport` **1.x**        | `libcurlPath`    | package root                     |
 | `epoxy-transport` **2.x**          | `epoxyPath`      | package root                     |
 | `libcurl-transport` **2.x**        | **none**         | resolve manually                 |
@@ -123,8 +136,13 @@ app.use(
 ```
 
 `require.resolve` only resolves a path; it does not execute the module. That
-matters because the newer transports are browser-only and **throw
-`"environment detection error"` if you import them in Node**.
+matters because the newer transports are browser-only and **throw if you import
+them in Node**. libcurl throws `"environment detection error"` from its
+Emscripten runtime, epoxy with something else from wasm-bindgen.
+
+"None" above means none you can reach: epoxy 3.x still ships a `lib/index.cjs`
+exporting `epoxyPath`, but its `exports` map only declares `"."`, so no import
+specifier resolves to it.
 
 ---
 
@@ -139,7 +157,8 @@ matters because the newer transports are browser-only and **throw
 | `epoxy-transport`     | `/epoxy/`      | `index.mjs` (ESM), `index.js` (UMD)                             |
 | `bare-mux`            | `/baremux/`    | `index.js`, `worker.js`                                         |
 | `ultraviolet`         | `/uv/`         | `uv.bundle.js`, `uv.client.js`, `uv.handler.js`, `uv.sw.js`     |
-| `bare-as-module3`     | `/baremod/`    | `index.mjs`                                                     |
+| `bare-as-module3`     | `/baremod/`    | `index.mjs` (bare-mux, UV only)                                 |
+| `bare-transport`      | `/baremod/`    | `index.mjs`, `index.js` (proxy-transports, Scramjet)            |
 
 The generated server gives each package a distinct prefix so the same routes
 work in Express and Fastify.
@@ -156,6 +175,8 @@ work in Express and Fastify.
 | `@mercuryworkshop/scramjet-utils`      | 0.0.3              | 2026-05-24 |
 | `@mercuryworkshop/proxy-bootstrap`     | 0.0.5              | 2026-05-24 |
 | `@mercuryworkshop/proxy-transports`    | 1.0.2              | 2025-12-18 |
+| `@mercuryworkshop/bare-transport`      | 1.0.0              | 2025-12-25 |
+| `@mercuryworkshop/bare-as-module3`     | 2.2.5 (superseded) | 2024-10-21 |
 | `@mercuryworkshop/bare-mux`            | 2.1.9 (deprecated) | 2026-04-27 |
 | `@mercuryworkshop/epoxy-transport`     | 3.0.1              | 2025-12-25 |
 | `@mercuryworkshop/libcurl-transport`   | 2.0.5              | 2025-12-24 |
@@ -165,8 +186,10 @@ work in Express and Fastify.
 | `chemicaljs`                           | 2.6.4              | 2024-12-26 |
 
 Two things to read off this table: **Ultraviolet has not shipped since October
-2024** and is archived. And **bare-mux 2.1.9 carries a deprecation notice**
-pointing at `proxy-transports`, even though UV 3.x still depends on it.
+2024**, and its README now calls it superseded by Scramjet, though the
+repository is not archived, and `main` has commits newer than 3.2.10. And
+**bare-mux 2.1.9 carries a deprecation notice** pointing at `proxy-transports`,
+even though UV 3.x still depends on it.
 
 ---
 

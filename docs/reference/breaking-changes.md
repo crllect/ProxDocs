@@ -45,9 +45,35 @@ The package now ships a deprecation notice pointing at
 
 **What to do:** on Scramjet 2.x, nothing. It already uses proxy-transports, and
 you should not add bare-mux. On Ultraviolet 3.x, keep using bare-mux; UV has no
-other option and will not get one, since it is archived.
+other option and is not going to get one.
 
 See [bare-mux and proxy-transports](../concepts/bare-mux.md).
+
+---
+
+## bare-as-module3 became bare-transport
+
+**Versions:** `bare-as-module3@2.2.5` (Oct 2024) → `bare-transport@1.0.0`
+(Dec 2025)
+
+The Bare transport was rewritten against `proxy-transports` and **republished
+under a new name**, restarting at 1.0.0:
+
+| Package                            | Interface          | Engine       |
+| ---------------------------------- | ------------------ | ------------ |
+| `@mercuryworkshop/bare-as-module3` | `bare-mux`         | Ultraviolet  |
+| `@mercuryworkshop/bare-transport`  | `proxy-transports` | Scramjet 2.x |
+
+Both are still on npm and neither is deprecated, so nothing warns you.
+Installing the familiar name on Scramjet gets you a transport it cannot use.
+
+The version numbers make it worse: the replacement is `1.0.0` and the old one is
+`2.2.5`, so the dead package looks newer.
+
+**What this changes:** Scramjet no longer requires a WebSocket. Over Bare it
+runs on request/response serverless hosts, which used to be the one thing only
+Ultraviolet could do. `proxy-bootstrap` cannot wire it yet, so use
+[manual wiring](../guides/wiring.md).
 
 ---
 
@@ -65,8 +91,14 @@ import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 app.use("/libcurl/", express.static(libcurlPath));
 ```
 
-The new majors are browser-only modules with no Node entry point. Importing one
-in Node throws `environment detection error`.
+The new majors dropped the `./node` export subpath, so those imports no longer
+resolve and the package root gives you the browser bundle. Importing libcurl in
+Node throws `environment detection error`, from its Emscripten runtime; epoxy is
+wasm-bindgen and fails with something else.
+
+(`epoxy-transport` still _ships_ a `lib/index.cjs` exporting `epoxyPath`. It is
+simply unreachable, because `exports` only declares `"."`. Do not try to reach
+around it, resolve the directory instead.)
 
 **Fix:** resolve the directory without executing the module.
 
@@ -173,8 +205,9 @@ const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
 await connection.setTransport("/libcurl/index.mjs", [{ wisp: wispUrl }]);
 ```
 
-Leaving `bare:` set while using a [wisp](../concepts/wisp-vs-bare.md) transport
-is harmless but does nothing. The field is only read by the bare transport.
+`__uv$config.bare` did not survive that change. **Nothing in UV 3.x reads it**,
+not even on a [bare](../concepts/wisp-vs-bare.md) deployment. The Bare URL is an
+argument to `setTransport()` now. Leaving it set is harmless and does nothing.
 Nearly every config in the wild still has it.
 
 ---
@@ -190,17 +223,32 @@ If you see `/v2/` endpoints or `X-Bare-Host` anywhere, it predates this.
 
 ---
 
-## Ultraviolet is archived
+## Ultraviolet is unmaintained
 
-**Date:** October 2024, final release 3.2.10
+**Date:** last npm release 3.2.10, 27 October 2024
 
-The repository is archived and its README points at Scramjet. No fixes, no
-security patches, no new browser support.
+The README says it plainly: "this project isn't really maintained anymore… It
+has been superseded by Scramjet."
+
+The repository is **not** archived, despite how often that gets repeated. It is
+open, it still accepts issues, and commits have landed since. What stopped is
+releases, and that gap matters, because `main` now carries fixes that npm 3.2.10
+does not:
+
+| Landed     | Change                                        |
+| ---------- | --------------------------------------------- |
+| 2024-11-16 | `codecs.js` update (#167)                     |
+| 2024-11-26 | WebSocket `isTrusted` and proper `on*` values |
+| 2025-03-06 | `import.meta.url` rewriting (#178)            |
+| 2025-03-06 | dependency updates                            |
+
+So if you are on UV and hitting one of those, installing from the git `main`
+branch rather than npm is a real option. Do not expect a review on your PR
+quickly.
 
 It still works, and it remains the option for an all-in-one backend that cannot
 hold Wisp's WebSocket open. A separately hosted Wisp relay removes that hosting
-constraint. See
-[Scramjet vs Ultraviolet](../concepts/scramjet-vs-ultraviolet.md).
+constraint. See [Scramjet vs Ultraviolet](../concepts/engines.md).
 
 ---
 

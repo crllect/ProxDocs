@@ -12,8 +12,8 @@ laptop is often not the one that works in production.
 The default in the generated projects. Template:
 `https://search.brave.com/search?q=%s`.
 
-It has worked consistently in testing with both generated engine adapters.
-Results pages are mostly server-rendered, which reduces client-side rewriting.
+It has worked consistently in testing. Results pages are mostly server-rendered,
+which reduces client-side rewriting.
 
 ## Google
 

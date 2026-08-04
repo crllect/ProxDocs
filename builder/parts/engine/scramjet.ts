@@ -34,6 +34,10 @@ export const defaultWispUrl = (): string => {
 	return scheme + "//" + location.host + "/wisp/";
 };
 
+//#if transportBare
+export const bareUrl = new URL("/bare/", location.href).href;
+//#endif
+
 //#if manual
 const runtimeScripts = [
 	"/scram/scramjet.js",
@@ -93,13 +97,17 @@ const transportModules: Partial<Record<string, string>> = {
 	libcurl: "/libcurl/index.mjs",
 	//#endif
 	//#if hasEpoxy
-	epoxy: "/epoxy/index.mjs"
+	epoxy: "/epoxy/index.mjs",
+	//#endif
+	//#if transportBare
+	bare: "/baremod/index.mjs"
 	//#endif
 };
 
 let currentTransport: TransportConfig = {
 	kind: "{{DEFAULT_TRANSPORT}}",
-	wisp: ""
+	wisp: "",
+	bare: ""
 };
 
 //#if transportSwitch
@@ -108,28 +116,52 @@ let activeTransport = "";
 
 const resolveTransport = (
 	config: TransportConfig
-): { path: string; wisp: string } => ({
-	path:
-		transportModules[config.kind] ??
-		transportModules["{{DEFAULT_TRANSPORT}}"]!,
-	wisp: config.wisp || defaultWispUrl()
-});
+): { path: string; kind: string; endpoint: string } => {
+	const kind = transportModules[config.kind]
+		? config.kind
+		: "{{DEFAULT_TRANSPORT}}";
+
+	switch (kind) {
+		//#if transportBare
+		case "bare":
+			return {
+				path: transportModules.bare!,
+				kind,
+				endpoint: config.bare || bareUrl
+			};
+		//#endif
+		default:
+			return {
+				path: transportModules[kind]!,
+				kind,
+				endpoint: config.wisp || defaultWispUrl()
+			};
+	}
+};
 
 const buildTransport = async (config: TransportConfig): Promise<unknown> => {
-	const { path, wisp } = resolveTransport(config);
+	const { path, kind, endpoint } = resolveTransport(config);
 	const module = (await import(/* @vite-ignore */ path)) as {
-		default: new (o: object) => unknown;
+		default: new (o: object | string) => unknown;
 	};
 	//#if transportSwitch
-	activeTransport = JSON.stringify([path, wisp]);
+	activeTransport = JSON.stringify([path, endpoint]);
 	//#endif
-	return new module.default({ wisp });
+
+	switch (kind) {
+		//#if transportBare
+		case "bare":
+			return new module.default(endpoint);
+		//#endif
+		default:
+			return new module.default({ wisp: endpoint });
+	}
 };
 
 //#if transportSwitch
 const applyTransport = async (): Promise<void> => {
-	const { path, wisp } = resolveTransport(currentTransport);
-	if (JSON.stringify([path, wisp]) === activeTransport) return;
+	const { path, endpoint } = resolveTransport(currentTransport);
+	if (JSON.stringify([path, endpoint]) === activeTransport) return;
 	controller!.setTransport(await buildTransport(currentTransport));
 };
 //#endif
@@ -361,7 +393,6 @@ export const engine: ProxyEngine = {
 	//#else
 	supportsTransportSwitch: false,
 	//#endif
-	requiresIsolation: true,
 
 	async init() {
 		ready ??= boot();

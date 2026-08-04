@@ -3,10 +3,9 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
-		<title>Barebones</title>
+		<title>Serverless</title>
 		<link rel="stylesheet" href="/styles.css" />
 		<meta name="robots" content="noindex" />
-		<script src="/bootstrap-init.js"></script>
 	</head>
 
 	<body>
@@ -40,6 +39,23 @@
 				/>
 			</form>
 
+			<div class="toolbar__right">
+				<button id="menu-toggle" type="button" aria-expanded="false">
+					menu
+				</button>
+			</div>
+		</div>
+
+		<div id="menu" class="menu" hidden>
+			<button data-open="serverless://settings" type="button">
+				settings
+			</button>
+			<button data-open="serverless://history" type="button">
+				history
+			</button>
+			<button data-open="serverless://about" type="button">
+				about
+			</button>
 		</div>
 
 		<p id="status" class="status" role="status" hidden></p>

@@ -66,7 +66,7 @@ src/types.ts          the engine interface, read this first
 ```
 
 `engine.ts` implements a small interface (`init`, `createSession`, `setTransport`).
-Feature modules use that interface. Changing engines also changes server mounts,
+Feature modules use that interface. Changing transports also changes server mounts,
 dependencies, service-worker files, and transport setup.
 
 ## Requirements
@@ -74,7 +74,9 @@ dependencies, service-worker files, and transport setup.
 - **HTTPS in production.** Service workers do not run on plain HTTP
   (localhost is exempt).
 - **Cross-origin isolation.** The server sets `Cross-Origin-Opener-Policy`
-  and `Cross-Origin-Embedder-Policy`. Scramjet's wasm rewriter needs
-  `SharedArrayBuffer`, which browsers withhold without them.
+  and `Cross-Origin-Embedder-Policy`. The engine does not need these to
+  run, but it re-sends them onto proxied responses, which is what lets a
+  proxied site use `SharedArrayBuffer`. Drop them and any site that needs
+  it breaks from inside its own code. Keep them.
 - **WebSockets.** The Wisp tunnel is a long-lived WebSocket, so serverless
   hosts will not work. Use a VPS, Render, Fly, Railway, or similar.

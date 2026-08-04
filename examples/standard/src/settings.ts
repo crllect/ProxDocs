@@ -97,7 +97,6 @@ export type Settings = {
 	homeUrl: string;
 	transport: string;
 	wispUrl: string;
-	saveHistory: boolean;
 };
 
 export const sections = [
@@ -134,12 +133,6 @@ export const schema = {
 		validate: wispUrl,
 		help: "Blank uses this site's own server."
 	},
-	saveHistory: {
-		section: "browsing",
-		label: "Save history",
-		default: true,
-		validate: bool
-	}
 };
 
 export const defaults = Object.fromEntries(

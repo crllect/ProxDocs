@@ -9,24 +9,12 @@ import { bootstrap } from "@mercuryworkshop/proxy-bootstrap";
 //#if scramjetManual
 import { createRequire } from "node:module";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
-import { server as wisp } from "@mercuryworkshop/wisp-js/server";
-//#endif
-//#if ultraviolet
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 //#if transportWisp
-//#if hasLibcurl
-import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
-//#endif
-//#if hasEpoxy
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
-//#endif
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+//#endif
 //#endif
 //#if transportBare
-import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
 import { createBareServer } from "@tomphttp/bare-server-node";
-//#endif
 //#endif
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -74,21 +62,8 @@ app.use(
 //#if hasEpoxy
 app.use("/epoxy/", express.static(dirOf("@mercuryworkshop/epoxy-transport")));
 //#endif
-//#endif
-
-//#if ultraviolet
-app.use("/uv/", express.static(uvPath));
-app.use("/baremux/", express.static(baremuxPath));
-//#if transportWisp
-//#if hasLibcurl
-app.use("/libcurl/", express.static(libcurlPath));
-//#endif
-//#if hasEpoxy
-app.use("/epoxy/", express.static(epoxyPath));
-//#endif
-//#endif
 //#if transportBare
-app.use("/baremod/", express.static(bareModulePath));
+app.use("/baremod/", express.static(dirOf("@mercuryworkshop/bare-transport")));
 //#endif
 //#endif
 
@@ -134,7 +109,10 @@ server.on("upgrade", (req, socket, head) => {
 	}
 	//#endif
 	//#if transportWisp
-	if (new URL(req.url ?? "/", "https://myproxy.com").pathname === "/wisp/") {
+	if (
+		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
+		"/wisp/"
+	) {
 		wisp.routeRequest(req, socket, head);
 		return;
 	}

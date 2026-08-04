@@ -1,11 +1,9 @@
-import "./styles.scss";
+import "./styles.css";
 import { engine } from "./engine.ts";
 import { resolveInput, formatForDisplay } from "./url.ts";
 import type { ProxySession } from "./types.ts";
 import * as settings from "./settings.ts";
 import { TabManager } from "./tabs.ts";
-import * as visitLog from "./history.ts";
-import * as bookmarks from "./bookmarks.ts";
 import * as internal from "./internal.ts";
 import { registerInternalPages } from "./internal-pages.ts";
 
@@ -98,7 +96,7 @@ const renderTabs = () => {
 const startUrl = (): string => {
 	const configured = settings.get("homeUrl");
 	if (configured) return configured;
-	return internal.homeUrl;
+	return "";
 };
 
 const searchTemplate = (): string => {
@@ -123,21 +121,6 @@ const navigate = async (
 			location.assign(url);
 			return;
 
-		case "internal": {
-			const html = internal.render(url);
-			if (html === null) return;
-			const tab = tabs.active ?? tabs.open();
-			if (options.record !== false) tab.internalHistory.push(url);
-			if (options.record !== false) tab.record(url);
-			tab.url = url;
-			tab.title = url.replace("standard://", "");
-			tab.loading = false;
-			tab.element.removeAttribute("src");
-			tab.element.srcdoc = html;
-			tabs.emit();
-			return;
-		}
-
 		default: {
 			setStatus("");
 			const tab = tabs.active ?? tabs.open();
@@ -154,26 +137,79 @@ const navigate = async (
 	}
 };
 
-const refreshInternalPages = (names: readonly string[]) => {
-	for (const tab of tabs.tabs) {
-		if (
-			!internal.isInternal(tab.url) ||
-			!names.includes(internal.pageName(tab.url) ?? "")
+const popup = $<HTMLElement>("#popup");
+const popupFrame = $<HTMLIFrameElement>("#popup-frame");
+const popupTitle = $<HTMLElement>("#popup-title");
+const popupClose = $<HTMLButtonElement>("#popup-close");
+const popupBackground = [...popup.parentElement!.children].filter(
+	(element): element is HTMLElement =>
+		element instanceof HTMLElement && element !== popup
+);
+let popupPage = "";
+
+const popupFocusables = () =>
+	[
+		...popupFrame.contentDocument!.querySelectorAll<HTMLElement>(
+			'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 		)
-			continue;
-		const html = internal.render(tab.url);
-		if (html !== null) tab.element.srcdoc = html;
-	}
-	tabs.emit();
+	].filter(element => !element.hidden);
+
+let popupTrigger: HTMLElement | null = null;
+
+const closePopup = () => {
+	popup.hidden = true;
+	for (const element of popupBackground) element.inert = false;
+	popupTrigger?.focus();
 };
 
-visitLog.onChange(() => refreshInternalPages(["history"]));
-bookmarks.onChange(() => refreshInternalPages(["bookmarks"]));
+const openPopup = (name: string, trigger: HTMLElement | null = null) => {
+	popupTrigger = trigger;
+	const html = internal.render(`${internal.scheme}://${name}`);
+	if (html === null) return;
+	popupPage = name;
+	popupTitle.textContent = name;
+	popupFrame.title = name;
+	const doc = popupFrame.contentDocument!;
+	doc.open();
+	doc.write(html);
+	doc.close();
+	doc.addEventListener("keydown", event => {
+		if (event.key === "Escape") closePopup();
+		if (event.key !== "Tab") return;
+		const focusable = popupFocusables();
+		const edge = event.shiftKey ? focusable[0] : focusable.at(-1);
+		if (!edge || doc.activeElement === edge) {
+			event.preventDefault();
+			popupClose.focus();
+		}
+	});
+	for (const element of popupBackground) element.inert = true;
+	popup.hidden = false;
+	popupClose.focus();
+};
+
+popupClose.addEventListener("click", closePopup);
+popupClose.addEventListener("keydown", event => {
+	if (event.key !== "Tab") return;
+	const focusable = popupFocusables();
+	const target = event.shiftKey ? focusable.at(-1) : focusable[0];
+	if (!target) return;
+	event.preventDefault();
+	target.focus();
+});
+popup.addEventListener("click", event => {
+	if (event.target === popup) closePopup();
+});
+addEventListener("keydown", event => {
+	if (event.key === "Escape" && !popup.hidden) closePopup();
+});
+
+const refreshPopup = () => openPopup(popupPage);
 
 addEventListener("message", event => {
 	if (event.origin !== location.origin) return;
-	if (!internal.isInternal(currentUrl())) return;
-	if (event.source !== tabs.active?.element.contentWindow) return;
+	const fromPopup = event.source === popupFrame.contentWindow;
+	if (!fromPopup) return;
 
 	const data = event.data as {
 		type?: string;
@@ -185,7 +221,10 @@ addEventListener("message", event => {
 
 	switch (data.type) {
 		case "internal:open":
-			if (typeof data.url === "string") void navigate(data.url);
+			if (typeof data.url === "string") {
+				closePopup();
+				void navigate(data.url);
+			}
 			break;
 
 		case "internal:settings": {
@@ -200,20 +239,12 @@ addEventListener("message", event => {
 					: saved
 			);
 			void applyTransport();
-			void navigate(currentUrl());
+			refreshPopup();
 			break;
 		}
 
 		case "internal:action":
 			switch (data.action) {
-				case "clear-history":
-					setStatus(
-						visitLog.clear()
-							? "History cleared."
-							: "History cleared for this session, but browser storage is unavailable."
-					);
-					void navigate(currentUrl());
-					break;
 				case "reset-settings":
 					const { persisted } = settings.reset();
 					void applyTransport();
@@ -222,7 +253,7 @@ addEventListener("message", event => {
 							? "Settings reset."
 							: "Reset for this session, but browser storage is unavailable."
 					);
-					void navigate(currentUrl());
+					refreshPopup();
 					break;
 			}
 			break;
@@ -253,16 +284,7 @@ const render = () => {
 
 	$<HTMLButtonElement>("#back").disabled = !canGoBack();
 	$<HTMLButtonElement>("#forward").disabled = !canGoForward();
-	$<HTMLButtonElement>("#reload").disabled =
-		!currentSession() && !internal.isInternal(url);
-
-	const star = $<HTMLButtonElement>("#bookmark");
-	const bookmarkable = /^https?:/i.test(url);
-	star.disabled = !bookmarkable;
-	star.setAttribute(
-		"aria-pressed",
-		String(bookmarkable ? bookmarks.has(url) : false)
-	);
+	$<HTMLButtonElement>("#reload").disabled = !currentSession();
 
 	if (isLoading()) setStatus("Loading");
 	else if (status.textContent === "Loading") setStatus("");
@@ -287,38 +309,23 @@ $("#forward").addEventListener("click", () => {
 	const url = goForward();
 	if (url) void navigate(url, { record: false });
 });
-$("#reload").addEventListener("click", () => {
-	if (internal.isInternal(currentUrl())) {
-		void navigate(currentUrl());
-		return;
-	}
-	currentSession()?.reload();
-});
+$("#reload").addEventListener("click", () => currentSession()?.reload());
 
-const menu = $<HTMLElement>("#menu");
-const menuToggle = $<HTMLButtonElement>("#menu-toggle");
+const closeMenu = () => {};
+const menuRoot: ParentNode = document;
 
-menuToggle.addEventListener("click", () => {
-	menu.hidden = !menu.hidden;
-	menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
-});
-
-for (const button of menu.querySelectorAll<HTMLElement>("[data-open]")) {
+for (const button of menuRoot.querySelectorAll<HTMLElement>("[data-open]")) {
 	button.addEventListener("click", () => {
-		menu.hidden = true;
-		menuToggle.setAttribute("aria-expanded", "false");
+		closeMenu();
 		void navigate(button.dataset.open!);
 	});
 }
-
-$("#bookmark").addEventListener("click", () => {
-	const url = currentUrl();
-	if (!/^https?:/i.test(url)) return;
-	bookmarks.toggle(url, currentTitle());
-	render();
-});
-
-bookmarks.onChange(() => render());
+for (const button of menuRoot.querySelectorAll<HTMLElement>("[data-popup]")) {
+	button.addEventListener("click", () => {
+		closeMenu();
+		openPopup(button.dataset.popup!, button);
+	});
+}
 
 addEventListener("keydown", event => {
 	if (!(event.ctrlKey || event.metaKey)) return;

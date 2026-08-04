@@ -87,7 +87,7 @@ const { default: EpoxyTransport } = await import("/epoxy/index.mjs");
 const transport = new EpoxyTransport({ wisp: "wss://proxy.crllect.dev/wisp/" });
 ```
 
-### bare-as-module3
+### bare
 
 The original: it talks to a [Bare server](wisp-vs-bare.md) over plain HTTP. No
 WebAssembly, no WebSocket, and no client TLS stack.
@@ -95,13 +95,24 @@ WebAssembly, no WebSocket, and no client TLS stack.
 - **The all-in-one option on request/response hosts.**
 - Tiny, no startup cost.
 - Your server sees all traffic in plaintext.
-- Only works with Ultraviolet. Scramjet has no bare transport, the bootstrap
-  package has a stub that throws.
+
+**Get the package name right.** The one you want is
+`@mercuryworkshop/bare-transport`. There is an older
+`@mercuryworkshop/bare-as-module3`, still on npm, which implements the bare-mux
+interface instead and which Scramjet cannot use. Same project, renamed, and the
+version numbers make it worse: the live one is `1.0.0` and the dead one is
+`2.2.5`, so the wrong answer looks newer.
+
+`proxy-bootstrap` cannot wire it either; it ships a stub that throws
+`"Bare transport not implemented yet"`. Bare builds use
+[manual wiring](../guides/wiring.md).
+
+The constructor takes the Bare server URL directly, not a `{ wisp }` object like
+the other two:
 
 ```js
-await connection.setTransport("/baremod/index.mjs", [
-	new URL("/bare/", location.href).href
-]);
+const { default: BareClient } = await import("/baremod/index.mjs");
+const transport = new BareClient(new URL("/bare/", location.href).href);
 ```
 
 ---
@@ -109,8 +120,10 @@ await connection.setTransport("/baremod/index.mjs", [
 ## Choosing
 
 ```text
-Deploying all components to Vercel or Netlify Functions?
-├── Yes → bare, with Ultraviolet. No other option.
+Deploying everything to a serverless function?
+├── Yes → bare, and read the tradeoffs first. It is the only one that
+│         works without a WebSocket, and it costs you WebSocket sites
+│         plus TLS terminating on your server.
 └── No  → wisp. Then:
           ├── Default to libcurl. Best compatibility.
           └── Offer epoxy as a user-switchable alternative.
@@ -127,10 +140,10 @@ differently between their HTTP/TLS implementations. That is why
 This trips people up constantly. There are **two generations** of the transport
 packages, and they are not interchangeable:
 
-| Engine          | Transport interface | epoxy | libcurl |
-| --------------- | ------------------- | ----- | ------- |
-| Ultraviolet 3.x | bare-mux            | `^2`  | `^1`    |
-| Scramjet 2.x    | proxy-transports    | `^3`  | `^2`    |
+| Interface          | Used by                  | epoxy | libcurl |
+| ------------------ | ------------------------ | ----- | ------- |
+| `proxy-transports` | Scramjet 2.x, use these  | `^3`  | `^2`    |
+| `bare-mux`         | Ultraviolet 3.x, and old | `^2`  | `^1`    |
 
 The new majors also **removed the Node-side path helpers**:
 
@@ -195,14 +208,11 @@ controller.setTransport(await buildTransport("epoxy", wispUrl));
 Existing frames keep their DOM and their loaded pages; their _next_ request goes
 over the new transport. To have the current page re-fetched, reload it.
 
-With Ultraviolet and bare-mux, you name the module instead, bare-mux loads it
-inside its SharedWorker so every tab and the service worker share one
-connection:
-
-```js
-const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
-await connection.setTransport("/epoxy/index.mjs", [{ wisp: wispUrl }]);
-```
+> Older proxies did this through **bare-mux**, which held one transport in a
+> SharedWorker and named modules by path rather than passing objects. If you are
+> reading code that calls `connection.setTransport("/epoxy/index.mjs", [...])`,
+> that is what you are looking at. See
+> [bare-mux and proxy-transports](bare-mux.md).
 
 > **Bootstrap cannot do this.** `@mercuryworkshop/proxy-bootstrap` fixes the
 > transport at server start and only serves that one client, so runtime

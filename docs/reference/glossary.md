@@ -13,8 +13,16 @@ context (window, iframes, service worker) share it. Introduced in Ultraviolet
 3.0 to make transports swappable. Deprecated as of 2.1.9 in favour of
 proxy-transports. See [bare-mux and proxy-transports](../concepts/bare-mux.md).
 
-**bare-as-module3**. The bare-mux transport that speaks the Bare protocol. The
-only transport that works without WebSockets. See
+**bare-as-module3**. The Bare-protocol transport for **bare-mux**, so
+Ultraviolet only. Last published 2.2.5, October 2024. Superseded by
+`bare-transport`, below, and the confusing part is that the two are the same
+project under different names.
+
+**bare-transport**. `@mercuryworkshop/bare-transport`. The Bare-protocol
+transport for **proxy-transports**, so usable from Scramjet 2.x. Published 1.0.0
+in December 2025. The only transport that works without a WebSocket, which makes
+it the one that lets a proxy run all-in-one on request/response serverless
+hosts. `proxy-bootstrap` cannot wire it yet. See
 [Transports](../concepts/transports.md).
 
 **Chemical**. A meta-framework wrapping Ultraviolet, Scramjet and Rammerhead
@@ -41,8 +49,9 @@ worker connection, the transport, the cookie jar, and the frames.
 
 **COOP / COEP**. `Cross-Origin-Opener-Policy` and
 `Cross-Origin-Embedder-Policy`. Response headers required for cross-origin
-isolation, which is required for `SharedArrayBuffer`, which Scramjet's wasm
-rewriter needs. See
+isolation, which is required for `SharedArrayBuffer`. Neither engine needs them
+to run, but both re-send them onto proxied responses when your shell is
+isolated, which is what lets a proxied site use `SharedArrayBuffer` itself. See
 [Cross-origin isolation](../concepts/cross-origin-isolation.md).
 
 **Cross-origin isolation**. A browser state where a page has proven no untrusted
@@ -113,8 +122,7 @@ quickly is the hard problem in this space. See
 
 **Scramjet**. The current-generation interception proxy from Mercury Workshop.
 Rust/WASM rewriter, wisp transport, frames and plugins. Successor to
-Ultraviolet. See
-[Scramjet vs Ultraviolet](../concepts/scramjet-vs-ultraviolet.md).
+Ultraviolet. See [Scramjet vs Ultraviolet](../concepts/engines.md).
 
 **Service worker**. A browser-provided worker that can intercept network
 requests from pages on its origin and synthesise responses. The primitive the
@@ -123,12 +131,15 @@ URLs it controls. See [How a proxy works](../concepts/how-proxies-work.md).
 
 **SharedArrayBuffer**. Memory shared between JavaScript and WebAssembly without
 copying. Disabled after Spectre; re-enabled only for cross-origin isolated
-pages. Scramjet needs it; Ultraviolet does not. See
+pages. Neither engine's rewriter uses it, and neither do the epoxy or libcurl
+transports, all of which are built single-threaded. Scramjet touches it in
+exactly one place, behind the `syncxhr` flag. What it matters for is _proxied_
+sites that use it themselves. See
 [Cross-origin isolation](../concepts/cross-origin-isolation.md).
 
 **Session**. Not an engine term. In this documentation's generated code, the
-uniform per-tab object that both engine adapters expose (`go`, `back`,
-`forward`, `reload`, `destroy`), so features work on either engine.
+uniform per-tab object the engine adapter exposes (`go`, `back`, `forward`,
+`reload`, `destroy`), so feature code never touches the engine directly.
 
 **siteFlags**. Per-origin flag overrides, keyed by regular expression source
 strings tested against the full URL. First match wins, and only for flags
@@ -140,10 +151,10 @@ Chosen independently of the rewriter. See
 [Transports](../concepts/transports.md).
 
 **Ultraviolet**. The previous-generation interception proxy from
-TitaniumNetwork. JavaScript rewriter, bare-mux transports. Archived October 2024
-at 3.2.10. Still widely deployed, and the option for an all-in-one build whose
-backend cannot host Wisp. See
-[Scramjet vs Ultraviolet](../concepts/scramjet-vs-ultraviolet.md).
+TitaniumNetwork. JavaScript rewriter, bare-mux transports. Unmaintained, last
+released October 2024 at 3.2.10; the repository is open but its README points at
+Scramjet. Still widely deployed, and the option for an all-in-one build whose
+backend cannot host Wisp. See [Scramjet vs Ultraviolet](../concepts/engines.md).
 
 **UrlWatcherPlugin**. The Scramjet 2.x plugin that reports the real URL of a
 frame. There is no `urlchange` event; this is how you know where the page went.

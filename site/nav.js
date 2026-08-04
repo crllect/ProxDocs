@@ -35,11 +35,11 @@ export const nav = [
 					"The four layers of an interception proxy, and one request traced end to end through all of them."
 			},
 			{
-				slug: "concepts/scramjet-vs-ultraviolet",
-				file: "concepts/scramjet-vs-ultraviolet.md",
-				title: "Scramjet vs Ultraviolet",
+				slug: "concepts/engines",
+				file: "concepts/engines.md",
+				title: "Proxy engines",
 				description:
-					"Which rewriter to pick. Scramjet handles more sites; Ultraviolet is the only option on serverless hosts."
+					"What a proxy engine does, why this site documents Scramjet, and what the older engines you will see referenced actually were."
 			},
 			{
 				slug: "concepts/wisp-vs-bare",
@@ -124,11 +124,11 @@ export const nav = [
 					"How to serve Scramjet's browser files, service worker, and Wisp endpoint, with pinned package versions."
 			},
 			{
-				slug: "guides/ultraviolet-vercel",
-				file: "guides/ultraviolet-vercel.md",
-				title: "Ultraviolet on Vercel",
+				slug: "guides/serverless",
+				file: "guides/serverless.md",
+				title: "Serverless deployment",
 				description:
-					"Deploy an all-in-one Ultraviolet proxy on Vercel over the Bare protocol, and the limits that come with it."
+					"Deploy an all-in-one proxy to Vercel and similar hosts using the Bare transport, and the real limits that come with it."
 			},
 			{
 				slug: "guides/frameworks",

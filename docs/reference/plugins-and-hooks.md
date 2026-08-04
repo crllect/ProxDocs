@@ -387,6 +387,44 @@ assignments) which `init.post` misses, because no new document gets created.
 `UrlWatcherPlugin` wraps this same pattern, so unless you need `context.type`
 use the plugin instead of tapping it yourself.
 
+### `client.hooks.rewriter.html`
+
+The other client hook, and the one to reach for when you want to change a
+proxied page's markup. It has `pre` and `post`, firing either side of the HTML
+rewrite:
+
+| Hook   | Field                 | Type                       |
+| ------ | --------------------- | -------------------------- |
+| both   | `context.handler`     | `DomHandler` (htmlparser2) |
+| both   | `context.origHtml`    | `string`                   |
+| both   | `context.meta`        | `URLMeta`                  |
+| both   | `context.htmlcontext` | `HtmlContext`              |
+| `post` | `props.setRawHtml`    | `string` (optional)        |
+
+`pre` gives you the parsed document before Scramjet rewrites it; mutate
+`context.handler`'s tree and the rewrite runs over your changes. `post` runs
+after, and setting `props.setRawHtml` replaces the output wholesale.
+
+Reach for `pre` and the DOM tree rather than string surgery on `setRawHtml`;
+regex over rewritten HTML breaks in ways that are hard to attribute.
+
+### What else is on the client
+
+`context.client` in an init hook is a `ScramjetClient`, one per proxied
+document. Beyond the hooks, the parts worth knowing:
+
+| Member                 | What it is                                         |
+| ---------------------- | -------------------------------------------------- |
+| `client.url`           | The real URL of this document, already decoded     |
+| `client.global`        | The document's `window` / `self`                   |
+| `client.meta`          | `URLMeta`, the base and origin used for rewriting  |
+| `client.history`       | Tracked history state for this document            |
+| `client.initHeaders`   | The response headers the document arrived with     |
+| `client.flagEnabled()` | Resolves a flag for this URL, `siteFlags` included |
+
+`client.url` is the one you will use most: it is how a plugin answers "where is
+this frame actually pointed", without unrewriting anything yourself.
+
 ---
 
 ## The plugins you get for free

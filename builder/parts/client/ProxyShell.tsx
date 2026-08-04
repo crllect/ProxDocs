@@ -63,6 +63,58 @@ const ProxyShell = () => {
 						bookmark
 					</button>
 					{/*#endif */}
+					{/*#if menuSingle */}
+					{/*#if settings */}
+					{/*#if aboutPages */}
+					<button
+						data-open="{{INTERNAL_SCHEME}}://settings"
+						type="button"
+					>
+						settings
+					</button>
+					{/*#else */}
+					<button data-popup="settings" type="button">
+						settings
+					</button>
+					{/*#endif */}
+					{/*#endif */}
+					{/*#if history */}
+					{/*#if aboutPages */}
+					<button
+						data-open="{{INTERNAL_SCHEME}}://history"
+						type="button"
+					>
+						history
+					</button>
+					{/*#else */}
+					<button data-popup="history" type="button">
+						history
+					</button>
+					{/*#endif */}
+					{/*#endif */}
+					{/*#if bookmarks */}
+					{/*#if aboutPages */}
+					<button
+						data-open="{{INTERNAL_SCHEME}}://bookmarks"
+						type="button"
+					>
+						bookmarks
+					</button>
+					{/*#else */}
+					<button data-popup="bookmarks" type="button">
+						bookmarks
+					</button>
+					{/*#endif */}
+					{/*#endif */}
+					{/*#if aboutPages */}
+					<button
+						data-open="{{INTERNAL_SCHEME}}://about"
+						type="button"
+					>
+						about
+					</button>
+					{/*#endif */}
+					{/*#else */}
 					<button
 						id="menu-toggle"
 						type="button"
@@ -70,11 +122,13 @@ const ProxyShell = () => {
 					>
 						menu
 					</button>
+					{/*#endif */}
 				</div>
 				{/*#endif */}
 			</div>
 
 			{/*#if menuPages */}
+			{/*#if !menuSingle */}
 			<div id="menu" className="menu" hidden>
 				{/*#if settings */}
 				{/*#if aboutPages */}
@@ -121,6 +175,7 @@ const ProxyShell = () => {
 				</button>
 				{/*#endif */}
 			</div>
+			{/*#endif */}
 			{/*#endif */}
 
 			{/*#if popupMenus */}

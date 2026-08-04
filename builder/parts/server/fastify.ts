@@ -10,24 +10,12 @@ import { bootstrap } from "@mercuryworkshop/proxy-bootstrap";
 //#if scramjetManual
 import { createRequire } from "node:module";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
-import { server as wisp } from "@mercuryworkshop/wisp-js/server";
-//#endif
-//#if ultraviolet
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 //#if transportWisp
-//#if hasLibcurl
-import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
-//#endif
-//#if hasEpoxy
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
-//#endif
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+//#endif
 //#endif
 //#if transportBare
-import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
 import { createBareServer } from "@tomphttp/bare-server-node";
-//#endif
 //#endif
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -72,8 +60,8 @@ const app = Fastify({
 			//#endif
 			//#if transportWisp
 			if (
-				new URL(req.url ?? "/", "https://myproxy.com").pathname ===
-				"/wisp/"
+				new URL(req.url ?? "/", `http://${req.headers.host}`)
+					.pathname === "/wisp/"
 			) {
 				wisp.routeRequest(req, socket, head);
 				return;
@@ -139,38 +127,9 @@ await app.register(fastifyStatic, {
 	decorateReply: false
 });
 //#endif
-//#endif
-
-//#if ultraviolet
-await app.register(fastifyStatic, {
-	root: uvPath,
-	prefix: "/uv/",
-	decorateReply: false
-});
-await app.register(fastifyStatic, {
-	root: baremuxPath,
-	prefix: "/baremux/",
-	decorateReply: false
-});
-//#if transportWisp
-//#if hasLibcurl
-await app.register(fastifyStatic, {
-	root: libcurlPath,
-	prefix: "/libcurl/",
-	decorateReply: false
-});
-//#endif
-//#if hasEpoxy
-await app.register(fastifyStatic, {
-	root: epoxyPath,
-	prefix: "/epoxy/",
-	decorateReply: false
-});
-//#endif
-//#endif
 //#if transportBare
 await app.register(fastifyStatic, {
-	root: bareModulePath,
+	root: dirOf("@mercuryworkshop/bare-transport"),
 	prefix: "/baremod/",
 	decorateReply: false
 });

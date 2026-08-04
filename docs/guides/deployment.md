@@ -7,12 +7,12 @@ WebSocket open?** Everything else follows.
 
 ## The requirements
 
-| Requirement           | Why                                                          | Who needs it                  |
-| --------------------- | ------------------------------------------------------------ | ----------------------------- |
-| HTTPS                 | Service workers only run in a secure context                 | Everyone                      |
-| Persistent WebSockets | [Wisp](../concepts/wisp-vs-bare.md) is one long-lived socket | Scramjet always; UV over Wisp |
-| COOP + COEP headers   | `SharedArrayBuffer` for the wasm rewriter                    | Scramjet only                 |
-| Outbound network      | Your server opens TCP sockets to arbitrary hosts             | Everyone                      |
+| Requirement           | Why                                                          | Who needs it                       |
+| --------------------- | ------------------------------------------------------------ | ---------------------------------- |
+| HTTPS                 | Service workers only run in a secure context                 | Everyone                           |
+| Persistent WebSockets | [Wisp](../concepts/wisp-vs-bare.md) is one long-lived socket | Anything not on the Bare transport |
+| COOP + COEP headers   | Lets proxied sites use `SharedArrayBuffer`                   | Strongly recommended, both         |
+| Outbound network      | Your server opens TCP sockets to arbitrary hosts             | Everyone                           |
 
 `localhost` is exempt from HTTPS, which is why development works and production
 sometimes does not.
@@ -29,16 +29,16 @@ sometimes does not.
 | **Railway**                                   | Yes                   | Easy, usage-based                                   |
 | **Koyeb**                                     | Yes                   | Check current WebSocket and idle limits             |
 | **Deno Deploy**                               | Varies                | Needs a Deno-compatible Wisp server                 |
-| **Vercel Functions**                          | **No**                | All-in-one uses Bare; Wisp may be hosted elsewhere  |
+| **Serverless functions**                      | **No**                | All-in-one uses Bare; Wisp may be hosted elsewhere  |
 | **Netlify Functions**                         | **No**                | Bare only, shorter timeouts                         |
 | **Cloudflare Workers**                        | **No** (not for this) | Different runtime; `bare-server-node` needs porting |
 | **GitHub Pages**                              | **No**                | Static files only, no server code                   |
 | **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns   |
 
-The two **No** rows are not dead ends, they just change the engine: a serverless
-function can run Ultraviolet over Bare. That is free to start and fine at low
-traffic, and it is billed per GB of egress, which a proxy produces nothing but.
-[Ultraviolet on Vercel](ultraviolet-vercel.md) covers the tradeoff in full.
+The two **No** rows are not dead ends, they just change the transport: a
+serverless function can run Scramjet over Bare. That is free to start and fine
+at low traffic, and it is billed per GB of egress, which a proxy produces
+nothing but. [Serverless deployment](serverless.md) covers the tradeoff in full.
 
 If you have no platform constraint, use a VPS or another host that runs a
 long-lived Node process and supports WebSocket upgrades. It is the most capable
@@ -315,7 +315,7 @@ drowning out anything you would act on.
 Static frontend on a CDN, wisp backend on a small server:
 
 ```text
-Cloudflare Pages / Vercel / Netlify   →  the shell, assets, engine bundles
+Any static host                       →  the shell, assets, engine bundles
 A VPS or Fly.io                        →  the wisp endpoint
 ```
 

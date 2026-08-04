@@ -34,14 +34,14 @@ export const definePage = (name, definition) => {
     pages.set(name, definition);
 };
 export const isInternal = (url) => typeof url === "string" &&
-    url.slice(0, "ultravioletvercel:".length).toLowerCase() ===
-        "ultravioletvercel:";
+    url.slice(0, "serverless:".length).toLowerCase() ===
+        "serverless:";
 export const listPages = () => [...pages.entries()].map(([name, def]) => ({
     name,
     title: def.title,
-    url: `ultravioletvercel://${name}`
+    url: `serverless://${name}`
 }));
-export const homeUrl = `ultravioletvercel://home`;
+export const homeUrl = `serverless://home`;
 export const pageName = (rawUrl) => {
     try {
         const parsed = new URL(rawUrl);
@@ -100,7 +100,7 @@ ${body}
 };
 const errorDocument = (name) => wrap("Page not found", `<main class="internal">
        <h1>No such page</h1>
-       <p><code>ultravioletvercel://${escapeHtml(name)}</code> does not exist.</p>
+       <p><code>serverless://${escapeHtml(name)}</code> does not exist.</p>
        <ul>${listPages()
     .map(page => `<li><a href="#" data-open="${page.url}">${escapeHtml(page.url)}</a></li>`)
     .join("")}</ul>

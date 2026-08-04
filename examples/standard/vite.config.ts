@@ -1,8 +1,12 @@
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 
 const backendPort = process.env.BACKEND_PORT || "8080";
 
 export default defineConfig({
+	plugins: [
+		tailwindcss()
+	],
 
 	server: {
 		headers: {

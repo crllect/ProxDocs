@@ -22,10 +22,11 @@ For Scramjet, the first value must be `true`, the second should name your
 
 ## The page loads but nothing happens when I navigate
 
-**`crossOriginIsolated === false`**. _probably._
-
-Scramjet needs `SharedArrayBuffer`, which needs
-[cross-origin isolation](../concepts/cross-origin-isolation.md):
+**`crossOriginIsolated === false`**. _possibly, but check the service worker
+first._ Scramjet runs without isolation; what isolation buys you is proxied
+sites being able to use `SharedArrayBuffer` themselves. If nothing at all
+happens on navigation, a service worker scope problem is more likely. Still,
+these are the headers you want, and it costs one line to rule out:
 
 ```text
 Cross-Origin-Opener-Policy: same-origin
@@ -87,8 +88,13 @@ You imported a browser-only transport in Node:
 import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 ```
 
-libcurl 2.x and epoxy 3.x removed their Node entry points. Resolve the path
-without executing the module:
+That exact string comes from libcurl's Emscripten runtime, which is built for
+`worker,web` only and throws when it finds neither. Epoxy 3.x is Rust and
+wasm-bindgen, so it fails differently, but for the same reason and with the same
+fix.
+
+Neither libcurl 2.x nor epoxy 3.x exposes a Node entry point any more. Resolve
+the path without executing the module:
 
 ```js
 const require = createRequire(import.meta.url);
@@ -174,12 +180,51 @@ In this order:
    implementations, so a site may work with one and not the other. Shipping
    [transport switching](../concepts/transports.md) gives users that fallback.
 2. **Try Scramjet if you are on Ultraviolet.** UV's JavaScript rewriter breaks
-   on more sites, and it is archived, so those breakages are permanent.
+   on more sites, and it has not had a release since October 2024, so most of
+   those breakages are not getting fixed for you. Check UV's `main` branch
+   before giving up though, since a few fixes landed there after the last npm
+   release. See
+   [breaking changes](breaking-changes.md#ultraviolet-is-unmaintained).
 3. **Check whether the site needs WebSockets.** If you are on a Bare deployment,
    they will not work at all.
 4. **Check the console inside the frame.** Select the iframe's context in the
    devtools context dropdown. Rewriter failures usually show up as a syntax
    error in a rewritten script.
+5. **Turn on `rewriterLogs`** and reload. See below.
+
+### Getting the rewriter to tell you what it is doing
+
+`rewriterLogs` is off by default and is the single most useful flag when you
+suspect the rewriter rather than your own code. Scope it to the failing site so
+you are not drowning in output from every request:
+
+```js
+scramjetConfig: {
+	siteFlags: {
+		"https://discord\\.com/.*": { rewriterLogs: true }
+	}
+}
+```
+
+Two kinds of output land in the **frame's** console:
+
+**Parse errors.** Every error oxc produced while parsing a script is printed as
+`oxc parse error`. Without the flag these are swallowed, because
+`allowInvalidJs` passes the original script through instead, which is exactly
+why a site can be quietly half-broken with a clean-looking console. Pair the
+flag with `allowInvalidJs: false` to make those failures loud.
+
+**Timing.** Each rewrite prints how long it took, bucketed:
+
+```text
+[time] oxc rewrite for "https://discord.com/assets/app.js" was decent speed (23.45ms)
+```
+
+The buckets are `BLAZINGLY FAST` under 1 ms, `decent speed` under 500 ms, and
+`really slow` above that. HTML rewriting and rewriter-pool allocation report the
+same way. Consistent `really slow` on one site is the signal to reach for
+`disableComputedWrap` through `siteFlags`. See
+[the flags that matter](scramjet-config.md#the-ones-you-will-actually-change).
 
 Some sites will not work. Heavy anti-bot protection, aggressive integrity
 checking, and DRM video are the usual categories, and no amount of configuration

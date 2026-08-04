@@ -7,9 +7,10 @@
       "config": {
         "includeFiles": [
           "public/**",
-          "node_modules/@titaniumnetwork-dev/ultraviolet/**",
-          "node_modules/@mercuryworkshop/bare-mux/**",
-          "node_modules/@mercuryworkshop/bare-as-module3/**"
+          "node_modules/@mercuryworkshop/scramjet/**",
+          "node_modules/@mercuryworkshop/scramjet-controller/**",
+          "node_modules/@mercuryworkshop/scramjet-utils/**",
+          "node_modules/@mercuryworkshop/bare-transport/**"
         ]
       }
     }

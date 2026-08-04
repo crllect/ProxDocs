@@ -298,10 +298,11 @@ export default {
 };
 ```
 
-**This custom server cannot run in Vercel Functions**, since the persistent Wisp
-upgrade handler is the point. Vercel can still serve the client when Wisp is
-hosted separately. If you are using Next because you like React, consider Vite
-instead; the proxy shell is not a content site and gains little from Next.
+**This custom server cannot run in a serverless function**, since the persistent
+Wisp upgrade handler is the point. A static host can still serve the client when
+Wisp is hosted separately. If you are using Next because you like React,
+consider Vite instead; the proxy shell is not a content site and gains little
+from Next.
 
 ---
 

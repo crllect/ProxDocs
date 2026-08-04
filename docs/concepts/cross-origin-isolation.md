@@ -1,7 +1,7 @@
 # Cross-origin isolation
 
-If you take one thing from this page: **Scramjet will not work unless your
-server sends two specific headers**, and the failure mode gives you almost no
+If you take one thing from this page: **send these two headers.** Skipping them
+breaks a whole class of proxied sites, and the failure mode gives you almost no
 useful information.
 
 ```text
@@ -13,27 +13,53 @@ Cross-Origin-Embedder-Policy: require-corp
 
 ## Why it is needed
 
-Scramjet's [rewriter](how-proxies-work.md) is WebAssembly, and it uses
-**`SharedArrayBuffer`** to move data between JavaScript and wasm without
-copying, necessary when you are rewriting megabytes of JavaScript per page load.
+Setting these headers makes **your** page cross-origin isolated, which is what
+grants access to `SharedArrayBuffer`. That much is ordinary web platform
+behaviour. The part that matters for a proxy is what happens next: when your
+shell is isolated, Scramjet stamps `Cross-Origin-Opener-Policy: same-origin` and
+`Cross-Origin-Embedder-Policy: require-corp` onto every proxied document,
+iframe, worker, sharedworker, script and stylesheet on the way back out.
 
-To use `SharedArrayBuffer`, the page must be **cross-origin isolated**. That
-means proving no untrusted cross-origin content shares your process. You prove
-it with those two headers.
-
-So the chain is:
+Isolation propagates into the sites you proxy:
 
 ```text
-Scramjet needs a fast rewriter
-  → written in wasm
-    → needs SharedArrayBuffer
-      → needs cross-origin isolation
-        → needs COOP + COEP on every response
-          → and needs a secure context, so HTTPS
+Your server sends COOP + COEP
+  → your shell is cross-origin isolated
+    → the engine re-sends both headers on every proxied response
+      → proxied pages are isolated too
+        → sites that need SharedArrayBuffer actually work
+          → and all of it needs a secure context, so HTTPS
 ```
 
-Ultraviolet's rewriter is plain JavaScript, so none of this applies. That is a
-real part of why UV still gets deployed.
+Skip the headers and that chain never starts. The engine itself keeps running,
+since Scramjet's wasm [rewriter](how-proxies-work.md) is single-threaded and
+does not use `SharedArrayBuffer`. What you lose is every proxied site that wants
+it: `ffmpeg.wasm` video tools, emulators, wasm-threaded ML, some editors.
+
+Be realistic about the size of that set. Most sites never touch
+`SharedArrayBuffer`, and many libraries that use it fall back to a
+single-threaded path instead of failing, so the usual symptom is "much slower
+than it should be" rather than a hard break. When it does break, it breaks from
+inside the frame, in somebody else's minified code, with nothing pointing back
+at a header you did not send.
+
+That is the argument for sending them: the cost is two lines and self-hosting
+your own assets, the failure is silent and unattributable, and you cannot add
+the headers retroactively for a user who already hit the problem.
+
+There is one place Scramjet needs isolation in your own shell: the `syncxhr`
+flag, which is off by default. See
+[config and flags](../reference/scramjet-config.md#flags).
+
+**Ultraviolet does the same thing**, and does it correctly. Its service worker
+re-sends `Cross-Origin-Embedder-Policy: require-corp` on proxied responses when
+the shell is isolated. It never sets `Cross-Origin-Opener-Policy`, and it does
+not need to: **COOP only applies to top-level documents.** On a nested browsing
+context it is ignored, so an iframe is isolated when the top-level page is
+isolated and the frame itself carries COEP. That is exactly what UV sends.
+
+Scramjet sets both on proxied responses. The COOP half is doing nothing for
+frames; it costs nothing either.
 
 ---
 
@@ -101,7 +127,7 @@ crossOriginIsolated;
 ```
 
 The value must be `true`. If it is `false`, `SharedArrayBuffer` is unavailable
-and Scramjet cannot initialise. Check in order:
+to your shell and to everything you proxy. Check in order:
 
 1. **Both headers present** on the _document_ response, not just on assets. Look
    at the Network tab, select the document request, read the response headers.
@@ -116,23 +142,27 @@ and Scramjet cannot initialise. Check in order:
 
 ## The symptoms
 
-The failure is bad because it is silent and late. The page loads. The UI
-renders. Then navigation does nothing, or the console shows something about wasm
-or `SharedArrayBuffer` that does not mention headers at all.
+The failure is bad because it is silent, late, and happens in someone else's
+code. Your shell loads. The UI renders. Sites proxy fine. Then one particular
+site throws `SharedArrayBuffer is not defined` from inside its own bundle, and
+nothing in that message mentions a header on your server.
 
 Common presentations:
 
-| Symptom                                                | Cause                                                            |
-| ------------------------------------------------------ | ---------------------------------------------------------------- |
-| `SharedArrayBuffer is not defined`                     | Not isolated. Check headers.                                     |
-| `crossOriginIsolated === false` but headers look right | Not a secure context, or a proxy stripped them                   |
-| Page loads, iframe stays blank, no errors              | Usually isolation; check `crossOriginIsolated` first             |
-| Works on localhost, breaks in production               | HTTPS missing, or your host rewrites headers                     |
-| Google Fonts / CDN assets 404 or blocked               | `require-corp` blocking them. Self-host, or try `credentialless` |
-| OAuth popup can no longer reach `window.opener`        | COOP. Expected; no way around it with full isolation             |
+| Symptom                                                    | Cause                                                            |
+| ---------------------------------------------------------- | ---------------------------------------------------------------- |
+| `SharedArrayBuffer is not defined` _inside a proxied site_ | Your shell is not isolated, so the frame is not either           |
+| `crossOriginIsolated === false` but headers look right     | Not a secure context, or something stripped them                 |
+| Works on localhost, breaks in production                   | HTTPS missing, or your host rewrites headers                     |
+| Google Fonts / CDN assets 404 or blocked                   | `require-corp` blocking them. Self-host, or try `credentialless` |
+| OAuth popup can no longer reach `window.opener`            | COOP. Expected; no way around it with full isolation             |
 
-Test isolation _first_ whenever a Scramjet setup misbehaves. It costs one line
-and rules out the most common cause.
+Check `crossOriginIsolated` early whenever a _specific_ site misbehaves in a way
+that mentions wasm or shared memory. It costs one line.
+
+A blank frame or a proxy that does nothing at all is usually **not** this. Look
+at [service worker scope and registration](../reference/troubleshooting.md)
+first, since the engine runs fine without isolation.
 
 ---
 

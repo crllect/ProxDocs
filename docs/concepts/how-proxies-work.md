@@ -26,8 +26,8 @@ So a proxy has to do two separate jobs, and people constantly conflate them:
    them points back through the proxy instead of at the real site. → _the
    rewriting problem_
 
-Wisp, Bare, epoxy, libcurl are all answers to **problem 1**. Ultraviolet and
-Scramjet are answers to **problem 2**.
+Wisp, Bare, epoxy, libcurl are all answers to **problem 1**. Scramjet is the
+answer to **problem 2**.
 
 Architecture questions are easier once you identify which of those two jobs a
 component performs.
@@ -45,8 +45,8 @@ is much easier to get wrong than it looks.
 
 ## Layer 2: the rewriter (the "proxy" proper)
 
-Ultraviolet and Scramjet live here. A **service worker** registered on your
-origin intercepts every request the proxied page makes, and a rewriter
+The [engine](engines.md) lives here. A **service worker** registered on your
+origin intercepts every request the proxied page makes, and the rewriter
 transforms the response before the browser sees it.
 
 This is called an **interception proxy**, and it is what makes the modern
@@ -95,10 +95,11 @@ Two separate jobs:
 2. **Run the tunnel endpoint**. A **Wisp** server on a WebSocket route, or a
    **bare** server on an HTTP route.
 
-Static assets run anywhere. A Wisp relay needs a long-lived WebSocket, so Vercel
-can serve a Scramjet client but Vercel Functions cannot host its bundled relay.
-The [Vercel guide](../guides/ultraviolet-vercel.md) covers an all-in-one
-Ultraviolet-over-Bare build and a separately hosted Wisp alternative.
+Static assets run anywhere. A Wisp relay needs a long-lived WebSocket, which
+request/response functions cannot hold open. The
+[serverless guide](../guides/serverless.md) covers the two ways around that: an
+all-in-one build over Bare, or a static frontend pointed at Wisp on another
+host.
 
 ---
 
@@ -142,13 +143,15 @@ Those eight steps identify where to start debugging a failed request.
 **Costs you:**
 
 - A service worker, so **HTTPS is mandatory** in production.
-- Scramjet's wasm rewriter needs `SharedArrayBuffer`, so **cross-origin
-  isolation headers are mandatory**. See
+- **Cross-origin isolation headers**, which no engine strictly requires but
+  every serious deployment should send, because they are what let proxied sites
+  use `SharedArrayBuffer`. See
   [Cross-origin isolation](cross-origin-isolation.md).
 - Wisp needs a **persistent WebSocket**, so request/response functions cannot
   host the relay. The client and relay may be deployed separately.
 - Rewriting JavaScript correctly is hard. This is a common reason sites break,
-  and the reason [Scramjet replaced Ultraviolet](scramjet-vs-ultraviolet.md).
+  and the reason [the engine](engines.md) is the part of the stack that took the
+  longest to get right.
 
 ---
 
@@ -156,4 +159,4 @@ Those eight steps identify where to start debugging a failed request.
 
 - [Wisp vs Bare](wisp-vs-bare.md). The two tunnel protocols, and why wisp won.
 - [Transports](transports.md). Epoxy, libcurl, bare, and how to choose.
-- [Scramjet vs Ultraviolet](scramjet-vs-ultraviolet.md), which rewriter to use.
+- [Proxy engines](engines.md), what the rewriter does and which one to use.

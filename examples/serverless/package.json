@@ -1,5 +1,5 @@
 {
-  "name": "ultraviolet-vercel",
+  "name": "serverless",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,10 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@mercuryworkshop/bare-as-module3": "^2.2.5",
-    "@mercuryworkshop/bare-mux": "^2.1.9",
-    "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
+    "@mercuryworkshop/bare-transport": "^1.0.0",
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
     "@tomphttp/bare-server-node": "^2.0.3",
     "express": "^4.21.2"
   }

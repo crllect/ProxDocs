@@ -4,12 +4,93 @@ export const defaultWispUrl = () => {
     const scheme = location.protocol === "https:" ? "wss:" : "ws:";
     return scheme + "//" + location.host + "/wisp/";
 };
-const boot = async () => {
-    if (typeof initBootstrap !== "function") {
-        throw new Error('initBootstrap() is missing. Check that <script src="/bootstrap-init.js"> ' +
-            "is in your <head> and that the server called bootstrap().");
+const runtimeScripts = [
+    "/scram/scramjet.js",
+    "/controller/controller.api.js",
+    "/utils/scramjet-utils.js"
+];
+const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+        const el = document.createElement("script");
+        el.src = src;
+        el.async = false;
+        el.onload = () => resolve();
+        el.onerror = () => reject(new Error("Failed to load " + src));
+        document.head.append(el);
+    });
+};
+const loadRuntimeScripts = async () => {
+    await Promise.all(runtimeScripts.map(loadScript));
+};
+const isDevHost = () => location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const registerServiceWorker = async () => {
+    if (!("serviceWorker" in navigator)) {
+        throw new Error("Service workers are unavailable. The page must be served over https:// " +
+            "or from a localhost secure context.");
     }
-    controller = await initBootstrap();
+    if (isDevHost()) {
+        for (const existing of await navigator.serviceWorker.getRegistrations()) {
+            if (!existing.active?.scriptURL.endsWith("/sw.js")) {
+                await existing.unregister();
+            }
+        }
+    }
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+        scope: "/",
+        updateViaCache: "none"
+    });
+    void registration.update();
+    const ready = await navigator.serviceWorker.ready;
+    const worker = ready.active ?? navigator.serviceWorker.controller;
+    if (!worker)
+        throw new Error("Service worker registered but never became active");
+    return worker;
+};
+const transportModules = {
+    libcurl: "/libcurl/index.mjs",
+};
+let currentTransport = {
+    kind: "libcurl",
+    wisp: "",
+    bare: ""
+};
+const resolveTransport = (config) => {
+    const kind = transportModules[config.kind]
+        ? config.kind
+        : "libcurl";
+    switch (kind) {
+        default:
+            return {
+                path: transportModules[kind],
+                kind,
+                endpoint: config.wisp || defaultWispUrl()
+            };
+    }
+};
+const buildTransport = async (config) => {
+    const { path, kind, endpoint } = resolveTransport(config);
+    const module = (await import(/* @vite-ignore */ path));
+    switch (kind) {
+        default:
+            return new module.default({ wisp: endpoint });
+    }
+};
+const boot = async () => {
+    const [serviceworker] = await Promise.all([
+        registerServiceWorker(),
+        loadRuntimeScripts()
+    ]);
+    const api = window.$scramjetController;
+    controller = new api.Controller({
+        serviceworker,
+        transport: await buildTransport(currentTransport),
+        config: {
+            scramjetPath: "/scram/scramjet.js",
+            wasmPath: "/scram/scramjet.wasm",
+            injectPath: "/controller/controller.inject.js"
+        }
+    });
+    await controller.wait();
     return controller;
 };
 const utils = () => {
@@ -113,7 +194,6 @@ export const engine = {
     id: "scramjet",
     label: "Scramjet",
     supportsTransportSwitch: false,
-    requiresIsolation: true,
     async init() {
         ready ??= boot();
         return ready;

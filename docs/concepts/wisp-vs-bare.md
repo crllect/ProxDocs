@@ -35,10 +35,9 @@ The specification is
 
 ### What Bare is good at
 
-**It is ordinary HTTP.** That property lets an all-in-one Ultraviolet-over-Bare
-build use request/response functions that cannot hold a socket open. On Vercel,
-this is the all-in-one alternative to serving a Scramjet client with Wisp hosted
-elsewhere. See [Ultraviolet on Vercel](../guides/ultraviolet-vercel.md).
+**It is ordinary HTTP.** That property lets an all-in-one build run on
+request/response functions that cannot hold a socket open. See
+[Serverless deployment](../guides/serverless.md).
 
 It is also easy to reason about and easy to debug: every request is visible in
 your server logs as a normal request.
@@ -96,7 +95,11 @@ It also means:
 
 - **Websockets to the target site are native.** They are just another TCP
   stream. Nothing is bolted on, so sites that depend on WebSockets work.
-- **UDP works too**, which bare cannot do at all.
+- **UDP works too**, which bare cannot do at all. The spec makes UDP optional
+  for both ends and negotiates it through an extension, so it is not guaranteed
+  by "speaks wisp" alone. In practice both common relays do it:
+  `wisp-server-node` handles UDP streams, and `wisp-js` ships
+  `allow_udp_streams: true` by default.
 - **One connection is reused** for everything, so there is no per-request
   connection setup.
 
@@ -104,7 +107,7 @@ It also means:
 
 **A persistent WebSocket:**
 
-- Vercel and Netlify Functions cannot host it. Other serverless runtimes need a
+- Serverless functions cannot host it. Other serverless runtimes need a
   Wisp-compatible WebSocket and outbound-socket implementation.
 - Any proxy or load balancer between you and the user must pass WebSockets
   through, correctly, without an aggressive idle timeout.
@@ -127,7 +130,7 @@ WebAssembly, which is a meaningful download and some startup cost.
 | Websockets to target         | Native                      | Bolted on; impossible on serverless |
 | UDP                          | Yes                         | No                                  |
 | All-in-one request/response  | No                          | Yes                                 |
-| Used by                      | Scramjet (required), UV 3.x | UV 1.x–3.x                          |
+| Used by                      | Scramjet, Ultraviolet 3.x   | Scramjet, Ultraviolet 1.x–3.x       |
 
 ---
 
@@ -136,9 +139,9 @@ WebAssembly, which is a meaningful download and some startup cost.
 **Wisp, unless you cannot.**
 
 Use Bare for an all-in-one deployment whose backend cannot hold a WebSocket
-open. That means Ultraviolet, because Scramjet has no Bare transport. A Scramjet
-client can instead point to Wisp on a separate host. See
-[Ultraviolet on Vercel](../guides/ultraviolet-vercel.md).
+open. Scramjet runs over Bare through `@mercuryworkshop/bare-transport`. The
+better option, if you can take it, is to keep Wisp on a separate host and point
+a Scramjet client at it. See [Serverless deployment](../guides/serverless.md).
 
 If you run Bare, tell users that your server terminates target TLS and can
 inspect their requests and responses.
@@ -154,7 +157,7 @@ route upgrade requests to it:
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+	if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
 		wisp.routeRequest(req, socket, head);
 		return;
 	}

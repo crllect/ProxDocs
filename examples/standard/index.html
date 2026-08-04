@@ -39,28 +39,34 @@
 			</form>
 
 			<div class="toolbar__right">
-				<button id="bookmark" type="button" aria-pressed="false">
-					bookmark
-				</button>
-				<button id="menu-toggle" type="button" aria-expanded="false">
-					menu
-				</button>
+				<button data-popup="settings" type="button">settings</button>
 			</div>
 		</div>
 
-		<div id="menu" class="menu" hidden>
-			<button data-open="standard://settings" type="button">
-				settings
-			</button>
-			<button data-open="standard://history" type="button">
-				history
-			</button>
-			<button data-open="standard://bookmarks" type="button">
-				bookmarks
-			</button>
-			<button data-open="standard://about" type="button">
-				about
-			</button>
+		<div id="popup" class="popup" hidden>
+			<section
+				class="popup__panel"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="popup-title"
+			>
+				<header class="popup__header">
+					<span id="popup-title"></span>
+					<button
+						id="popup-close"
+						type="button"
+						aria-label="Close menu"
+					>
+						close
+					</button>
+				</header>
+				<iframe
+					id="popup-frame"
+					class="popup__frame"
+					title="Menu"
+					sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-downloads"
+				></iframe>
+			</section>
 		</div>
 
 		<div id="tabs" class="tabs" role="tablist"></div>

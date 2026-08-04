@@ -20,8 +20,8 @@ const app = Fastify({
 
 		server.on("upgrade", (req, socket, head) => {
 			if (
-				new URL(req.url ?? "/", "https://myproxy.com").pathname ===
-				"/wisp/"
+				new URL(req.url ?? "/", `http://${req.headers.host}`)
+					.pathname === "/wisp/"
 			) {
 				wisp.routeRequest(req, socket, head);
 				return;

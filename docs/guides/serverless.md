@@ -1,9 +1,10 @@
-# Ultraviolet on Vercel
+# Serverless deployment
 
-Vercel can serve a Scramjet client, but Vercel Functions cannot host bundled
-Wisp because its persistent WebSocket outlives a function request. An all-in-one
-Vercel build therefore uses **Ultraviolet over Bare**. Wisp may instead run on a
-separate WebSocket-capable host.
+Serverless function platforms cannot hold a WebSocket open. That rules out
+[Wisp](../concepts/wisp-vs-bare.md), which is one long-lived socket carrying
+every stream. The way around it is the [Bare](../concepts/wisp-vs-bare.md)
+transport: ordinary HTTP, one request in and one response out, which is exactly
+the shape a function has.
 
 This works, and for a lot of projects it is the right call. If you have no
 server, no budget, and a handful of users, serverless is the only way to put a
@@ -11,61 +12,79 @@ whole proxy somewhere for free, and the costs below never come due at that size.
 
 What it is not is a path that scales. Read the tradeoffs before you commit, so
 that if the project grows the move is planned rather than forced. My first ever
-proxy landed me an $600 monthly bill because I was using vercel pro, don't make
-that mistake.
+proxy landed me a $600 monthly bill on a serverless host. Do not make that
+mistake.
+
+Fair warning that this is a shrinking corner of the ecosystem. Most proxies run
+on a cheap VPS now, because it is cheaper, faster, and does not lose WebSocket
+sites. If you have the option, skip to
+[the alternative](#the-alternative-worth-considering).
 
 ```bash
-node builder/cli.js --out ./my-proxy --preset staticHost
+node builder/cli.js --out ./my-proxy --preset serverless
 ```
 
 ---
 
-## Why the constraint exists
-
-Vercel Functions use a request/response lifecycle and cannot keep Wisp's
-WebSocket open between requests.
-
-[Wisp](../concepts/wisp-vs-bare.md) is a single persistent WebSocket carrying
-every stream. The two models cannot be reconciled. It is not a configuration
-problem and there is no flag to set.
-
-[Bare](../concepts/wisp-vs-bare.md) is ordinary HTTP: one request in, one
-response out. That maps onto a Vercel Function.
-
-So the all-in-one combination for Vercel is:
+## The pieces
 
 ```text
-Ultraviolet  (no SharedArrayBuffer, so no COOP/COEP requirement)
+Scramjet          (the rewriter, unchanged)
     over
-bare-as-module3  (plain HTTP, no WebSocket)
+bare-transport    (plain HTTP, no WebSocket)
     to
-@tomphttp/bare-server-node  (running as a serverless function)
+@tomphttp/bare-server-node   (running in the same function)
 ```
 
-Scramjet has no bare [transport](../concepts/transports.md) at all.
-`proxy-bootstrap` contains a stub that throws
-`"Bare transport not implemented yet"`. Do not spend time trying.
+`@mercuryworkshop/bare-transport` is the Bare transport for `proxy-transports`,
+which is the interface Scramjet 2.x uses. **It is not `bare-as-module3`**,
+despite that being the name most search results give you. That one is the older
+bare-mux version and Scramjet cannot use it. See
+[the two Bare packages](../concepts/transports.md#bare).
+
+`proxy-bootstrap` cannot wire Bare; it ships a stub that throws
+`"Bare transport not implemented yet"`. Serverless builds use
+[manual wiring](wiring.md), which is what you want anyway.
 
 ---
 
 ## The server
 
+One file, and it is the same server you would run anywhere else plus a Bare
+server bolted onto the front.
+
 ```js
-import express from "express";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import express from "express";
+import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { createBareServer } from "@tomphttp/bare-server-node";
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const dirOf = specifier => path.dirname(require.resolve(specifier));
 
 const app = express();
 
-app.use("/uv/", express.static(uvPath));
-app.use("/baremux/", express.static(baremuxPath));
-app.use("/baremod/", express.static(bareModulePath));
-app.use(express.static("public"));
+app.use((_req, res, next) => {
+	res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+	res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+	next();
+});
+
+app.use("/scram/", express.static(scramjetPath));
+app.use("/utils/", express.static(dirOf("@mercuryworkshop/scramjet-utils")));
+app.use(
+	"/controller/",
+	express.static(dirOf("@mercuryworkshop/scramjet-controller"))
+);
+app.use("/baremod/", express.static(dirOf("@mercuryworkshop/bare-transport")));
+app.use(express.static(path.join(__dirname, "public")));
 
 const bareServer = createBareServer("/bare/");
+
 const handleRequest = (req, res) => {
 	if (bareServer.shouldRoute(req)) {
 		bareServer.routeRequest(req, res);
@@ -81,8 +100,15 @@ if (!process.env.VERCEL) {
 }
 ```
 
-Note there is **no `upgrade` handler and no COOP/COEP middleware**. Ultraviolet
-does not need isolation, and there are no WebSockets to route.
+Two things to notice. There is **no `upgrade` handler**, because there are no
+WebSockets to route. And the isolation headers are still here: nothing in this
+stack requires them, but they are what let a proxied site use
+`SharedArrayBuffer`, so keep them. See
+[cross-origin isolation](../concepts/cross-origin-isolation.md).
+
+The `export default handleRequest` is what the platform invokes. The
+`if (!process.env.VERCEL)` guard is so the same file still runs locally with
+`node server.js`; rename the variable if your host sets a different one.
 
 ### `vercel.json`
 
@@ -96,9 +122,10 @@ does not need isolation, and there are no WebSockets to route.
 			"config": {
 				"includeFiles": [
 					"public/**",
-					"node_modules/@titaniumnetwork-dev/ultraviolet/**",
-					"node_modules/@mercuryworkshop/bare-mux/**",
-					"node_modules/@mercuryworkshop/bare-as-module3/**"
+					"node_modules/@mercuryworkshop/scramjet/**",
+					"node_modules/@mercuryworkshop/scramjet-controller/**",
+					"node_modules/@mercuryworkshop/scramjet-utils/**",
+					"node_modules/@mercuryworkshop/bare-transport/**"
 				]
 			}
 		}
@@ -107,53 +134,36 @@ does not need isolation, and there are no WebSockets to route.
 }
 ```
 
-Everything goes to one exported function. `includeFiles` keeps the application,
-UV, bare-mux, and Bare module assets available to Express after Vercel traces
-the server bundle.
+Everything routes to the one exported function. `includeFiles` matters more than
+it looks: the bundler traces imports to decide what to ship, and it cannot see
+that `express.static(dirOf(...))` needs those directories at runtime. Leave a
+package out and you get 404s on the engine files with a server that started
+fine. Other platforms have an equivalent setting under a different name.
 
 ## The client
 
-```js
-self.__uv$config = {
-	prefix: "/service/",
-	bare: "/bare/",
-	encodeUrl: Ultraviolet.codec.xor.encode,
-	decodeUrl: Ultraviolet.codec.xor.decode,
-	handler: "/uv/uv.handler.js",
-	client: "/uv/uv.client.js",
-	bundle: "/uv/uv.bundle.js",
-	config: "/uv-config.js",
-	sw: "/uv/uv.sw.js"
-};
-```
+Identical to any other Scramjet setup except for the transport, which takes the
+Bare server URL directly rather than a `{ wisp }` object:
 
 ```js
-const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
-await connection.setTransport("/baremod/index.mjs", [
-	new URL("/bare/", location.href).href
-]);
+const { default: BareClient } = await import("/baremod/index.mjs");
 
-const registration = await navigator.serviceWorker.register("/uv-sw.js", {
-	scope: __uv$config.prefix
+const controller = new api.Controller({
+	serviceworker,
+	transport: new BareClient(new URL("/bare/", location.href).href),
+	config: {
+		scramjetPath: "/scram/scramjet.js",
+		wasmPath: "/scram/scramjet.wasm",
+		injectPath: "/controller/controller.inject.js"
+	}
 });
 
-const worker =
-	registration.active ?? registration.installing ?? registration.waiting;
-if (worker && worker.state !== "activated") {
-	await new Promise(resolve =>
-		worker.addEventListener("statechange", () => {
-			if (worker.state === "activated") resolve();
-		})
-	);
-}
-
-iframe.src = __uv$config.prefix + __uv$config.encodeUrl(url);
+await controller.wait();
 ```
 
-> **The `bare` field confuses everyone.** Almost every Ultraviolet config in the
-> wild sets `bare:` even when running libcurl or epoxy over wisp, where it is
-> completely ignored. It is only read by the Bare transport. In this setup it is
-> used; in a Wisp setup you can delete it.
+Everything downstream, frames, plugins, cookies, is unchanged. The transport is
+the only difference between this and a Wisp deployment, which is the whole point
+of the transport abstraction. See [Transports](../concepts/transports.md).
 
 ---
 
@@ -163,7 +173,8 @@ iframe.src = __uv$config.prefix + __uv$config.encodeUrl(url);
 
 Not "will be slow". Will not work. Discord, most chat apps, live dashboards,
 collaborative editors, anything with real-time updates. The Bare spec does
-define WebSocket tunnelling, but it needs a connection the function cannot hold.
+define WebSocket tunnelling, and `bare-transport` implements it, but it needs a
+connection the function cannot hold open.
 
 This rules out a large fraction of what people want a proxy for.
 
@@ -174,16 +185,10 @@ cookie, form post, and response that passes through the function.
 
 With Wisp, HTTPS target TLS terminates in the browser and the relay sees
 ciphertext plus connection metadata. Plain HTTP destinations are not encrypted
-end to end.
+end to end either way.
 
 If you deploy this, tell your users. It is a legitimate engineering tradeoff and
 a bad thing to be quiet about.
-
-### Worse site compatibility
-
-Ultraviolet's JavaScript rewriter breaks on more sites than Scramjet's Rust/WASM
-one, and it is [archived](../concepts/scramjet-vs-ultraviolet.md), when a site
-changes something UV gets wrong, it stays wrong.
 
 ### It gets expensive faster than anything else here
 
@@ -199,14 +204,14 @@ several GB.
 A VPS with a few TB of included transfer costs a few dollars a month and does
 not surprise you. Serverless has no equivalent ceiling. Compare your provider's
 per-GB egress price against a VPS bandwidth allowance before you deploy this
-somewhere the public can reach. Though in complete honesty, I would recommend
-using unlimited bandwidth VPSs exclusively unless your project is really small.
+somewhere the public can reach. In complete honesty, I would recommend
+unlimited-bandwidth VPSs exclusively unless your project is really small.
 
 ### Execution limits and cold starts
 
-Vercel functions have a wall-clock limit. Long downloads, video streaming, and
-slow endpoints get cut off. Cold starts add latency to the first request after
-idle.
+Functions have a wall-clock limit. Long downloads, video streaming, and slow
+endpoints get cut off. Cold starts add latency to the first request after idle,
+and a proxy's first request also pulls the rewriter wasm.
 
 ### Check the host's terms
 
@@ -217,14 +222,14 @@ policy. Read the current terms for your provider before deploying one.
 
 ## The alternative worth considering
 
-Split the deployment:
+Split the deployment instead of forcing everything into one function:
 
 ```text
-Frontend  → Vercel, Netlify, Cloudflare Pages, GitHub Pages (static, free, fast)
+Frontend  → any static host (free, fast, no server)
 Backend   → a small VPS, Fly, Render, Railway, Koyeb (WebSockets work)
 ```
 
-Point the client at the remote wisp server:
+Point the client at the remote Wisp server:
 
 ```js
 const transport = new LibcurlClient({
@@ -232,26 +237,19 @@ const transport = new LibcurlClient({
 });
 ```
 
-You get Scramjet, target-site WebSockets, and TLS in the browser while keeping
-the CDN for static assets. The Wisp host needs a valid certificate; if it also
-serves browser assets, those responses need appropriate CORS headers.
+You get target-site WebSockets and TLS terminating in the browser, while the
+part that costs nothing to host stays on the free tier. The only thing you give
+up is a single deployment target.
 
-A small VPS or long-running application host can run Wisp without the function
-limits above. See [Deployment](deployment.md).
+If you can do this, do this.
 
 ---
 
-## Other static hosts
+## Where to go next
 
-| Host                           | Bare over HTTP   | Wisp              | Notes                                               |
-| ------------------------------ | ---------------- | ----------------- | --------------------------------------------------- |
-| Vercel                         | Yes              | Separately hosted | Functions cannot host persistent Wisp               |
-| Netlify Functions              | Yes              | No                | Same model, shorter timeouts                        |
-| Cloudflare Workers             | Partly           | No                | Different runtime; `bare-server-node` needs porting |
-| GitHub Pages                   | No               | No                | Static files only, no server code at all            |
-| Deno Deploy                    | Runtime-specific | Runtime-specific  | Requires a Deno-compatible Wisp server              |
-| Render / Fly / Railway / Koyeb | Yes              | **Yes**           | Real Node processes; use Scramjet                   |
-
-Deno Deploy requires a Deno-compatible Wisp server rather than
-`@mercuryworkshop/wisp-js`'s Node build. Verify current WebSocket limits before
-choosing it.
+- [Wisp vs Bare](../concepts/wisp-vs-bare.md). What you are actually choosing
+  between, and what each one exposes.
+- [Transports](../concepts/transports.md). The three transports and the two
+  confusingly named Bare packages.
+- [Deployment](deployment.md). Hosting a normal, non-serverless proxy.
+- [Wiring Scramjet](wiring.md). The manual wiring this page assumes.

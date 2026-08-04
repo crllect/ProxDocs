@@ -154,13 +154,16 @@ const popupFocusables = () =>
 		)
 	].filter(element => !element.hidden);
 
+let popupTrigger: HTMLElement | null = null;
+
 const closePopup = () => {
 	popup.hidden = true;
 	for (const element of popupBackground) element.inert = false;
-	$<HTMLButtonElement>("#menu-toggle").focus();
+	popupTrigger?.focus();
 };
 
-const openPopup = (name: string) => {
+const openPopup = (name: string, trigger: HTMLElement | null = null) => {
+	popupTrigger = trigger;
 	const html = internal.render(`${internal.scheme}://${name}`);
 	if (html === null) return;
 	popupPage = name;
@@ -295,26 +298,19 @@ $("#forward").addEventListener("click", () => {
 });
 $("#reload").addEventListener("click", () => currentSession()?.reload());
 
-const menu = $<HTMLElement>("#menu");
-const menuToggle = $<HTMLButtonElement>("#menu-toggle");
+const closeMenu = () => {};
+const menuRoot: ParentNode = document;
 
-menuToggle.addEventListener("click", () => {
-	menu.hidden = !menu.hidden;
-	menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
-});
-
-for (const button of menu.querySelectorAll<HTMLElement>("[data-open]")) {
+for (const button of menuRoot.querySelectorAll<HTMLElement>("[data-open]")) {
 	button.addEventListener("click", () => {
-		menu.hidden = true;
-		menuToggle.setAttribute("aria-expanded", "false");
+		closeMenu();
 		void navigate(button.dataset.open!);
 	});
 }
-for (const button of menu.querySelectorAll<HTMLElement>("[data-popup]")) {
+for (const button of menuRoot.querySelectorAll<HTMLElement>("[data-popup]")) {
 	button.addEventListener("click", () => {
-		menu.hidden = true;
-		menuToggle.setAttribute("aria-expanded", "false");
-		openPopup(button.dataset.popup!);
+		closeMenu();
+		openPopup(button.dataset.popup!, button);
 	});
 }
 

@@ -6,14 +6,14 @@ A working Scramjet proxy, from nothing, in about two minutes.
 
 - **Node 22.13 or newer** to run this repository's builder. Check with
   `node -v`.
-- A host that can hold a WebSocket open. Your own machine qualifies; Vercel
-  Functions do not, though Vercel may serve the client while Wisp runs
+- A host that can hold a WebSocket open. Your own machine qualifies; serverless
+  functions do not, though a static host may serve the client while Wisp runs
   elsewhere. See [Deployment](deployment.md).
 
 ## Generate a project
 
 ```bash
-node builder/cli.js --out ./my-proxy --preset barebones
+node builder/cli.js --out ./my-proxy --preset minimal
 ```
 
 Or start the documentation site and use the `/build` route to download the zip.
@@ -27,15 +27,14 @@ npm start
 Open the generated app's `/` route on its configured port, type an address, and
 press enter. That is the whole thing.
 
-> The first `npm start` takes a few seconds longer than later ones.
-> `proxy-bootstrap` resolves and caches its runtime package set on first run.
-> Those versions are not part of the generated project's lockfile.
+Every package is a normal dependency in `package.json`, resolved by
+`npm install` and pinned in your lockfile. Nothing is fetched at runtime.
 
 ---
 
 ## What you got
 
-Ten files. The interesting ones:
+Eleven files. The interesting ones:
 
 ```text
 server.js               static files + the wisp endpoint
@@ -48,41 +47,61 @@ public/js/url.js        address-bar input -> URL
 ### `server.js`
 
 ```js
-const { routeRequest, routeUpgrade } = await bootstrap({
-	transport: "libcurl"
-});
-
 app.use((_req, res, next) => {
 	res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 	res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
 	next();
 });
 
-app.use((req, res, next) => {
-	if (routeRequest(req, res)) return;
-	next();
-});
+const dirOf = specifier => path.dirname(require.resolve(specifier));
+
+app.use("/scram/", express.static(scramjetPath));
+app.use("/utils/", express.static(dirOf("@mercuryworkshop/scramjet-utils")));
+app.use(
+	"/controller/",
+	express.static(dirOf("@mercuryworkshop/scramjet-controller"))
+);
+app.use(
+	"/libcurl/",
+	express.static(dirOf("@mercuryworkshop/libcurl-transport"))
+);
 app.use(express.static("public"));
 
-server.on("upgrade", routeUpgrade);
+server.on("upgrade", (req, socket, head) => {
+	if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
+		wisp.routeRequest(req, socket, head);
+		return;
+	}
+	socket.end();
+});
 ```
 
 Three things are happening:
 
-1. **`bootstrap()`** downloads the Scramjet packages and returns two routers. It
-   serves the Scramjet bundle, the wasm rewriter, the controller,
-   scramjet-utils, the transport client, `/sw.js`, and `/bootstrap-init.js`.
-2. **The COOP/COEP headers** have to be there. Scramjet's rewriter needs
-   `SharedArrayBuffer`, which browsers withhold from pages that are not
-   cross-origin isolated. Remove them and the app loads and then quietly fails.
-   See [Cross-origin isolation](../concepts/cross-origin-isolation.md).
-3. **`routeUpgrade`** runs the [wisp](../concepts/wisp-vs-bare.md) endpoint. The
-   WebSocket that carries all real traffic.
+1. **Four static mounts.** Scramjet's bundle and wasm, the controller, utils,
+   and the transport, each served straight out of `node_modules`. That is the
+   entire server side of a proxy. See [Wiring Scramjet](wiring.md).
+2. **The COOP/COEP headers.** Keep them. The engine itself runs without them,
+   but they are what makes your page cross-origin isolated, and Scramjet passes
+   that isolation on to every site you proxy. Remove them and any proxied site
+   needing `SharedArrayBuffer` fails from inside its own bundle. See
+   [Cross-origin isolation](../concepts/cross-origin-isolation.md).
+3. **The upgrade handler** runs the [wisp](../concepts/wisp-vs-bare.md)
+   endpoint. The WebSocket that carries all real traffic.
 
 ### `public/js/engine.js`
 
 ```js
-controller = await initBootstrap();
+const controller = new api.Controller({
+	serviceworker,
+	transport: new LibcurlClient({ wisp: wispUrl }),
+	config: {
+		scramjetPath: "/scram/scramjet.js",
+		wasmPath: "/scram/scramjet.wasm",
+		injectPath: "/controller/controller.inject.js"
+	}
+});
+await controller.wait();
 
 const frame = controller.createFrame(iframeElement, {
 	plugins: [
@@ -95,9 +114,9 @@ const frame = controller.createFrame(iframeElement, {
 frame.go("https://crllect.dev");
 ```
 
-`initBootstrap()` is a global from `/bootstrap-init.js`. It registers the
-service worker, loads every bundle, builds the transport, and hands back a ready
-`Controller`.
+The generated file also registers the service worker and loads the three runtime
+scripts before this runs. [Wiring Scramjet](wiring.md) walks through that boot
+sequence line by line.
 
 What the three plugins do:
 
@@ -122,8 +141,8 @@ full surface.
 
 ## Adding features
 
-The barebones build has no tabs, no settings, no history, on purpose. It is
-meant to be read in one sitting.
+The minimal build has no tabs, no settings, no history, on purpose. It is meant
+to be read in one sitting.
 
 When you want more, regenerate:
 
@@ -131,20 +150,14 @@ When you want more, regenerate:
 node builder/cli.js --out ./my-proxy --preset standard --force
 ```
 
-That gives you tabs, settings, transport switching, history and bookmarks, and
-switches to **manual wiring**: you install the Scramjet packages and mount them
-as static directories instead of letting bootstrap fetch them at runtime.
-
-That switch is required for [transport switching](../concepts/transports.md),
-because bootstrap only serves the single transport client it was configured
-with. The builder enforces it rather than letting you generate something that
-silently cannot work.
+That gives you tabs, settings and
+[transport switching](../concepts/transports.md), and moves you to TypeScript,
+Vite and Tailwind. The server is the same four static mounts.
 
 Or pick features individually:
 
 ```bash
 node builder/cli.js --out ./my-proxy \
-    --engine scramjet --wiring manual \
     --features tabs,settings,transportSwitch,history
 ```
 

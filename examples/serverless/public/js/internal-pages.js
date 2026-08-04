@@ -32,7 +32,7 @@ export const registerInternalPages = () => {
         title: "new tab",
         render: () => `
       <main class="internal">
-        <h1>Ultraviolet Vercel</h1>
+        <h1>Serverless</h1>
         <p>type an address above</p>
         <ul>
           ${listPages()
@@ -47,8 +47,8 @@ export const registerInternalPages = () => {
         render: () => {
             const sj = window.$scramjet;
             const facts = [
-                ["engine", "Ultraviolet 3.x"],
-                ["version", sj?.versionInfo?.version ?? "3.2.10"],
+                ["engine", "Scramjet"],
+                ["version", sj?.versionInfo?.version ?? "2.0.67-alpha.2"],
                 [
                     "transport",
                     engine.getTransport?.().kind ?? "bare"

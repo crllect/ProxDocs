@@ -1,8 +1,8 @@
 # Building a web proxy
 
-This is documentation for building an interception-based web proxy, the Scramjet
-and Ultraviolet family. Plus a generator that hands you a working project
-configured the way you want it.
+This is documentation for building an interception-based web proxy with
+**Scramjet**. Plus a generator that hands you a working project configured the
+way you want it.
 
 It fills the gap between short setup READMEs and reading every upstream package.
 
@@ -30,7 +30,7 @@ conflating them:
 
 **Wisp, Bare, epoxy, and libcurl** solve problem 1.
 
-**Ultraviolet and Scramjet** solve problem 2.
+**Scramjet** solves problem 2. It is the [engine](concepts/engines.md).
 
 They are chosen independently. "Should I use Scramjet or wisp?" is not a
 question. You use Scramjet _over_ wisp.
@@ -41,14 +41,14 @@ question. You use Scramjet _over_ wisp.
 
 ### Concepts
 
-| Page                                                           | What it answers                                           |
-| -------------------------------------------------------------- | --------------------------------------------------------- |
-| [How a proxy works](concepts/how-proxies-work.md)              | The four layers, and one request traced end to end        |
-| [Scramjet vs Ultraviolet](concepts/scramjet-vs-ultraviolet.md) | Which rewriter fits your host                             |
-| [Wisp vs Bare](concepts/wisp-vs-bare.md)                       | The two tunnel protocols, and why wisp won                |
-| [Transports](concepts/transports.md)                           | epoxy, libcurl, bare. What they are and how to choose     |
-| [bare-mux and proxy-transports](concepts/bare-mux.md)          | What bare-mux is, and what replaced it                    |
-| [Cross-origin isolation](concepts/cross-origin-isolation.md)   | Why Scramjet needs COOP/COEP and what breaks without them |
+| Page                                                         | What it answers                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [How a proxy works](concepts/how-proxies-work.md)            | The four layers, and one request traced end to end           |
+| [Proxy engines](concepts/engines.md)                         | What the rewriter does, and why this site documents Scramjet |
+| [Wisp vs Bare](concepts/wisp-vs-bare.md)                     | The two tunnel protocols, and why wisp won                   |
+| [Transports](concepts/transports.md)                         | epoxy, libcurl, bare. What they are and how to choose        |
+| [bare-mux and proxy-transports](concepts/bare-mux.md)        | What bare-mux is, and what replaced it                       |
+| [Cross-origin isolation](concepts/cross-origin-isolation.md) | Why Scramjet needs COOP/COEP and what breaks without them    |
 
 ### Guides
 
@@ -62,7 +62,7 @@ question. You use Scramjet _over_ wisp.
 | [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break         |
 | [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev   |
 | [Wiring Scramjet](guides/wiring.md)                          | Serving the engine, its service worker, and Wisp         |
-| [Ultraviolet on Vercel](guides/ultraviolet-vercel.md)        | An all-in-one deployment over Bare, and what it costs    |
+| [Serverless deployment](guides/serverless.md)                | An all-in-one deployment over Bare, and what it costs    |
 | [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun     |
 | [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                      |
 | [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch    |
@@ -92,17 +92,16 @@ you did not ask for and fills in a few names.
 
 It asks about the stack:
 
-| Question          | Options                                         |
-| ----------------- | ----------------------------------------------- |
-| Language          | TypeScript or JavaScript                        |
-| Package manager   | npm, pnpm, yarn, bun                            |
-| Runtime           | Node or Bun                                     |
-| Server framework  | Express or Fastify                              |
-| Frontend          | Vanilla, React, or Astro + Preact               |
-| Build step        | Vite, or none at all                            |
-| Styling           | Plain CSS, SCSS, or Tailwind                    |
-| Proxy engine      | Scramjet, or Ultraviolet if you need serverless |
-| Default transport | libcurl, epoxy, or bare                         |
+| Question          | Options                           |
+| ----------------- | --------------------------------- |
+| Language          | TypeScript or JavaScript          |
+| Package manager   | npm, pnpm, yarn, bun              |
+| Runtime           | Node or Bun                       |
+| Server framework  | Express or Fastify                |
+| Frontend          | Vanilla, React, or Astro + Preact |
+| Build step        | Vite, or none at all              |
+| Styling           | Plain CSS, SCSS, or Tailwind      |
+| Default transport | libcurl, epoxy, or bare           |
 
 It also asks about the features:
 
@@ -120,9 +119,9 @@ It also asks about the features:
 
 Choices that cannot work together are greyed out with the reason, rather than
 letting you pick them and quietly changing them afterwards. Picking an
-all-in-one Vercel host selects Ultraviolet over Bare because Vercel Functions
-cannot host Wisp; a Scramjet client may instead use Wisp hosted elsewhere.
-Picking bootstrap wiring disables transport switching.
+all-in-one serverless host selects the Bare transport, because those hosts
+cannot hold Wisp's WebSocket open; a static frontend may instead point at Wisp
+hosted elsewhere. See [Serverless deployment](guides/serverless.md).
 
 Or from the terminal:
 
@@ -137,8 +136,8 @@ node builder/cli.js --out ./my-proxy \
 
 Generated projects are structured so that `engine.ts` is the only file that
 talks to the proxy engine. Everything else, tabs, settings, history, is written
-against a small interface, which is why the same feature code works on both
-Scramjet and Ultraviolet.
+against a small interface, so swapping transports or upgrading the engine does
+not touch your feature code.
 
 The generated UI is a compact dark interface with a monospace typeface and plain
 controls. It works on narrow screens and is intended to be easy to edit.
@@ -165,11 +164,11 @@ local-site functionality.
 - `about:blank` cloaking hides a URL from someone looking at your screen. It
   adds no network privacy. What an observer sees depends on whether the proxy
   uses Wisp or Bare; a managed-browser extension can still inspect the page.
-- Scramjet handles more sites, so prefer it where you have the choice.
-  Serverless hosting does not give you that choice: it needs Ultraviolet over
-  Bare. That combination is free to start and fine at small scale, but every
-  proxied byte is billed egress, so it stops adding up as traffic grows. Vercel
-  can still serve a Scramjet client when Wisp runs elsewhere.
+- Serverless hosting forces the Bare transport, which means your server
+  terminates target TLS and WebSocket sites stop working. It is free to start
+  and fine at small scale, but every proxied byte is billed egress, so it stops
+  adding up as traffic grows. A static frontend pointed at Wisp on a cheap VPS
+  avoids all of it.
 - The published Scramjet docs currently describe the 1.x API while the
   repository has moved on. [Breaking changes](reference/breaking-changes.md)
   tracks the difference.

@@ -31,10 +31,9 @@ export type TransportChoice = {
 };
 
 export type ProxyEngine = {
-	readonly id: "scramjet" | "ultraviolet";
+	readonly id: "scramjet";
 	readonly label: string;
 	readonly supportsTransportSwitch: boolean;
-	readonly requiresIsolation: boolean;
 	init(): Promise<unknown>;
 	createSession(
 		element: HTMLIFrameElement,

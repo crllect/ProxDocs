@@ -1,4 +1,4 @@
-const namespace = "ultraviolet-vercel";
+const namespace = "serverless";
 const version = 1;
 const key = (name) => `${namespace}:${name}`;
 export const read = (name, fallback) => {

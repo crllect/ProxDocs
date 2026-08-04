@@ -2,23 +2,23 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { bootstrap } from "@mercuryworkshop/proxy-bootstrap";
+import { createRequire } from "node:module";
+import { scramjetPath } from "@mercuryworkshop/scramjet/path";
+import { createBareServer } from "@tomphttp/bare-server-node";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticRoot = path.join(__dirname, "public");
 const app = express();
-const { routeRequest, routeUpgrade } = await bootstrap({
-    transport: "libcurl"
-});
 app.use((_req, res, next) => {
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     next();
 });
-app.use((req, res, next) => {
-    if (routeRequest(req, res))
-        return;
-    next();
-});
+const require = createRequire(import.meta.url);
+const dirOf = (specifier) => path.dirname(require.resolve(specifier));
+app.use("/scram/", express.static(scramjetPath));
+app.use("/utils/", express.static(dirOf("@mercuryworkshop/scramjet-utils")));
+app.use("/controller/", express.static(dirOf("@mercuryworkshop/scramjet-controller")));
+app.use("/baremod/", express.static(dirOf("@mercuryworkshop/bare-transport")));
 app.use(express.static(staticRoot, {
     setHeaders(res, filePath) {
         if (path.basename(filePath).endsWith("sw.js")) {
@@ -26,15 +26,16 @@ app.use(express.static(staticRoot, {
         }
     }
 }));
+const bareServer = createBareServer("/bare/");
 const handleRequest = (req, res) => {
+    if (bareServer.shouldRoute(req)) {
+        bareServer.routeRequest(req, res);
+        return;
+    }
     app(req, res);
 };
+export default handleRequest;
 const server = http.createServer(handleRequest);
-server.on("upgrade", (req, socket, head) => {
-    if (routeUpgrade(req, socket, head))
-        return;
-    socket.end();
-});
 const listenWithFallback = (target, startPort, attempts = 20) => {
     let port = startPort;
     let left = attempts;
@@ -53,11 +54,13 @@ const listenWithFallback = (target, startPort, attempts = 20) => {
         process.send?.({ type: "listening", port });
         console.log(process.env.BACKEND_ONLY
             ? `Backend listening on http://localhost:${port}`
-            : `Barebones listening on http://localhost:${port}`);
+            : `Serverless listening on http://localhost:${port}`);
     });
 };
-const port = Number(process.env.PORT) || Number("8080");
-listenWithFallback(server, port);
-for (const signal of ["SIGINT", "SIGTERM"]) {
-    process.on(signal, () => server.close(() => process.exit(0)));
+if (!process.env.VERCEL) {
+    const port = Number(process.env.PORT) || Number("3000");
+    listenWithFallback(server, port);
+    for (const signal of ["SIGINT", "SIGTERM"]) {
+        process.on(signal, () => server.close(() => process.exit(0)));
+    }
 }

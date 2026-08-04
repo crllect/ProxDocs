@@ -9,18 +9,12 @@ export const versions = {
 	epoxyTransport: "^3.0.1",
 	libcurlTransport: "^2.0.5",
 
-	epoxyTransportLegacy: "^2.1.28",
-	libcurlTransportLegacy: "^1.5.2",
-
 	proxyTransports: "^1.0.2",
-
-	bareMux: "^2.1.9",
 
 	wispJs: "^0.4.1",
 
-	ultraviolet: "^3.2.10",
 	bareServerNode: "^2.0.3",
-	bareAsModule3: "^2.2.5",
+	bareTransport: "^1.0.0",
 
 	express: "^4.21.2",
 	fastify: "^5.6.0",

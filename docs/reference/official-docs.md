@@ -55,8 +55,11 @@ The most useful things in that repository are not the README:
 | Changelog  | <https://github.com/titaniumnetwork-dev/Ultraviolet/blob/main/CHANGELOG.md> |
 | npm        | `@titaniumnetwork-dev/ultraviolet`                                          |
 
-Archived in October 2024 at 3.2.10. The README points at Scramjet. The changelog
-is still the best short account of how the transport layer evolved.
+Last released October 2024 at 3.2.10, and the README now points at Scramjet. The
+repository is not archived and `main` is ahead of the last npm release, so check
+it before assuming a bug is permanent but for all intents and purposes UV is
+archived. The changelog is still the best short account of how the transport
+layer evolved.
 
 ## Transports and protocols
 
@@ -80,6 +83,30 @@ questions for project maintainers: <https://discord.gg/algebra>
 Before asking anywhere, collect the things in
 [troubleshooting](troubleshooting.md). "It doesn't work" is unanswerable; the
 list there usually contains the answer anyway.
+
+## How this site stays correct
+
+Every page footer names the exact package versions it was checked against, and
+the date. That comes from
+[`builder/versions.js`](https://github.com/crllect/ProxDocs/blob/main/builder/versions.js),
+so it cannot drift page by page: bump the pins, and every page restamps.
+
+The checking is not editorial. Upstream sources are cloned locally and claims
+are traced to a file and a line before they get written down. `npm run check`
+enforces what can be automated: links and heading anchors resolve, version pins
+in prose match `builder/versions.js`, and all 58 generator combinations still
+compile and type-check.
+
+**Found something wrong?** Open an issue or a PR at
+<https://github.com/crllect/ProxDocs>. A one-line report naming the page and
+what upstream actually does is enough; a citation to the upstream file and line
+is better and will get fixed same day.
+
+Two things worth knowing about how these packages move. Scramjet 2.x ships under
+the `alpha` dist-tag and its API has changed between patch releases more than
+once, so a page can go stale without anything here changing. And a claim that
+was true against npm can be false against upstream `main`, which is why pages
+say which one they mean.
 
 ## Contributing back
 

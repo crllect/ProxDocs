@@ -18,6 +18,7 @@ import { buildSearchIndex } from "../site/search-index.js";
 import { partsDir } from "../builder/node.js";
 import {
 	presets,
+	visible,
 	engines,
 	wirings,
 	features,
@@ -140,7 +141,14 @@ const run = async () => {
 
 	bytes += await write(
 		"static/options.json",
-		JSON.stringify({ presets, engines, wirings, features, servers, hosts })
+		JSON.stringify({
+			presets,
+			engines,
+			wirings: visible(wirings),
+			features,
+			servers,
+			hosts
+		})
 	);
 
 	const parts = await bundleParts();

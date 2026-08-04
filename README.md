@@ -1,16 +1,16 @@
 # ProxDocs
 
-Documentation and a modular generator for modern web proxies: Scramjet,
-Ultraviolet, Wisp, Bare, and their transport layers.
+Documentation and a modular generator for modern web proxies: Scramjet, Wisp,
+Bare, and their transport layers.
 
 Two things live here:
 
 - **`docs/`**. An explanation of the whole stack, written to be read. Plain
   markdown, so it renders fine on GitHub, and there is a local site that renders
   it with navigation and search-friendly structure.
-- **`builder/`**. A generator that composes a working proxy from parts. Pick an
-  engine and tick the features you want; the generated README gives the commands
-  for your selected package manager.
+- **`builder/`**. A generator that composes a working proxy from parts. Tick the
+  features you want; the generated README gives the commands for your selected
+  package manager.
 
 Ask development questions or show your project in the **Night Network** Discord:
 <https://discord.gg/algebra>. For more direct support, message me on discord:
@@ -75,20 +75,22 @@ endpoints run as Functions, so reading the documentation costs no invocations.
 ## Generate a proxy
 
 ```bash
-node builder/cli.js --out ./my-proxy --preset barebones
+node builder/cli.js --out ./my-proxy --preset minimal
 cd my-proxy && npm install && npm start
 ```
 
 ### Presets
 
-| Preset        | Frontend       | Toolchain               | Engine                  | Purpose                          |
-| ------------- | -------------- | ----------------------- | ----------------------- | -------------------------------- |
-| `barebones`   | Vanilla        | JavaScript, no bundler  | Scramjet with bootstrap | Smallest readable build          |
-| `standard`    | Vanilla        | TypeScript, Vite, SCSS  | Scramjet                | Most browser features            |
-| `everything`  | Vanilla        | Bun, Vite, Tailwind CSS | Scramjet                | Every optional feature           |
-| `staticHost`  | Vanilla        | JavaScript, no bundler  | Ultraviolet over Bare   | Serverless, no server to run     |
-| `react`       | React          | TypeScript, Vite        | Scramjet                | Hydrated React shell             |
-| `astroPreact` | Astro + Preact | TypeScript, Astro       | Scramjet                | Static page with a Preact island |
+| Preset        | Frontend       | Toolchain                       | Transport | Purpose                          |
+| ------------- | -------------- | ------------------------------- | --------- | -------------------------------- |
+| `minimal`     | Vanilla        | JavaScript, no bundler          | libcurl   | Smallest readable build          |
+| `standard`    | Vanilla        | Bun, TypeScript, Vite, Tailwind | libcurl   | The recommended setup            |
+| `everything`  | Vanilla        | Bun, Vite, Tailwind CSS         | libcurl   | Every optional feature           |
+| `serverless`  | Vanilla        | JavaScript, no bundler          | bare      | Serverless, no WebSocket needed  |
+| `react`       | React          | TypeScript, Vite                | libcurl   | Hydrated React shell             |
+| `astroPreact` | Astro + Preact | TypeScript, Astro               | libcurl   | Static page with a Preact island |
+
+Every preset uses Scramjet with manual wiring.
 
 Or answer the questions yourself:
 
@@ -96,7 +98,7 @@ Or answer the questions yourself:
 node builder/cli.js --out ./my-proxy \
     --language ts --runtime bun --server express \
     --frontend react --bundler vite --styling tailwind \
-    --engine scramjet --transport libcurl \
+    --transport libcurl \
     --features browserControls,tabs,settings,transportSwitch,history,bookmarks
 ```
 
@@ -111,14 +113,14 @@ node builder/cli.js --out ./my-proxy \
 | `--frontend`        | `vanilla`, `react`, `astro`                |
 | `--bundler`         | `vite`, `none`                             |
 | `--styling`         | `plain`, `scss`, `tailwind`                |
-| `--engine`          | `scramjet`, `ultraviolet`                  |
 | `--transport`       | `libcurl`, `epoxy`, `bare`                 |
 | `--features`        | Comma-separated feature identifiers below. |
 
 Two more flags exist but are not part of the normal path. `--wiring manual`
-(default) or `bootstrap` picks how Scramjet's browser files are served; see
-[wiring](docs/guides/wiring.md). `--host node` (default) or `vercel` targets a
-serverless function, which forces Ultraviolet over Bare.
+(default) or `bootstrap` picks how Scramjet's browser files are served; only
+manual is offered in the web builder, and `bootstrap` cannot use the Bare
+transport. See [wiring](docs/guides/wiring.md). `--host node` (default) or
+`vercel` targets a serverless function, which forces the Bare transport.
 
 | Feature identifier   | Adds                                                 |
 | -------------------- | ---------------------------------------------------- |
@@ -138,11 +140,12 @@ you are happy shipping it uncompiled. Tailwind without a build step loads from
 the Tailwind CDN. Fastify on Bun falls back to Express because `@fastify/static`
 serves empty bodies there.
 
-Serverless hosting forces Ultraviolet over Bare, because Vercel Functions cannot
-hold Wisp's persistent WebSocket open. It works, and it is a reasonable choice
-if you have no server and no budget. A proxy is almost pure egress though, and
-serverless bills egress per GB, so the economics stop working as traffic grows.
-A Scramjet client can still be served from Vercel when Wisp runs elsewhere.
+Serverless hosting forces the Bare transport, because functions cannot hold
+Wisp's persistent WebSocket open. It works, and it is a reasonable choice if you
+have no server and no budget. It costs you WebSocket sites and puts target TLS
+on your server, and a proxy is almost pure egress while serverless bills egress
+per GB, so the economics stop working as traffic grows. A static host can serve
+the client instead, with Wisp on a cheap VPS.
 
 Run `node builder/cli.js --help` for the full list.
 
@@ -154,7 +157,7 @@ if you would rather just read it.
 ## What the docs cover
 
 **Concepts**: [how a proxy works](docs/concepts/how-proxies-work.md),
-[Scramjet vs Ultraviolet](docs/concepts/scramjet-vs-ultraviolet.md),
+[proxy engines](docs/concepts/engines.md),
 [wisp vs bare](docs/concepts/wisp-vs-bare.md),
 [transports](docs/concepts/transports.md),
 [bare-mux and proxy-transports](docs/concepts/bare-mux.md),
@@ -167,7 +170,7 @@ if you would rather just read it.
 [custom protocols](docs/guides/custom-protocols.md),
 [search engines](docs/guides/search-engines.md),
 [bootstrap or manual wiring](docs/guides/wiring.md),
-[Ultraviolet on Vercel](docs/guides/ultraviolet-vercel.md),
+[serverless deployment](docs/guides/serverless.md),
 [other frameworks](docs/guides/frameworks.md),
 [deployment](docs/guides/deployment.md),
 [practices worth knowing](docs/guides/site-best-practices.md).
@@ -218,9 +221,9 @@ session.reload();
 session.destroy();
 ```
 
-Tabs, settings, history, and bookmarks therefore work with either engine.
-Changing engines also changes dependencies, server mounts, service-worker files,
-and transport setup; regenerate instead of replacing only `engine.ts`.
+Tabs, settings, history, and bookmarks are written against that interface, so
+they never touch the engine directly. Changing transports also changes
+dependencies and server mounts; regenerate instead of editing only `engine.ts`.
 
 ### Layout
 
@@ -264,15 +267,13 @@ Package constraints live in [`builder/versions.js`](builder/versions.js),
 verified against npm on **2026-08-02**. The two combinations that work:
 
 ```text
-Scramjet 2.x    scramjet 2.0.67-alpha.2 + controller 0.0.14 + utils 0.0.3
-                libcurl ^2  epoxy ^3   (proxy-transports generation)
-
-Ultraviolet 3.x ultraviolet ^3.2.10 + bare-mux ^2.1.9
-                libcurl ^1  epoxy ^2   (bare-mux generation)
+scramjet 2.0.67-alpha.2 + controller 0.0.14 + utils 0.0.3
+libcurl ^2  epoxy ^3  bare-transport ^1   (proxy-transports generation)
 ```
 
-Mixing the transport generations causes your proxy to shit itself. See
-[the version matrix](docs/reference/versions.md).
+There is an older bare-mux generation (libcurl ^1, epoxy ^2, bare-as-module3)
+that Ultraviolet used. Mixing the two generations causes your proxy to shit
+itself. See [the version matrix](docs/reference/versions.md).
 
 Note that `npm install @mercuryworkshop/scramjet` gives you **1.1.0**, 2.x is
 published under the `alpha` tag, not `latest`.

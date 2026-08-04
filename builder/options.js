@@ -122,21 +122,10 @@ export const engines = {
 	scramjet: {
 		label: "Scramjet",
 		tagline:
-			"Current generation. Rust/WASM rewriter with broader site compatibility.",
-		detail: "Needs a WebSocket and cross-origin isolation, so no serverless.",
+			"Rust/WASM rewriter, frames and plugins. Runs over Wisp or Bare.",
+		detail: "The current generation, and the only engine this builder ships.",
 		requiresIsolation: true,
-		docs: "/concepts/scramjet-vs-ultraviolet"
-	},
-	ultraviolet: {
-		label: "Ultraviolet 3.x",
-		tagline: "Deprecated and archived, but it can run over plain HTTP.",
-		detail:
-			"Final release October 2024. Its JS rewriter breaks on more sites. " +
-			"Pick it only for the one thing Scramjet cannot do: run on a host that " +
-			"cannot hold a WebSocket open.",
-		requiresIsolation: false,
-		deprecated: true,
-		docs: "/concepts/scramjet-vs-ultraviolet"
+		docs: "/concepts/engines"
 	}
 };
 
@@ -144,15 +133,16 @@ export const wirings = {
 	bootstrap: {
 		label: "Bootstrap",
 		tagline: "proxy-bootstrap fetches and serves every asset for you.",
-		detail: "Three lines of server code. Pins one transport at boot.",
+		detail: "Three lines of server code. Pins one transport at boot, resolves packages at runtime, and cannot use the Bare transport.",
 		engines: ["scramjet"],
+		hidden: true,
 		docs: "/guides/wiring"
 	},
 	manual: {
 		label: "Manual",
 		tagline: "You mount each package yourself from node_modules.",
 		detail: "More server code, but you control versions and can serve both transports.",
-		engines: ["scramjet", "ultraviolet"],
+		engines: ["scramjet"],
 		docs: "/guides/wiring"
 	}
 };
@@ -162,21 +152,21 @@ export const transports = {
 		label: "libcurl",
 		tagline: "curl in WebAssembly, over wisp. Widest site compatibility.",
 		backend: "wisp",
-		engines: ["scramjet", "ultraviolet"]
+		engines: ["scramjet"]
 	},
 	epoxy: {
 		label: "epoxy",
 		tagline:
 			"A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl.",
 		backend: "wisp",
-		engines: ["scramjet", "ultraviolet"]
+		engines: ["scramjet"]
 	},
 	bare: {
 		label: "bare",
 		tagline: "Plain HTTP to a Bare server. Works without WebSockets.",
-		detail: "Ultraviolet only. The server can inspect target request and response data.",
+		detail: "The only transport that runs on request/response serverless hosts. Your server can inspect target request and response data, and WebSocket sites will not work.",
 		backend: "bare",
-		engines: ["ultraviolet"]
+		engines: ["scramjet"]
 	}
 };
 
@@ -188,7 +178,7 @@ export const hosts = {
 	},
 	vercel: {
 		label: "Vercel or serverless",
-		tagline: "No WebSockets, so Ultraviolet over Bare only.",
+		tagline: "No WebSockets, so the Bare transport only.",
 		supportsWebsockets: false
 	}
 };
@@ -247,11 +237,11 @@ export const features = {
 const needsStorage = ["settings", "history", "bookmarks", "cloak"];
 
 export const presets = {
-	barebones: {
-		label: "Barebones",
+	minimal: {
+		label: "Minimal",
 		description:
-			"One iframe and a URL bar, in plain JavaScript with no build step. " +
-			"Read this one first; everything else is this plus features.",
+			"One iframe and a URL bar, plain JavaScript with no build step. " +
+			"Read this one first; every other preset is this plus features.",
 		options: {
 			language: "js",
 			packageManager: "npm",
@@ -261,7 +251,7 @@ export const presets = {
 			bundler: "none",
 			styling: "plain",
 			engine: "scramjet",
-			wiring: "bootstrap",
+			wiring: "manual",
 			transport: "libcurl",
 			host: "node",
 			features: ["browserControls"]
@@ -270,28 +260,21 @@ export const presets = {
 	standard: {
 		label: "Standard",
 		description:
-			"TypeScript, Vite and Fastify, with the features most people want.",
+			"The recommended setup. TypeScript, Vite and Tailwind on Fastify, " +
+			"with tabs, settings and transport switching.",
 		options: {
 			language: "ts",
-			packageManager: "npm",
+			packageManager: "bun",
 			runtime: "node",
 			server: "fastify",
 			frontend: "vanilla",
 			bundler: "vite",
-			styling: "scss",
+			styling: "tailwind",
 			engine: "scramjet",
 			wiring: "manual",
 			transport: "libcurl",
 			host: "node",
-			features: [
-				"browserControls",
-				"tabs",
-				"settings",
-				"transportSwitch",
-				"history",
-				"bookmarks",
-				"aboutPages"
-			]
+			features: ["browserControls", "tabs", "settings", "transportSwitch"]
 		}
 	},
 	everything: {
@@ -313,10 +296,10 @@ export const presets = {
 			features: Object.keys(features)
 		}
 	},
-	staticHost: {
+	serverless: {
 		label: "Serverless",
 		description:
-			"Ultraviolet over a Bare server for Vercel and similar serverless hosts.",
+			"Scramjet over a Bare server, for serverless hosts that cannot hold a WebSocket open.",
 		options: {
 			language: "js",
 			packageManager: "npm",
@@ -325,7 +308,7 @@ export const presets = {
 			frontend: "vanilla",
 			bundler: "none",
 			styling: "plain",
-			engine: "ultraviolet",
+			engine: "scramjet",
 			wiring: "manual",
 			transport: "bare",
 			host: "vercel",
@@ -372,10 +355,10 @@ export const presets = {
 };
 
 export const exampleNames = {
-	barebones: "barebones",
+	minimal: "minimal",
 	standard: "standard",
 	everything: "everything",
-	staticHost: "ultraviolet-vercel",
+	serverless: "serverless",
 	react: "react",
 	astroPreact: "astro-preact"
 };
@@ -414,12 +397,12 @@ export const incompatibilities = opts => {
 	const serverless = opts.host === "vercel";
 
 	if (serverless) {
-		out.engine.scramjet =
-			"Scramjet needs a WebSocket, which serverless hosts cannot hold open.";
 		out.transport.libcurl =
 			"Wisp needs a WebSocket, which serverless hosts cannot hold open.";
 		out.transport.epoxy =
 			"Wisp needs a WebSocket, which serverless hosts cannot hold open.";
+		out.wiring.bootstrap =
+			"proxy-bootstrap only wires Wisp transports, which need a WebSocket.";
 		out.runtime.bun = "Vercel functions run Node.";
 		out.server.fastify =
 			"The generated Vercel function exports an Express handler.";
@@ -427,15 +410,9 @@ export const incompatibilities = opts => {
 			"Vercel cannot use the Wisp transports available to the switcher.";
 	}
 
-	switch (opts.engine) {
-		case "ultraviolet":
-			out.wiring.bootstrap = "proxy-bootstrap only builds Scramjet.";
-			break;
-		default:
-			out.transport.bare = "Scramjet has no bare transport.";
-	}
-
 	if (opts.wiring === "bootstrap") {
+		out.transport.bare =
+			"proxy-bootstrap 0.0.5 ships a stub that throws for bare. Use manual wiring.";
 		out.transport.epoxy =
 			"proxy-bootstrap 0.0.5 does not serve its epoxy client correctly.";
 		out.features.transportSwitch =
@@ -503,15 +480,8 @@ export const resolve = (raw = {}) => {
 	pick("transport", transports, "libcurl");
 	pick("host", hosts, "node");
 
-	if (!hosts[opts.host].supportsWebsockets && opts.engine === "scramjet") {
-		notes.push(
-			"Scramjet needs a WebSocket, so the engine was switched to Ultraviolet."
-		);
-		opts.engine = "ultraviolet";
-	}
-
 	if (!wirings[opts.wiring]?.engines.includes(opts.engine)) {
-		opts.wiring = opts.engine === "ultraviolet" ? "manual" : "bootstrap";
+		opts.wiring = "manual";
 	}
 
 	if (!transports[opts.transport].engines.includes(opts.engine)) {
@@ -536,6 +506,13 @@ export const resolve = (raw = {}) => {
 			"Serverless hosts cannot hold a WebSocket open, so the transport is Bare."
 		);
 		opts.transport = "bare";
+	}
+
+	if (opts.wiring === "bootstrap" && opts.transport === "bare") {
+		notes.push(
+			"proxy-bootstrap 0.0.5 cannot wire the Bare transport, so manual wiring was used."
+		);
+		opts.wiring = "manual";
 	}
 
 	if (opts.runtime === "bun" && opts.host === "vercel") {
@@ -705,3 +682,8 @@ export const availability = opts => {
 };
 
 export const has = (opts, feature) => opts.features.includes(feature);
+
+export const visible = group =>
+	Object.fromEntries(
+		Object.entries(group).filter(([, value]) => !value.hidden)
+	);

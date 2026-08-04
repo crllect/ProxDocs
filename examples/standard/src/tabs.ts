@@ -1,8 +1,6 @@
 import { engine } from "./engine.ts";
 import type { ProxySession } from "./types.ts";
-import { InternalHistory } from "./internal.ts";
 import * as settings from "./settings.ts";
-import * as visitLog from "./history.ts";
 
 let seq = 0;
 
@@ -16,7 +14,6 @@ export class Tab {
 	element: HTMLIFrameElement;
 	history: string[] = [];
 	historyIndex = -1;
-	internalHistory = new InternalHistory();
 
 	#manager: TabManager;
 	#sessionPending: Promise<ProxySession> | null = null;
@@ -53,8 +50,6 @@ export class Tab {
 				} catch {
 					this.title = url;
 				}
-				if (settings.get("saveHistory"))
-					visitLog.record(url, this.title);
 				this.#manager.emit();
 			},
 			loading: () => {
@@ -85,7 +80,6 @@ export class Tab {
 	}
 
 	async go(url: string): Promise<void> {
-		this.internalHistory.clear();
 		this.element.removeAttribute("srcdoc");
 		await this.ensureSession();
 		this.record(url);

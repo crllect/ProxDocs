@@ -2,16 +2,23 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
-import { createBareServer } from "@tomphttp/bare-server-node";
+import { createRequire } from "node:module";
+import { scramjetPath } from "@mercuryworkshop/scramjet/path";
+import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticRoot = path.join(__dirname, "public");
 const app = express();
-app.use("/uv/", express.static(uvPath));
-app.use("/baremux/", express.static(baremuxPath));
-app.use("/baremod/", express.static(bareModulePath));
+app.use((_req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+});
+const require = createRequire(import.meta.url);
+const dirOf = (specifier) => path.dirname(require.resolve(specifier));
+app.use("/scram/", express.static(scramjetPath));
+app.use("/utils/", express.static(dirOf("@mercuryworkshop/scramjet-utils")));
+app.use("/controller/", express.static(dirOf("@mercuryworkshop/scramjet-controller")));
+app.use("/libcurl/", express.static(dirOf("@mercuryworkshop/libcurl-transport")));
 app.use(express.static(staticRoot, {
     setHeaders(res, filePath) {
         if (path.basename(filePath).endsWith("sw.js")) {
@@ -19,16 +26,18 @@ app.use(express.static(staticRoot, {
         }
     }
 }));
-const bareServer = createBareServer("/bare/");
 const handleRequest = (req, res) => {
-    if (bareServer.shouldRoute(req)) {
-        bareServer.routeRequest(req, res);
-        return;
-    }
     app(req, res);
 };
-export default handleRequest;
 const server = http.createServer(handleRequest);
+server.on("upgrade", (req, socket, head) => {
+    if (new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
+        "/wisp/") {
+        wisp.routeRequest(req, socket, head);
+        return;
+    }
+    socket.end();
+});
 const listenWithFallback = (target, startPort, attempts = 20) => {
     let port = startPort;
     let left = attempts;
@@ -47,13 +56,11 @@ const listenWithFallback = (target, startPort, attempts = 20) => {
         process.send?.({ type: "listening", port });
         console.log(process.env.BACKEND_ONLY
             ? `Backend listening on http://localhost:${port}`
-            : `Ultraviolet Vercel listening on http://localhost:${port}`);
+            : `Minimal listening on http://localhost:${port}`);
     });
 };
-if (!process.env.VERCEL) {
-    const port = Number(process.env.PORT) || Number("3000");
-    listenWithFallback(server, port);
-    for (const signal of ["SIGINT", "SIGTERM"]) {
-        process.on(signal, () => server.close(() => process.exit(0)));
-    }
+const port = Number(process.env.PORT) || Number("8080");
+listenWithFallback(server, port);
+for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.on(signal, () => server.close(() => process.exit(0)));
 }

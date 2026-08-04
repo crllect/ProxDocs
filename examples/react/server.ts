@@ -49,7 +49,10 @@ const handleRequest = (req: http.IncomingMessage, res: http.ServerResponse) => {
 const server = http.createServer(handleRequest);
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url ?? "/", "https://myproxy.com").pathname === "/wisp/") {
+	if (
+		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
+		"/wisp/"
+	) {
 		wisp.routeRequest(req, socket, head);
 		return;
 	}

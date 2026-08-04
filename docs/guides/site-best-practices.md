@@ -66,7 +66,7 @@ through the tunnel. Slow for users, expensive for you.
 
 **Do not preload the engine on your landing page.** The wasm rewriter and TLS
 stack are a large download. Initialize on first navigation, so people who bounce
-never pay for it. The barebones preset does this; builds with transport settings
+never pay for it. The minimal preset does this; builds with transport settings
 initialize at startup so the saved transport is active before navigation.
 
 **Self-host your fonts and icons.** Under `require-corp` most CDN assets are

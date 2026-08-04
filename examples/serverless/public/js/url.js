@@ -1,4 +1,4 @@
-export const internalScheme = "ultravioletvercel:";
+export const internalScheme = "serverless:";
 const looksLikeUrl = /^(?:(?:(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-f:.]+\]|[^\s/?#@]+\.[^\s/?#@.]{2,})(?::\d+)?(?:[/?#]\S*)?)$/iu;
 const proxyableSchemes = new Set(["http:", "https:"]);
 const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
