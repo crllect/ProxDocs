@@ -221,6 +221,13 @@ await controller.wait();
 The load order is core, controller, then utils. To switch transports later,
 serve both modules and pass a new instance to `controller.setTransport()`.
 
+Register the service worker once, here, and construct one controller for the
+whole page. Frames come from `controller.createFrame()`, so a second
+registration or a second controller buys nothing and costs a duplicate wisp
+connection. For the same reason, `setTransport()` belongs on an actual transport
+change and not on every navigation — see
+[Transports](../concepts/transports.md).
+
 ## Which one
 
 | Capability                        | Bootstrap | Manual                   |

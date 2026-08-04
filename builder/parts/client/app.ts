@@ -653,11 +653,8 @@ addEventListener("keydown", event => {
 });
 
 //#if transportSwitch
-engine
-	.init()
-	.then(applyTransport, () =>
-		setStatus("Could not reach the proxy backend.")
-	);
+void applyTransport();
+engine.init().catch(() => setStatus("Could not reach the proxy backend."));
 //#endif
 
 //#if tabs

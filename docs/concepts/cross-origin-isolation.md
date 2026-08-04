@@ -17,11 +17,7 @@ Scramjet's rewriter is WebAssembly, and it uses **`SharedArrayBuffer`** to move
 data between JavaScript and wasm without copying, necessary when you are
 rewriting megabytes of JavaScript per page load.
 
-`SharedArrayBuffer` was disabled in every browser in 2018 after Spectre and
-Meltdown. Shared memory plus a high-resolution timer is enough to build a timing
-attack that reads memory the page should not see.
-
-Browsers brought it back on one condition: the page must be **cross-origin
+To use `SharedArrayBuffer`, the page must be **cross-origin
 isolated**. That means proving no untrusted cross-origin content shares your
 process. You prove it with those two headers.
 

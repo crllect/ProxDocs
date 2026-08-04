@@ -16,54 +16,60 @@ const utils = () => {
     return window
         .$scramjetUtils;
 };
-const makeErrorPagePlugin = (onError) => {
-    return class ErrorPagePlugin extends utils().ManagedPlugin {
-        constructor() {
-            super("error-page", []);
-        }
-        install(frame) {
-            this.tap(frame.hooks.error.request, (context, props) => {
-                const ctx = context;
-                const out = props;
-                if (ctx.error?.name === "AbortError")
-                    return;
-                if (!["document", "iframe", "frame"].includes(ctx.rawrequest?.destination ?? ""))
-                    return;
-                out.suppressError = true;
-                out.setResponse = {
-                    body: errorPage(ctx.error),
-                    headers: [["content-type", "text/html; charset=utf-8"]],
-                    status: 502,
-                    statusText: "Bad Gateway"
-                };
-                onError?.(ctx.error);
-            });
-        }
-    };
-};
-const makeHistoryUrlPlugin = () => {
-    return class HistoryUrlPlugin extends utils().ManagedPlugin {
-        constructor() {
-            super("history-url", []);
-        }
-        install(frame) {
-            this.tap(frame.hooks.init.post, (context) => {
-                if (!context.isTopLevel)
-                    return;
-                const historyConstructor = context.window.History;
-                const history = historyConstructor.prototype;
-                for (const method of [
-                    "pushState",
-                    "replaceState"
-                ]) {
-                    const original = history[method];
-                    history[method] = function (data, unused, url) {
-                        return original.call(this, data, unused, url ?? context.client.url.href);
+let localPlugins = null;
+const plugins = () => {
+    localPlugins ??= {
+        ErrorPage: class ErrorPagePlugin extends utils().ManagedPlugin {
+            #onError;
+            constructor(onError) {
+                super("error-page", []);
+                this.#onError = onError;
+            }
+            install(frame) {
+                this.tap(frame.hooks.error.request, (context, props) => {
+                    const ctx = context;
+                    const out = props;
+                    if (ctx.error?.name === "AbortError")
+                        return;
+                    if (!["document", "iframe", "frame"].includes(ctx.rawrequest?.destination ?? ""))
+                        return;
+                    out.suppressError = true;
+                    out.setResponse = {
+                        body: errorPage(ctx.error),
+                        headers: [
+                            ["content-type", "text/html; charset=utf-8"]
+                        ],
+                        status: 502,
+                        statusText: "Bad Gateway"
                     };
-                }
-            });
+                    this.#onError?.(ctx.error);
+                });
+            }
+        },
+        HistoryUrl: class HistoryUrlPlugin extends utils().ManagedPlugin {
+            constructor() {
+                super("history-url", []);
+            }
+            install(frame) {
+                this.tap(frame.hooks.init.post, (context) => {
+                    if (!context.isTopLevel)
+                        return;
+                    const historyConstructor = context.window.History;
+                    const history = historyConstructor.prototype;
+                    for (const method of [
+                        "pushState",
+                        "replaceState"
+                    ]) {
+                        const original = history[method];
+                        history[method] = function (data, unused, url) {
+                            return original.call(this, data, unused, url ?? context.client.url.href);
+                        };
+                    }
+                });
+            }
         }
     };
+    return localPlugins;
 };
 class ScramjetSession {
     url = "";
@@ -97,6 +103,9 @@ class ScramjetSession {
     }
     destroy() {
         this.#destroyed = true;
+        const index = controller?.frames.indexOf(this.#frame) ?? -1;
+        if (index !== -1)
+            controller.frames.splice(index, 1);
         this.#frame.element.remove();
     }
 }
@@ -112,12 +121,11 @@ export const engine = {
     async createSession(element, handlers = {}) {
         await this.init();
         const u = utils();
-        const ErrorPagePlugin = makeErrorPagePlugin(handlers.error);
-        const HistoryUrlPlugin = makeHistoryUrlPlugin();
+        const { ErrorPage, HistoryUrl } = plugins();
         const session = new ScramjetSession(controller.createFrame(element, {
             plugins: [
                 new u.HttpCachePlugin(),
-                new HistoryUrlPlugin(),
+                new HistoryUrl(),
                 new u.UrlWatcherPlugin((url) => {
                     session.url = url;
                     handlers.url?.(url);
@@ -127,7 +135,7 @@ export const engine = {
                     handlers.escape?.(url.href);
                     return new URL(`data:text/html,${encodeURIComponent(errorPage(new Error("Opened in a new tab.")))}`);
                 }),
-                new ErrorPagePlugin()
+                new ErrorPage(handlers.error)
             ]
         }), handlers);
         return session;

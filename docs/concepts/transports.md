@@ -208,6 +208,71 @@ await connection.setTransport("/epoxy/index.mjs", [{ wisp: wispUrl }]);
 > switching is unavailable. Use manual wiring if you want it, the builder
 > enforces this for you.
 
+### Switch only when the choice actually changed
+
+Every `setTransport` call costs a transport. A new `LibcurlClient` is a fresh
+curl-in-WebAssembly instance that opens its own wisp connection; the one it
+replaces stays alive until it is garbage collected. Do that on each navigation,
+or from a settings listener that fires for every field, and a browser that looks
+idle is holding several WebAssembly clients and several sockets open.
+
+The fix is to make the swap idempotent inside the engine rather than filtering
+at each call site. Resolve the config to the values the transport is actually
+built from, compare against the last applied set, and return early when nothing
+moved:
+
+```js
+let activeTransport = "";
+
+const resolveTransport = config => ({
+	path: transportModules[config.kind] ?? transportModules.libcurl,
+	wisp: config.wisp || defaultWispUrl()
+});
+
+const buildTransport = async config => {
+	const { path, wisp } = resolveTransport(config);
+	const { default: Transport } = await import(path);
+	activeTransport = JSON.stringify([path, wisp]);
+	return new Transport({ wisp });
+};
+
+const applyTransport = async config => {
+	const { path, wisp } = resolveTransport(config);
+	if (JSON.stringify([path, wisp]) === activeTransport) return;
+	controller.setTransport(await buildTransport(config));
+};
+```
+
+Compare the resolved values, not the raw config. A blank `wisp` setting and an
+explicit `wss://this-host/wisp/` are the same endpoint, and treating them as
+different rebuilds the transport on the first save after boot for no reason.
+
+The same guard belongs in front of `connection.setTransport()` on bare-mux. It
+is cheaper there, because the SharedWorker owns the connection, but a redundant
+call still tears down and re-establishes it for every tab at once.
+
+### Seed the transport before boot, not after
+
+A saved transport choice has to reach the engine _before_ it constructs its
+first client. This ordering builds two:
+
+```js
+await engine.init();
+await engine.setTransport({ kind: settings.get("transport") });
+```
+
+`init()` builds the default transport, then `setTransport` throws it away and
+builds the saved one. Any frame created in between is on the wrong transport.
+Record the choice first and let boot consume it:
+
+```js
+void engine.setTransport({ kind: settings.get("transport") });
+await engine.init();
+```
+
+That requires `setTransport` to be callable before `init()` — it stores the
+config, and only swaps when a controller already exists.
+
 ---
 
 ## Writing your own

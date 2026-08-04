@@ -71,6 +71,8 @@ const transportEntry = (
 	}
 };
 
+let activeTransport = "";
+
 const applyTransport = async (): Promise<void> => {
 	const entry =
 		transportEntry(currentTransport.kind) ??
@@ -79,7 +81,12 @@ const applyTransport = async (): Promise<void> => {
 		throw new Error(
 			`No transport available for "${currentTransport.kind}"`
 		);
+
+	const signature = JSON.stringify(entry);
+	if (signature === activeTransport) return;
+
 	await connection!.setTransport(entry.module, entry.args);
+	activeTransport = signature;
 };
 
 const registerServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
@@ -216,9 +223,11 @@ export const engine: ProxyEngine = {
 	async setTransport(
 		config: Partial<TransportConfig>
 	): Promise<TransportConfig> {
-		await this.init();
 		currentTransport = { ...currentTransport, ...config };
-		await applyTransport();
+		if (ready) {
+			await ready;
+			await applyTransport();
+		}
 		return { ...currentTransport };
 	},
 

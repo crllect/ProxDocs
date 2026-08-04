@@ -314,11 +314,22 @@ A transport change applies to the next request. Existing pages keep their
 connections until reloaded. Say so in the UI rather than letting people wonder
 whether it worked.
 
+Note what that listener does: `onChange` fires for **every** setting, so
+changing the home page or the search engine runs `applyTransportSettings` too.
+That is the right shape for the call site — it stays one line and can never go
+stale as the schema grows — but only because the engine treats a repeat of the
+current transport as a no-op. If yours rebuilds unconditionally, editing an
+unrelated field constructs a second WebAssembly client and swaps it under every
+open frame. See
+[Switch only when the choice actually changed](../concepts/transports.md).
+
 Apply stored settings once at boot too, or a saved choice silently reverts to
-the default on every reload:
+the default on every reload. Seed before `init()`, not after, so boot builds the
+saved transport instead of building the default and immediately replacing it:
 
 ```js
-engine.init().then(applyTransportSettings);
+void applyTransportSettings();
+engine.init().catch(() => setStatus("Could not reach the proxy backend."));
 ```
 
 ---

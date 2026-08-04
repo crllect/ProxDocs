@@ -17,6 +17,7 @@ type ScramjetFrame = {
 };
 
 type ScramjetController = {
+	frames: ScramjetFrame[];
 	createFrame(
 		element: HTMLIFrameElement,
 		options: { plugins: unknown[] }
@@ -48,6 +49,10 @@ const loadScript = (src: string): Promise<void> => {
 		el.onerror = () => reject(new Error("Failed to load " + src));
 		document.head.append(el);
 	});
+};
+
+const loadRuntimeScripts = async (): Promise<void> => {
+	for (const src of runtimeScripts) await loadScript(src);
 };
 
 const registerServiceWorker = async (): Promise<ServiceWorker> => {
@@ -96,15 +101,37 @@ let currentTransport: TransportConfig = {
 	wisp: ""
 };
 
-const buildTransport = async (config: TransportConfig): Promise<unknown> => {
-	const path =
+//#if transportSwitch
+let activeTransport = "";
+//#endif
+
+const resolveTransport = (
+	config: TransportConfig
+): { path: string; wisp: string } => ({
+	path:
 		transportModules[config.kind] ??
-		transportModules["{{DEFAULT_TRANSPORT}}"]!;
+		transportModules["{{DEFAULT_TRANSPORT}}"]!,
+	wisp: config.wisp || defaultWispUrl()
+});
+
+const buildTransport = async (config: TransportConfig): Promise<unknown> => {
+	const { path, wisp } = resolveTransport(config);
 	const module = (await import(/* @vite-ignore */ path)) as {
 		default: new (o: object) => unknown;
 	};
-	return new module.default({ wisp: config.wisp || defaultWispUrl() });
+	//#if transportSwitch
+	activeTransport = JSON.stringify([path, wisp]);
+	//#endif
+	return new module.default({ wisp });
 };
+
+//#if transportSwitch
+const applyTransport = async (): Promise<void> => {
+	const { path, wisp } = resolveTransport(currentTransport);
+	if (JSON.stringify([path, wisp]) === activeTransport) return;
+	controller!.setTransport(await buildTransport(currentTransport));
+};
+//#endif
 //#endif
 
 const boot = async (): Promise<ScramjetController> => {
@@ -118,9 +145,10 @@ const boot = async (): Promise<ScramjetController> => {
 	controller = await initBootstrap();
 	//#endif
 	//#if manual
-	const serviceworker = await registerServiceWorker();
-
-	for (const src of runtimeScripts) await loadScript(src);
+	const [serviceworker] = await Promise.all([
+		registerServiceWorker(),
+		loadRuntimeScripts()
+	]);
 
 	const api = (
 		window as never as {
@@ -166,97 +194,112 @@ const utils = (): ScramjetUtils => {
 		.$scramjetUtils;
 };
 
-const makeErrorPagePlugin = (onError?: (error: unknown) => void) => {
-	return class ErrorPagePlugin extends utils().ManagedPlugin {
-		constructor() {
-			super("error-page", []);
-		}
-
-		install(frame: { hooks: { error: { request: unknown } } }) {
-			this.tap(
-				frame.hooks.error.request,
-				(context: never, props: never) => {
-					const ctx = context as {
-						error?: { name?: string };
-						rawrequest?: { destination?: string };
-					};
-					const out = props as {
-						suppressError?: boolean;
-						setResponse?: unknown;
-					};
-
-					if (ctx.error?.name === "AbortError") return;
-					if (
-						!["document", "iframe", "frame"].includes(
-							ctx.rawrequest?.destination ?? ""
-						)
-					)
-						return;
-
-					out.suppressError = true;
-					out.setResponse = {
-						body: errorPage(ctx.error),
-						headers: [["content-type", "text/html; charset=utf-8"]],
-						status: 502,
-						statusText: "Bad Gateway"
-					};
-
-					onError?.(ctx.error);
-				}
-			);
-		}
-	};
+type LocalPlugins = {
+	ErrorPage: new (onError?: (error: unknown) => void) => object;
+	HistoryUrl: new () => object;
 };
 
-const makeHistoryUrlPlugin = () => {
-	return class HistoryUrlPlugin extends utils().ManagedPlugin {
-		constructor() {
-			super("history-url", []);
-		}
+let localPlugins: LocalPlugins | null = null;
 
-		install(frame: {
-			hooks: {
-				init: {
-					post: unknown;
-				};
-			};
-		}) {
-			this.tap(
-				frame.hooks.init.post,
-				(context: {
-					window: Window;
-					isTopLevel: boolean;
-					client: { url: URL };
-				}) => {
-					if (!context.isTopLevel) return;
-					const historyConstructor = (
-						context.window as unknown as {
-							History: { prototype: History };
-						}
-					).History;
-					const history = historyConstructor.prototype as unknown as {
-						pushState: HistoryMethod;
-						replaceState: HistoryMethod;
-					};
+const plugins = (): LocalPlugins => {
+	localPlugins ??= {
+		ErrorPage: class ErrorPagePlugin extends utils().ManagedPlugin {
+			#onError?: (error: unknown) => void;
 
-					for (const method of [
-						"pushState",
-						"replaceState"
-					] as const) {
-						const original = history[method];
-						history[method] = function (data, unused, url) {
-							return original.call(
-								this,
-								data,
-								unused,
-								url ?? context.client.url.href
-							);
+			constructor(onError?: (error: unknown) => void) {
+				super("error-page", []);
+				this.#onError = onError;
+			}
+
+			install(frame: { hooks: { error: { request: unknown } } }) {
+				this.tap(
+					frame.hooks.error.request,
+					(context: never, props: never) => {
+						const ctx = context as {
+							error?: { name?: string };
+							rawrequest?: { destination?: string };
 						};
+						const out = props as {
+							suppressError?: boolean;
+							setResponse?: unknown;
+						};
+
+						if (ctx.error?.name === "AbortError") return;
+						if (
+							!["document", "iframe", "frame"].includes(
+								ctx.rawrequest?.destination ?? ""
+							)
+						)
+							return;
+
+						out.suppressError = true;
+						out.setResponse = {
+							body: errorPage(ctx.error),
+							headers: [
+								["content-type", "text/html; charset=utf-8"]
+							],
+							status: 502,
+							statusText: "Bad Gateway"
+						};
+
+						this.#onError?.(ctx.error);
 					}
-				}
-			);
+				);
+			}
+		},
+
+		HistoryUrl: class HistoryUrlPlugin extends utils().ManagedPlugin {
+			constructor() {
+				super("history-url", []);
+			}
+
+			install(frame: {
+				hooks: {
+					init: {
+						post: unknown;
+					};
+				};
+			}) {
+				this.tap(
+					frame.hooks.init.post,
+					(context: {
+						window: Window;
+						isTopLevel: boolean;
+						client: { url: URL };
+					}) => {
+						if (!context.isTopLevel) return;
+						const historyConstructor = (
+							context.window as unknown as {
+								History: { prototype: History };
+							}
+						).History;
+						const history =
+							historyConstructor.prototype as unknown as {
+								pushState: HistoryMethod;
+								replaceState: HistoryMethod;
+							};
+
+						for (const method of [
+							"pushState",
+							"replaceState"
+						] as const) {
+							const original = history[method];
+							history[method] = function (data, unused, url) {
+								return original.call(
+									this,
+									data,
+									unused,
+									url ?? context.client.url.href
+								);
+							};
+						}
+					}
+				);
+			}
 		}
 	};
+
+	return localPlugins;
 };
 
 type HistoryMethod = (
@@ -301,6 +344,10 @@ class ScramjetSession implements ProxySession {
 
 	destroy(): void {
 		this.#destroyed = true;
+
+		const index = controller?.frames.indexOf(this.#frame) ?? -1;
+		if (index !== -1) controller!.frames.splice(index, 1);
+
 		this.#frame.element.remove();
 	}
 }
@@ -324,14 +371,13 @@ export const engine: ProxyEngine = {
 		await this.init();
 
 		const u = utils();
-		const ErrorPagePlugin = makeErrorPagePlugin(handlers.error);
-		const HistoryUrlPlugin = makeHistoryUrlPlugin();
+		const { ErrorPage, HistoryUrl } = plugins();
 
 		const session = new ScramjetSession(
 			controller!.createFrame(element, {
 				plugins: [
 					new u.HttpCachePlugin(),
-					new HistoryUrlPlugin(),
+					new HistoryUrl(),
 
 					new u.UrlWatcherPlugin((url: string) => {
 						session.url = url;
@@ -346,7 +392,7 @@ export const engine: ProxyEngine = {
 						);
 					}),
 
-					new ErrorPagePlugin()
+					new ErrorPage(handlers.error)
 				]
 			}),
 			handlers
@@ -359,9 +405,11 @@ export const engine: ProxyEngine = {
 	async setTransport(
 		config: Partial<TransportConfig>
 	): Promise<TransportConfig> {
-		await this.init();
 		currentTransport = { ...currentTransport, ...config };
-		controller!.setTransport(await buildTransport(currentTransport));
+		if (ready) {
+			await ready;
+			await applyTransport();
+		}
 		return { ...currentTransport };
 	},
 

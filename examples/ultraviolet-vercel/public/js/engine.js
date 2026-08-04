@@ -21,12 +21,17 @@ const transportEntry = (kind) => {
             return null;
     }
 };
+let activeTransport = "";
 const applyTransport = async () => {
     const entry = transportEntry(currentTransport.kind) ??
         transportEntry("bare");
     if (!entry)
         throw new Error(`No transport available for "${currentTransport.kind}"`);
+    const signature = JSON.stringify(entry);
+    if (signature === activeTransport)
+        return;
     await connection.setTransport(entry.module, entry.args);
+    activeTransport = signature;
 };
 const registerServiceWorker = async () => {
     if (!("serviceWorker" in navigator)) {

@@ -84,12 +84,21 @@ const { default: LibcurlClient } = await import("/libcurl/index.mjs");
 const transport = new LibcurlClient({ wisp: wispUrl });
 
 const controller = new Controller({ serviceworker, transport });
+```
 
+Later, when the user picks a different one:
+
+```js
 controller.setTransport(await buildTransport("epoxy", wispUrl));
 ```
 
 This is simpler and easier to debug. The transport is a normal object in your
 page, so you can inspect it, wrap it, or log through it.
+
+It also means the lifetime is yours to manage. bare-mux kept one connection in a
+SharedWorker no matter how often you called it; here, every `setTransport` is
+another WebAssembly client and another socket, so
+[only call it when the choice changed](transports.md).
 
 ---
 

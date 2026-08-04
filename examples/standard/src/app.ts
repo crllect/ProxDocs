@@ -338,11 +338,8 @@ addEventListener("keydown", event => {
 	}
 });
 
-engine
-	.init()
-	.then(applyTransport, () =>
-		setStatus("Could not reach the proxy backend.")
-	);
+void applyTransport();
+engine.init().catch(() => setStatus("Could not reach the proxy backend."));
 
 tabs.open();
 void navigate(startUrl());

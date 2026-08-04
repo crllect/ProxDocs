@@ -262,6 +262,21 @@ Then in `select()`, if a tab has a `discardedUrl` and no session, re-navigate.
 Only do this under real pressure. A timer, or a count threshold. Discarding
 eagerly reintroduces exactly the problem that keeping frames mounted solves.
 
+For this to actually free anything, `destroy()` has to unregister the frame from
+the controller. `controller.createFrame()` pushes onto `controller.frames` and
+Scramjet 2.x has no matching remove, so dropping the iframe alone leaves the
+`Frame` — its fetch handler, plugins, and hooks — reachable for the life of the
+page. Every close and every discard adds one, and `setTransport()` then walks
+them all. Take it out yourself:
+
+```js
+destroy() {
+	const index = controller.frames.indexOf(this.frame);
+	if (index !== -1) controller.frames.splice(index, 1);
+	this.frame.element.remove();
+}
+```
+
 ---
 
 ## Keyboard shortcuts
