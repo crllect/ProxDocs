@@ -8,6 +8,7 @@ import { nav, findPage, breadcrumbFor } from "./nav.js";
 import { layout } from "./layout.js";
 import { buildPage } from "./builder-page.js";
 import { buildSearchIndex } from "./search-index.js";
+import { sitemapXml, robotsTxt } from "./seo.js";
 import { compose } from "../builder/node.js";
 import {
 	presets,
@@ -95,6 +96,7 @@ const renderDoc = async (res, slug) => {
 			breadcrumb: breadcrumbFor(slug),
 			toc,
 			body: html,
+			description: page.description ?? "",
 			sourcePath: `docs/${page.file}`
 		})
 	);
@@ -110,6 +112,24 @@ const server = http.createServer(async (req, res) => {
 			pathname = decodeURIComponent(requestUrl.pathname);
 		} catch {
 			return send(res, 400, "Bad request", "text/plain; charset=utf-8");
+		}
+
+		if (pathname === "/robots.txt") {
+			send(res, 200, robotsTxt(), "text/plain; charset=utf-8");
+			return;
+		}
+
+		if (pathname === "/sitemap.xml") {
+			const pages = nav
+				.flatMap(section => section.items)
+				.filter(page => page.file);
+			send(
+				res,
+				200,
+				sitemapXml(pages, new Date().toISOString().slice(0, 10)),
+				"application/xml; charset=utf-8"
+			);
+			return;
 		}
 
 		if (pathname === "/static/search-index.json") {
@@ -186,6 +206,7 @@ const server = http.createServer(async (req, res) => {
 				nav,
 				breadcrumb: [],
 				toc: [],
+				noindex: true,
 				body: `<h1>Not found</h1><p>There is no page at <code>${escapeHtml(pathname)}</code>.</p>`
 			})
 		);
@@ -249,9 +270,6 @@ const escapeHtml = value => {
 	);
 };
 
-// Astro's dev server also defaults to 4321, and a developer reading the docs is
-// very likely running a generated project beside them, so walk upward rather
-// than dying on EADDRINUSE.
 let port = Number(process.env.PORT) || 4321;
 let attemptsLeft = 20;
 

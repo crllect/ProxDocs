@@ -19,9 +19,9 @@ extension can inspect the page before transport encryption.
 run a bare deployment, say so.
 
 **A passive Wisp relay does not terminate target TLS, but it sees metadata.**
-The relay knows that a connection to `crllect.dev:443` opened, plus timing and
-traffic sizes. The operator also serves the client and could modify it to expose
-plaintext, so this is not a boundary against a malicious operator.
+The relay knows that a connection to `night-network.org:443` opened, plus timing
+and traffic sizes. The operator also serves the client and could modify it to
+expose plaintext, so this is not a boundary against a malicious operator.
 
 **Nothing here defeats a device management profile.** If the browser or OS is
 managed, it can screenshot, log keystrokes, and inspect traffic before it is
@@ -64,9 +64,9 @@ though proxied content is hostile, because some of it is.
 through the tunnel. Slow for users, expensive for you.
 
 **Do not preload the engine on your landing page.** The wasm rewriter and TLS
-stack are a large download. Initialise on first navigation, so people who bounce
+stack are a large download. Initialize on first navigation, so people who bounce
 never pay for it. The barebones preset does this; builds with transport settings
-initialise at startup so the saved transport is active before navigation.
+initialize at startup so the saved transport is active before navigation.
 
 **Self-host your fonts and icons.** Under `require-corp` most CDN assets are
 blocked anyway, and self-hosting is faster.
@@ -78,7 +78,7 @@ your server or CDN applies gzip or brotli to it.
 
 ## Accessibility
 
-Proxy frontends are notoriously bad at this, and it is easy to fix:
+Proxy frontends all suck at this, and its easy to fix:
 
 - **Keyboard navigation.** Tabs reachable by Tab, activated by Enter or Space.
   `Ctrl/Cmd+L` to focus the address bar.

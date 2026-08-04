@@ -38,24 +38,60 @@ export const sidebar = (nav, activeSlug) => {
 		.join("\n");
 };
 
+export const siteUrl = "https://docs.crllect.dev";
+export const siteName = "ProxDocs";
+
+export const canonicalFor = slug =>
+	!slug || slug === "index" ? `${siteUrl}/` : `${siteUrl}/${slug}`;
+
 export const shell = ({
 	title,
 	slug,
 	nav,
 	main,
+	description = "",
+	noindex = false,
+	structuredData = null,
 	extraHead = "",
 	extraBody = ""
 }) => {
+	const canonical = canonicalFor(slug);
+	const fullTitle =
+		slug === "index"
+			? `${escapeHtml(title)}`
+			: `${escapeHtml(title)} · ${siteName}`;
+	const summary = escapeHtml(description);
+
+	const meta = description
+		? `<meta name="description" content="${summary}">
+	<meta property="og:description" content="${summary}">
+	<meta name="twitter:description" content="${summary}">`
+		: "";
+
+	const jsonLd = structuredData
+		? `<script type="application/ld+json">${JSON.stringify(structuredData).replace(/</g, "\\u003c")}</script>`
+		: "";
+
 	return `<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>${escapeHtml(title)} · ProxDocs</title>
+	<title>${fullTitle}</title>
 	<link rel="stylesheet" href="/static/styles.css">
 	<link rel="icon" href="/static/favicon.png" type="image/png" sizes="64x64">
 	<link rel="icon" href="/static/favicon.webp" type="image/webp" sizes="64x64">
-	<link rel="canonical" href="https://docs.crllect.dev" />
+	<link rel="canonical" href="${canonical}">
+	${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">'}
+	${meta}
+	<meta property="og:type" content="article">
+	<meta property="og:site_name" content="${siteName}">
+	<meta property="og:title" content="${escapeHtml(title)}">
+	<meta property="og:url" content="${canonical}">
+	<meta property="og:image" content="${siteUrl}/static/favicon.png">
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:title" content="${escapeHtml(title)}">
+	${jsonLd}
 	${extraHead}
 </head>
 <body>
@@ -99,7 +135,10 @@ export const layout = ({
 	breadcrumb,
 	toc,
 	body,
-	sourcePath
+	sourcePath,
+	description = "",
+	noindex = false,
+	updated = null
 }) => {
 	const { prev, next } = adjacent(slug);
 
@@ -131,10 +170,46 @@ export const layout = ({
 		? `<p class="source-link">Source: <code>${escapeHtml(sourcePath)}</code></p>`
 		: "";
 
+	const crumbTrail = [{ title: siteName, slug: "index" }].concat(
+		breadcrumb.slice(0, -1).map(c => ({ title: c.title })),
+		slug && slug !== "index" ? [{ title, slug }] : []
+	);
+
+	const structuredData = {
+		"@context": "https://schema.org",
+		"@graph": [
+			{
+				"@type": "TechArticle",
+				headline: title,
+				description,
+				url: canonicalFor(slug),
+				inLanguage: "en",
+				isPartOf: {
+					"@type": "WebSite",
+					name: siteName,
+					url: `${siteUrl}/`
+				},
+				...(updated ? { dateModified: updated } : {})
+			},
+			{
+				"@type": "BreadcrumbList",
+				itemListElement: crumbTrail.map((entry, index) => ({
+					"@type": "ListItem",
+					position: index + 1,
+					name: entry.title,
+					...(entry.slug ? { item: canonicalFor(entry.slug) } : {})
+				}))
+			}
+		]
+	};
+
 	return shell({
 		title,
 		slug,
 		nav,
+		description,
+		noindex,
+		structuredData,
 		main: `
 	<main id="content" class="content">
 		<article class="prose">

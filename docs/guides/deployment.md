@@ -56,9 +56,6 @@ proxy.crllect.dev {
 
 Caddy handles ACME, HTTP/2, and WebSocket upgrades with that config.
 
-With nginx you must be explicit, and forgetting this is the most common culprit
-of "WebSockets don't work in production":
-
 ```nginx
 location / {
     proxy_pass http://localhost:8080;

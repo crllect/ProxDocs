@@ -11,7 +11,7 @@ import ts from "typescript";
 
 import { nav } from "../site/nav.js";
 import { markdownToHtml } from "../site/markdown.js";
-import { shell } from "../site/layout.js";
+import { shell, canonicalFor, siteUrl } from "../site/layout.js";
 import { highlight } from "../site/public/highlight.js";
 import { compose } from "../builder/node.js";
 import { toJavaScript } from "../builder/transpile.js";
@@ -53,6 +53,34 @@ for (const page of pages) {
 	}
 }
 if (!failures) ok(`${pages.length} pages present`);
+
+console.log("\nPage metadata");
+
+const seenDescriptions = new Map();
+for (const page of pages) {
+	const text = page.description;
+	if (!text) {
+		fail(`${page.slug} has no description in site/nav.js`);
+		continue;
+	}
+	if (text.length < 70 || text.length > 165) {
+		fail(
+			`${page.slug} description is ${text.length} chars, want 70 to 165`
+		);
+	}
+	const duplicate = seenDescriptions.get(text);
+	if (duplicate)
+		fail(`${page.slug} repeats the description from ${duplicate}`);
+	else seenDescriptions.set(text, page.slug);
+
+	const canonical = canonicalFor(page.slug);
+	const expected =
+		page.slug === "index" ? `${siteUrl}/` : `${siteUrl}/${page.slug}`;
+	if (canonical !== expected) {
+		fail(`${page.slug} canonical resolved to ${canonical}`);
+	}
+}
+if (!failures) ok(`${pages.length} descriptions and canonical URLs are unique`);
 
 console.log("\nInternal links");
 

@@ -7,10 +7,6 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 	const seen = new Map();
 	let title = null;
 
-	// parseInline returns HTML, so headings arrive with their entities already
-	// escaped. Decode the five marked emits to recover real text: otherwise
-	// "Scramjet's" slugs as "scramjet39s", and callers that escape again render
-	// a literal &#39;. &amp; goes last so "&lt;" written as text survives.
 	const decodeEntities = value =>
 		value
 			.replace(/&lt;/g, "<")

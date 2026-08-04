@@ -347,8 +347,6 @@ const frontendCommand = options => {
 	}
 };
 
-// Values are emitted as raw code, not JSON, so the targets can interpolate the
-// `backendPort` const that the config file resolves from BACKEND_PORT.
 const viteProxyConfig = options => {
 	const proxy = {};
 	const switches = options.features.includes("transportSwitch");

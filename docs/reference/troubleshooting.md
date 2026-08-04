@@ -21,7 +21,7 @@ For Scramjet, the first value must be `true`, the second should name your
 
 ## The page loads but nothing happens when I navigate
 
-**`crossOriginIsolated === false`**. The most common cause by a wide margin.
+**`crossOriginIsolated === false`**. _probably._
 
 Scramjet needs `SharedArrayBuffer`, which needs
 [cross-origin isolation](../concepts/cross-origin-isolation.md):
