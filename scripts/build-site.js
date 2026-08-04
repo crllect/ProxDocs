@@ -87,8 +87,8 @@ const bundleParts = async () => {
 		}
 	};
 	await walk(partsDir);
-
-	const body = `// DONT TOUCH
+	// ---------------- DONT TOUCH OR HELP YOU GOD ----------------
+	const body = `
 export const parts = ${JSON.stringify(parts, null, 0)};
 
 export const readPart = relative => {
