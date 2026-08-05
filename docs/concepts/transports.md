@@ -162,15 +162,18 @@ browser actually pulls them:
 | ------------------------- | ------------- |
 | `libcurl-transport` 2.0.5 | 849 KB        |
 | `epoxy-transport` 3.0.1   | 737 KB        |
-| `bare-transport` 1.0.0    | under 20 KB   |
+| `bare-transport` 1.0.0    | 5 KB          |
 
 The engine is about 291 KB gzipped on top of that, `scramjet.js` at 88 plus the
-wasm rewriter at 203, and the controller and utils are a rounding error at maybe
-10 KB together. Add it up: libcurl is roughly **1.15 MB** before you write a
-single line, epoxy is **1.04 MB**, Bare is **310 KB**.
+wasm rewriter at 203, and the controller and utils are a rounding error at 10 KB
+together. Add it up, in the same KB the table uses: libcurl puts you at about
+**1,150 KB** before you write a single line, epoxy about **1,040 KB**, Bare
+about **305 KB**.
 
-You are asking a browser to do TLS, which is a ridiculous thing to be doing and
-the entire reason any of this works.
+The two big ones are big because they contain a TLS stack. You are asking a
+browser to do TLS, which is a ridiculous thing to be doing and the entire reason
+any of this works. Bare is small because your server does that part instead,
+which is the whole tradeoff in one number.
 
 Shipping both wisp transports doesn't double it, thankfully. The import is
 [lazy](#switching-at-runtime), so only the one your user picked gets fetched.

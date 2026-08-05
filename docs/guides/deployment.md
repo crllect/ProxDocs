@@ -64,17 +64,38 @@ proxy.crllect.dev {
 Caddy handles ACME, HTTP/2, and WebSocket upgrades with that config.
 
 ```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 location / {
     proxy_pass http://localhost:8080;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+    proxy_set_header Connection $connection_upgrade;
     proxy_set_header Host $host;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
     proxy_read_timeout 3600s;
     proxy_send_timeout 3600s;
 }
 ```
+
+Two lines there are easy to leave out and both bite you later.
+
+The `map` block goes at `http` level, outside `server`. You will see
+`proxy_set_header Connection "upgrade"` hardcoded in most snippets on the
+internet, which sends `Connection: upgrade` on ordinary HTTP requests too. It
+usually works and it breaks upstream keepalive. The map sends it only when the
+client actually asked for an upgrade.
+
+`X-Forwarded-For` is the one that matters for a proxy specifically. Without it
+every request reaches your server from `127.0.0.1`, so wisp-js logs one address
+for everybody and any rate limiting you wrote counts all of your users as a
+single client. See [rate limiting](running-a-proxy.md#rate-limiting).
 
 **On a PaaS**, TLS is handled for you.
 

@@ -70,6 +70,13 @@ for (const [preset, dirName] of Object.entries(exampleNames)) {
 	for (const note of notes) console.log(`  note: ${note}`);
 }
 
+const known = new Set(Object.values(exampleNames));
+for (const entry of await readdir(examplesDir, { withFileTypes: true })) {
+	if (!entry.isDirectory() || known.has(entry.name)) continue;
+	await rm(path.join(examplesDir, entry.name), { recursive: true });
+	console.log(`removed ${entry.name}/, which no preset generates any more`);
+}
+
 const readme = `# Examples
 
 Pre-generated output from the builder presets. **Do not edit these by hand**.
