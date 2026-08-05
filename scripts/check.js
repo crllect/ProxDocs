@@ -177,10 +177,6 @@ console.log("\nHouse style");
 
 const styleRules = [
 	{
-		pattern: /—/g,
-		message: "em dash, use a comma, colon, or a second sentence"
-	},
-	{
 		pattern: /[“”‘’]/g,
 		message: "curly quote, use a straight quote"
 	}

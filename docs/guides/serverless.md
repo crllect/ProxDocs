@@ -7,18 +7,16 @@ every stream, so the generated serverless target uses the
 request in and one response out, which is exactly the shape a function has.
 
 "Bad place" rather than "impossible", because that changed. Vercel Functions
-serve WebSockets now, and Cloudflare Workers have done for years. What has not
+serve WebSockets now, and Cloudflare Workers have for years. What has not
 changed is why you do not want your tunnel there. Vercel closes the socket when
 the function hits its maximum duration, so every user gets disconnected on a
 timer, and you are billed for function time for the entire life of every
 connection. A proxy holds one socket per active user for as long as they browse.
 That is the single worst billing shape available to you.
 
-So: it is not that serverless cannot do Wisp. It is that Wisp on serverless
-bills you per second per user to get randomly hung up on. Bare, below, at least
-matches what a function is good at. And bare,
-
-is fine... _if ur broke_
+So it isn't that serverless cannot do Wisp. It is that Wisp on serverless bills
+you per second per user for the privilege of being hung up on. Bare at least
+matches what a function is good at, and bare actually is fine _if ur broke_
 
 ###### Brokie
 

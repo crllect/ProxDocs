@@ -8,7 +8,7 @@ Cross-Origin-Embedder-Policy: require-corp
 ```
 
 They are optional. Scramjet runs fine without them. Not sending them is still
-stupid, and the rest of this page is why.
+retarded.
 
 ---
 
@@ -50,12 +50,13 @@ people's favicons and images rather than your fonts or your CDN, since those opt
 in already. `same-origin` cuts `window.opener`, so popup OAuth in your shell can
 stop working.
 
-Weigh that against what you get, which is a class of sites that otherwise dies. That trade, is retarded.
+Weigh that against what you get, which is a class of sites that otherwise dies.
+That trade, is retarded.
 
 There is one place Scramjet reaches for isolation in your own shell: the
 `syncxhr` flag, which is off by default and which should allocate a
-`SharedArrayBuffer` when on. But its currently broken, so it isn't an argument for
-the headers either way. See
+`SharedArrayBuffer` when on. But its currently broken, so it isn't an argument
+for the headers either way. See
 [config and flags](../reference/scramjet-config.md#flags).
 
 **Ultraviolet does the same thing**, and does it correctly. Its service worker
@@ -95,7 +96,7 @@ Without this, you could embed a cross-origin image and read it through a timing
 side channel.
 
 **What it breaks is narrower than the warnings suggest**, because the big hosts
-fixed themselves years ago. Measured against a real `require-corp` page: Google
+added the header years ago. Measured on a real `require-corp` page: Google
 Fonts, jsDelivr, cdnjs and unpkg all send
 `Cross-Origin-Resource-Policy: cross-origin` and load fine.
 
@@ -118,13 +119,13 @@ satisfies COEP:
 ```
 
 That makes Wikipedia and Discord's CDN load. It does nothing for `github.com`,
-which sends neither header, so a favicon from there has to be proxied or
-self-hosted like everything else.
+which sends neither header, so that favicon has to be proxied or copied to your
+own origin.
 
 Favicon services redirect, and **the redirect itself has to carry CORP too**.
-`google.com/s2/favicons` answers `301` with no CORP and only then points at
-`t3.gstatic.com`, which does send it. Chrome blocks the hop it never got to, and
-tells you
+`google.com/s2/favicons` answers `301` without it, and only that redirect points
+at `t3.gstatic.com`, which does send CORP. Chrome checks the `301`, fails it,
+and so never follows it to the host that would have worked. What you get is
 `ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep`, which
 is not a sentence. If your history or bookmarks page pulls favicons from a
 service, this is why they are all blank.

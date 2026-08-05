@@ -152,27 +152,26 @@ fetched or rewrote something, it is in the tab's console, not the worker's.
 
 ---
 
-## What this architecture buys you, and what it costs
+## The good, the bad and the ugly
 
-**Buys you:**
+**The good:**
 
 - JavaScript-created URLs and WebSockets can be handled at runtime.
 - With epoxy/libcurl, the Wisp relay doesn't terminate target TLS. The relay
   sees destinations, sizes, timing, and encrypted bytes. An operator that also
   controls the client code could still modify it to expose plaintext.
 
-**Costs you:**
+**The bad:**
 
-- A service worker, so **HTTPS is mandatory** in production.
-- **Cross-origin isolation headers**. No engine requires them, and going without
-  is stupid anyway: they are what lets a proxied site use `SharedArrayBuffer`,
-  and the sites that need it fail quietly rather than loudly. See
+- **HTTPS is mandatory** in production cus of the SW.
+- **Cross-origin isolation headers** is needed for some site support. No engine
+  requires them, but not using them is stupid. See
   [Cross-origin isolation](cross-origin-isolation.md).
 - Wisp needs a **persistent WebSocket**, so request/response functions can't
   host the relay. The client and relay may be deployed separately.
-- Rewriting JavaScript correctly is hard. This is a common reason sites break,
-  and the reason [the engine](engines.md) is the part of the stack that took the
-  longest to get right.
+- Rewriting JavaScript correctly is hard and inherently jank.
+
+**You are ugly.**
 
 ---
 

@@ -140,7 +140,7 @@ await controller.wait();
 
 Resolves once three things are done: the worker has acknowledged the handshake,
 the wasm has been fetched and installed, and the saved cookie jar has loaded.
-The constructor puts all three in one `Promise.all` and `wait()` returns it.
+The constructor puts all three in one `Promise.all`, and `wait()` awaits it.
 Call it before creating frames.
 
 Requests reload the jar defensively on top of that, and the controller holds
