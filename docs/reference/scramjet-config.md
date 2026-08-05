@@ -281,7 +281,7 @@ to the flag. Apply it per-site through `siteFlags` instead of globally.
 
 **`scramitize`** is a leak detector. It wraps every call expression so a value
 containing your real origin, `~/sj`, or the string `scramjet` trips a
-`debugger`. When a site is somehow learning its real URL, this finds it fast. It
+`debugger`. When a site is somehow learning its real URL, this finds it. It
 is also very slow and does nothing with devtools closed, so keep it out of
 production.
 
