@@ -61,6 +61,12 @@ with it.
 **Upstream wins.** When this site and the source disagree, the source is right
 and the page is a bug. Say so in the page rather than quietly working around it.
 
+**Upstream bugs go on [known bugs](docs/reference/known-bugs.md).** One entry
+per bug: the symptom a reader would actually see first, usually an error string
+or a behaviour, then the snippet that causes it, then the workaround. Give a fix
+only when it is genuinely a line or two. Entries stay after upstream fixes them,
+annotated, because most people run an older release than you do.
+
 **Document the trap, not just the API.** A signature anyone can read off the
 types. What earns a page is the part that is not in the types: the field that is
 always `false`, the guard that never fires, the merge that silently reverts your

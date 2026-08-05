@@ -181,6 +181,9 @@ class ScramjetSession {
             if (!this.#destroyed)
                 this.#handlers.ready?.();
         };
+        // ready fires from two places on purpose: the url watcher, which
+        // reports as soon as a document exists, and load, which many real
+        // sites never reach because one request stays open forever.
         this.#frame.element.addEventListener("load", this.#onLoad);
     }
     get element() {
@@ -234,6 +237,7 @@ export const engine = {
                 new u.UrlWatcherPlugin((url) => {
                     session.url = url;
                     handlers.url?.(url);
+                    handlers.ready?.();
                 }),
                 new u.CatchEscapedLinksPlugin((url) => {
                     handlers.escape?.(url.href);

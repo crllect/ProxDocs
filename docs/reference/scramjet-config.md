@@ -379,6 +379,8 @@ block out of someone's repository.
   Scramjet, and where behaviour you cannot get from a flag comes from.
 - [Controller and Frame API](controller-api.md). The objects these two config
   values are passed to, and how the merge actually resolves.
+- [Known bugs](known-bugs.md). `syncxhr` and the `allowFailedIntercepts` merge,
+  with the code behind both.
 - [Site compatibility](site-compatibility.md). Which sites need which flags, and
   which are not a flag problem at all.
 - [Bootstrap or manual wiring](../guides/wiring.md). Where these paths come

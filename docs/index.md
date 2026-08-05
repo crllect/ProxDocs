@@ -71,13 +71,14 @@ question. You use Scramjet _over_ wisp.
 
 ### Reference
 
-| Page                                                    | What it answers                                         |
-| ------------------------------------------------------- | ------------------------------------------------------- |
-| [Config and flags](reference/scramjet-config.md)        | Every Scramjet option, what it does, what breaks        |
-| [Plugins and hooks](reference/plugins-and-hooks.md)     | The extension surface, and how to write against it      |
-| [Controller and Frame API](reference/controller-api.md) | Every member of the two classes, and the traps          |
-| [Core API and types](reference/core-api.md)             | The `$scramjet` global, class by class and type by type |
-| [Site compatibility](reference/site-compatibility.md)   | Why a given site fails, and whether you can fix it      |
+| Page                                                    | What it answers                                          |
+| ------------------------------------------------------- | -------------------------------------------------------- |
+| [Config and flags](reference/scramjet-config.md)        | Every Scramjet option, what it does, what breaks         |
+| [Plugins and hooks](reference/plugins-and-hooks.md)     | The extension surface, and how to write against it       |
+| [Controller and Frame API](reference/controller-api.md) | Every member of the two classes, and the traps           |
+| [Core API and types](reference/core-api.md)             | The `$scramjet` global, class by class and type by type  |
+| [Known bugs](reference/known-bugs.md)                   | Upstream bugs, their symptoms, and what to do about them |
+| [Site compatibility](reference/site-compatibility.md)   | Why a given site fails, and whether you can fix it       |
 
 [Version matrix](reference/versions.md) ·
 [Breaking changes](reference/breaking-changes.md) ·

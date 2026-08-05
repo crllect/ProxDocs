@@ -68,16 +68,17 @@ The validator accepts any HTTP or HTTPS URL containing `%s`:
 const searchEngine = "https://searx.crllect.dev/search?q=%s";
 ```
 
-The generated form shows the entries in `SEARCH_ENGINES`. Add a custom template
-to that list, or pass it to `settings.set()` from your own UI. Invalid templates
-fall back to the default. See [Settings](settings.md).
+The generated form shows the entries in `searchEngines`, exported from
+`settings.ts`. Add a custom template to that list, or pass one to
+`settings.set()` from your own UI. Invalid templates fall back to the default.
+See [Settings](settings.md).
 
 ## Testing a search engine
 
 Test against a deployed instance, not `localhost`. The differences that matter
 are all about where the request appears to come from.
 
-Three searches will tell you most of what you need:
+Four checks will tell you most of what you need:
 
 1. A plain word, to check the results page renders.
 2. A phrase with quotes and punctuation, to check the query is encoded correctly

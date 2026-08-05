@@ -629,6 +629,8 @@ order. Load order is core, controller, then utils. See the
 
 ## Where to go next
 
+- [Known bugs](known-bugs.md). The members on this page that do not do what they
+  look like, collected with the code behind each one.
 - [Config and flags](scramjet-config.md). What every value in `config` and
   `scramjetConfig` actually changes.
 - [Plugins and hooks](plugins-and-hooks.md). The contents of `frame.hooks`,

@@ -222,3 +222,5 @@ same protocol, so the browser side does not change.
 - [Transports](transports.md). Epoxy and libcurl, the things that speak wisp
 - [bare-mux and proxy-transports](bare-mux.md). The layer that lets you swap
   them
+- [Known bugs](../reference/known-bugs.md). Including the wisp-js log error that
+  looks alarming and is not

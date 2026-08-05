@@ -166,13 +166,21 @@ const ensureSession = async tab => {
 };
 ```
 
-`loading` and `ready` are what drive a per-tab spinner, and they are not
-symmetric. `loading` fires when you start a navigation, and `ready` fires on the
-iframe's `load` event, once per document. Do not wire `ready` to the URL-change
-callback instead: that one also fires for `history.pushState` and hash changes,
-where no document loads, so the spinner clears on navigations that have not
-finished and stays up on ones that never fire it. The engine adapter attaches
-the `load` listener when the session is created and removes it in `destroy()`.
+`loading` and `ready` drive a per-tab spinner, and `ready` deliberately fires
+from **two** places: the iframe's `load` event, and the URL watcher.
+
+That looks redundant and is not. Wiring it to `load` alone is the obvious choice
+and it hangs on real sites: DuckDuckGo's results page keeps a telemetry request
+open, so its document sits at `readyState: "interactive"` forever, the iframe
+never fires `load`, and the tab reads "loading" under a page the user is already
+scrolling. Wiring it to the URL watcher alone clears the spinner on
+`history.pushState` and hash changes, where nothing is loading at all.
+
+Firing on both, and keeping the handler idempotent, is what actually behaves:
+the watcher clears it as soon as a document exists, and `load` clears it again
+for reloads and back-navigations where the URL never changed. The engine adapter
+attaches the `load` listener when the session is created and removes it in
+`destroy()`.
 
 The `escape` handler is what makes `target="_blank"` behave: Scramjet's
 `CatchEscapedLinksPlugin` catches navigations that would leave the proxy, and

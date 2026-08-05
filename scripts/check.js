@@ -53,7 +53,35 @@ for (const page of pages) {
 		fail(`${page.file} is in the nav but does not exist`);
 	}
 }
-if (!failures) ok(`${pages.length} pages present`);
+
+const seenSlugs = new Set();
+const seenFiles = new Set();
+for (const page of pages) {
+	if (seenSlugs.has(page.slug)) fail(`${page.slug} appears twice in the nav`);
+	if (seenFiles.has(page.file)) fail(`${page.file} is in the nav twice`);
+	seenSlugs.add(page.slug);
+	seenFiles.add(page.file);
+	if (!page.description) fail(`${page.slug} has no nav description`);
+	else if (page.description.length > 160)
+		fail(
+			`${page.slug} description is ${page.description.length} chars, over 160`
+		);
+}
+
+const onDisk = [];
+for (const dir of ["", "concepts", "guides", "reference"]) {
+	const full = path.join(docsDir, dir);
+	for (const entry of await readdir(full, { withFileTypes: true })) {
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			onDisk.push(dir ? `${dir}/${entry.name}` : entry.name);
+		}
+	}
+}
+for (const file of onDisk) {
+	if (!seenFiles.has(file)) fail(`docs/${file} exists but is not in the nav`);
+}
+
+if (!failures) ok(`${pages.length} pages present, each once, all reachable`);
 
 console.log("\nInternal links");
 

@@ -227,7 +227,7 @@ const shellResponse = async request => {
 			if (response.ok) cache.put(request, response.clone());
 			return response;
 		})
-		.catch(() => cached);
+		.catch(() => cached ?? Response.error());
 
 	return cached ?? network;
 };
@@ -236,6 +236,13 @@ const shellResponse = async request => {
 That is stale-while-revalidate: serve the cached copy instantly if there is one,
 fetch a fresh copy in the background for next time, and fall back to the cache
 when the network fails.
+
+`Response.error()` in that last position matters. Resolving `respondWith` with
+`undefined`, which is what you get if you write `.catch(() => cached)` and
+nothing is cached yet, makes the browser log a
+`FetchEvent ... resulted in a network error response` TypeError on top of the
+failure you already had. Returning an explicit network error fails the request
+cleanly instead.
 
 ### Why it matters more here than on a normal site
 

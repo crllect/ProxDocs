@@ -192,6 +192,8 @@ promised everything report all of them, and stop trusting anything you say.
 
 ## Where to go next
 
+- [Known bugs](known-bugs.md). Upstream bugs with their symptoms, for when it is
+  not the site's fault either.
 - [Troubleshooting](troubleshooting.md). When nothing works, rather than one
   site.
 - [Config and flags](scramjet-config.md). The per-site escape hatch.

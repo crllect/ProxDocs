@@ -31,9 +31,11 @@ Every byte of every page passes through your server twice, in from the
 destination and out to the user. There is no caching layer that helps, because
 the traffic is per-user and mostly not cacheable.
 
-A rough figure to plan with: **a user browsing normally costs a few hundred MB
-an hour**, and a user watching video costs several GB. Twenty casual users can
-clear a terabyte in a month.
+Orders of magnitude to plan with, not measurements: **normal browsing runs to a
+few hundred MB an hour per user**, and video runs to several GB. A small handful
+of regular users will clear a terabyte in a month without anyone doing anything
+unusual. Measure your own traffic before you trust any of those figures,
+including these.
 
 Check your provider's allowance before you advertise anywhere. The common
 outcomes when you exceed it are a large bill, or the instance being throttled to

@@ -2,6 +2,9 @@
 
 Ordered roughly by how often each one is the answer.
 
+If the symptom turns out to be an upstream bug rather than your setup, it is on
+[known bugs](known-bugs.md) with the code behind it.
+
 ---
 
 ## Start here
@@ -400,7 +403,10 @@ yet. Check whether it has shipped before carrying the workaround forward.
 
 Until then, the generated Scramjet adapter installs a frame-local compatibility
 plugin. It supplies the frame's current URL only when either History method
-omits the URL. It leaves real URLs, the URL watcher, and HTTP caching unchanged:
+omits the URL, and leaves real URLs, the URL watcher, and HTTP caching
+unchanged. It patches `History.prototype` inside the proxied document, ahead of
+Scramjet's own proxy, so the value that reaches the buggy line is already a real
+URL:
 
 ```js
 for (const method of ["pushState", "replaceState"]) {
@@ -410,6 +416,12 @@ for (const method of ["pushState", "replaceState"]) {
 	};
 }
 ```
+
+**It only covers the top-level document.** The plugin taps `init.post` and
+returns early when `isTopLevel` is false, so a nested iframe inside the proxied
+page, an embedded SPA or an ad frame, can still navigate itself to `/undefined`.
+Patching every nested context is a bigger hammer than the bug warrants, and the
+real fix is an upstream release.
 
 Do not filter `UrlWatcherPlugin` values or override `frame.back()` to work
 around this. Both affect normal navigation for every site. Upgrade or regenerate

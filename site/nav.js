@@ -114,13 +114,6 @@ export const nav = [
 				file: "guides/cookies-and-sessions.md",
 				title: "Cookies and sessions",
 				description:
-					"Where Scramjet stores cookies, how sessions persist across tabs, and what commonly breaks logins."
-			},
-			{
-				slug: "guides/cookies-and-sessions",
-				file: "guides/cookies-and-sessions.md",
-				title: "Cookies and sessions",
-				description:
 					"Where Scramjet keeps cookies, how the CookieJar persists and syncs across tabs, and the three things that break logins."
 			},
 			{
@@ -204,6 +197,13 @@ export const nav = [
 				title: "Core API and types",
 				description:
 					"Every class, function, and type on the $scramjet global, with the signatures and the behaviour they do not advertise."
+			},
+			{
+				slug: "reference/known-bugs",
+				file: "reference/known-bugs.md",
+				title: "Known bugs",
+				description:
+					"Upstream bugs in Scramjet, wisp-js and the transport packages, each with the symptom, the code, and the workaround."
 			},
 			{
 				slug: "reference/site-compatibility",

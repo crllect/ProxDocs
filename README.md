@@ -183,6 +183,7 @@ if you would rather just read it.
 [plugins and hooks](docs/reference/plugins-and-hooks.md),
 [Controller and Frame API](docs/reference/controller-api.md),
 [core API and types](docs/reference/core-api.md),
+[known bugs](docs/reference/known-bugs.md),
 [site compatibility](docs/reference/site-compatibility.md),
 [version matrix](docs/reference/versions.md),
 [breaking changes](docs/reference/breaking-changes.md),

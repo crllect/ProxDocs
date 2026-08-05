@@ -512,5 +512,7 @@ document lifecycle use `frame.hooks.init.post` and add your own listeners to
 - [Plugins and hooks](plugins-and-hooks.md). What to do with the hook maps
   above.
 - [Config and flags](scramjet-config.md). Every value inside `ScramjetConfig`.
+- [Known bugs](known-bugs.md). The parts of this surface that are broken
+  upstream, with symptoms.
 - [Inside Scramjet](../concepts/scramjet-internals.md). Where these files live
   upstream, and how to build and test the thing you are reading about.
