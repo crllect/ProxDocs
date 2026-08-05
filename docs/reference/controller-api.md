@@ -138,11 +138,14 @@ through config, which is fine, because unmasking them breaks the frame.
 await controller.wait();
 ```
 
-Resolves once the worker has acknowledged the handshake and the wasm has been
-fetched and installed. Call it before creating frames.
+Resolves once three things are done: the worker has acknowledged the handshake,
+the wasm has been fetched and installed, and the saved cookie jar has loaded.
+The constructor puts all three in one `Promise.all` and `wait()` returns it.
+Call it before creating frames.
 
-It does **not** wait for the cookie jar. That loads lazily and the controller
-holds proxied requests until it is ready, so you don't have to sequence it. See
+Requests reload the jar defensively on top of that, and the controller holds
+each proxied request until the load finishes, so cookies are one of the few
+things here you cannot get wrong by ordering. See
 [Cookies and sessions](../guides/cookies-and-sessions.md).
 
 ### `createFrame(element?, options?)`

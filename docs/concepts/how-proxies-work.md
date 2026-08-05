@@ -164,9 +164,9 @@ fetched or rewrote something, it is in the tab's console, not the worker's.
 **Costs you:**
 
 - A service worker, so **HTTPS is mandatory** in production.
-- **Cross-origin isolation headers**, which no engine strictly requires but
-  every serious deployment should send, because they are what let proxied sites
-  use `SharedArrayBuffer`. See
+- **Cross-origin isolation headers**. No engine requires them, and going without
+  is stupid anyway: they are what lets a proxied site use `SharedArrayBuffer`,
+  and the sites that need it fail quietly rather than loudly. See
   [Cross-origin isolation](cross-origin-isolation.md).
 - Wisp needs a **persistent WebSocket**, so request/response functions can't
   host the relay. The client and relay may be deployed separately.

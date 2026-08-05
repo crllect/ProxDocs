@@ -1,18 +1,37 @@
 # Serverless deployment
 
-Serverless function platforms can't hold a WebSocket open. That rules out
-[Wisp](../concepts/wisp-vs-bare.md), which is one long-lived socket carrying
-every stream. The way around it is the [Bare](../concepts/wisp-vs-bare.md)
-transport: ordinary HTTP, one request in and one response out, which is exactly
-the shape a function has.
+Serverless functions are a bad place to hold a WebSocket open. That is awkward
+for [Wisp](../concepts/wisp-vs-bare.md), which is one long-lived socket carrying
+every stream, so the generated serverless target uses the
+[Bare](../concepts/wisp-vs-bare.md) transport instead: ordinary HTTP, one
+request in and one response out, which is exactly the shape a function has.
 
-its fine... _if ur broke_
+"Bad place" rather than "impossible", because that changed. Vercel Functions
+serve WebSockets now, and Cloudflare Workers have done for years. What has not
+changed is why you do not want your tunnel there. Vercel closes the socket when
+the function hits its maximum duration, so every user gets disconnected on a
+timer, and you are billed for function time for the entire life of every
+connection. A proxy holds one socket per active user for as long as they browse.
+That is the single worst billing shape available to you.
+
+So: it is not that serverless cannot do Wisp. It is that Wisp on serverless
+bills you per second per user to get randomly hung up on. Bare, below, at least
+matches what a function is good at. And bare,
+
+is fine... _if ur broke_
 
 ###### Brokie
 
-This works, and for a lot of projects it is the right call. If you have no
-server, no budget, and a handful of users, serverless is the only way to put a
-whole proxy somewhere for free, and the costs below never come due at that size.
+> [!IMPORTANT] Even with bare, be mindful, if you are doing serverless, look at
+> your analytics. I got a 600 dollar monthly bill from vercel because I got a
+> ton of users out of the blue and didn't know. If you cant afford a VPS, you
+> sure as hell cant afford a 600 dollar bill from vercel. Wisp will make this
+> exponentially worse on serverless, so don't even think about it.
+
+However it does work, and for a lot of projects it is the right call. If you
+have no server, no budget, and a handful of users, serverless is the only way to
+put a whole proxy somewhere for free, and the costs below never come due at that
+size.
 
 What it isn't is a path that scales. Read the tradeoffs before you commit, so
 that if the project grows the move is planned rather than forced. My first ever
@@ -27,11 +46,6 @@ sites. If you have the option, skip to
 ```bash
 node builder/cli.js --out ./my-proxy --preset serverless
 ```
-
-> [!IMPORTANT] If you are doing serverless, look at your analytics. I got a 600
-> dollar monthly bill from vercel because I was running serverless, and I got a
-> few too many users. If you cant afford a VPS, you sure as hell cant afford a
-> 600 dollar bill from vercel.
 
 ---
 

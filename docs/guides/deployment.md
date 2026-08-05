@@ -21,21 +21,28 @@ sometimes doesn't.
 
 ## Where it works
 
-| Host                                          | Websockets            | Notes                                               |
-| --------------------------------------------- | --------------------- | --------------------------------------------------- |
-| **A VPS** (Hetzner, DigitalOcean, Vultr, OVH) | Yes                   | Full control; check current pricing                 |
-| **Fly.io**                                    | Yes                   | Long-running containers; check current plans        |
-| **Render**                                    | Yes                   | Git-based deployment; services may sleep by plan    |
-| **Railway**                                   | Yes                   | Easy, usage-based                                   |
-| **Koyeb**                                     | Yes                   | Check current WebSocket and idle limits             |
-| **Deno Deploy**                               | Varies                | Needs a Deno-compatible Wisp server                 |
-| **Serverless functions**                      | **No**                | All-in-one uses Bare; Wisp may be hosted elsewhere  |
-| **Netlify Functions**                         | **No**                | Bare only, shorter timeouts                         |
-| **Cloudflare Workers**                        | **No** (not for this) | Different runtime; `bare-server-node` needs porting |
-| **GitHub Pages**                              | **No**                | Static files only, no server code                   |
-| **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns   |
+| Host                                          | Websockets            | Notes                                              |
+| --------------------------------------------- | --------------------- | -------------------------------------------------- |
+| **A VPS** (Hetzner, DigitalOcean, Vultr, OVH) | Yes                   | Full control; check current pricing                |
+| **Fly.io**                                    | Yes                   | Long-running containers; check current plans       |
+| **Render**                                    | Yes                   | Git-based deployment; services may sleep by plan   |
+| **Railway**                                   | Yes                   | Easy, usage-based                                  |
+| **Koyeb**                                     | Yes                   | Check current WebSocket and idle limits            |
+| **Deno Deploy**                               | Varies                | Needs a Deno-compatible Wisp server                |
+| **Serverless functions**                      | Not worth it          | Sockets exist now, but you pay per second per user |
+| **Netlify Functions**                         | **No**                | Bare only, shorter timeouts                        |
+| **Cloudflare Workers**                        | **No** (not for this) | Sockets fine; `bare-server-node` needs porting     |
+| **GitHub Pages**                              | **No**                | Static files only, no server code                  |
+| **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns  |
 
-The two **No** rows aren't dead ends, they just change the transport: a
+"Not worth it" is doing real work in that table. Vercel Functions can hold a
+WebSocket open these days and Cloudflare Workers always could, so the old line
+about serverless being physically incapable of Wisp is dead. The reason to stay
+away is billing: your tunnel lives for as long as someone browses, and a
+function bills for every second of it, then hangs up at its maximum duration
+anyway.
+
+The **No** rows aren't dead ends either, they just change the transport: a
 serverless function can run Scramjet over Bare. That is free to start and fine
 at low traffic, and it is billed per GB of egress, which a proxy produces
 nothing but. [Serverless deployment](serverless.md) covers the tradeoff in full.

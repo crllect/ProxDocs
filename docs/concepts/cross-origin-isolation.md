@@ -1,13 +1,14 @@
 # Cross-origin isolation
 
-If you take one thing from this page: **send these two headers.** Skipping them
-breaks a whole class of proxied sites, and the failure mode gives you almost no
-useful information.
+Send these two headers.
 
 ```text
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
+
+They are optional. Scramjet runs fine without them. Not sending them is still
+stupid, and the rest of this page is why.
 
 ---
 
@@ -43,14 +44,17 @@ than it should be" rather than a hard break. When it does break, it breaks from
 inside the frame, in somebody else's minified code, with nothing pointing back
 at a header you didn't send.
 
-So send them. It costs you two lines and self-hosting your own assets, and the
-alternative is a failure nobody can trace back to you. You also can't go back
-and add them for someone who already hit the problem and left.
+Here is the whole bill for turning them on. `require-corp` blocks cross-origin
+assets in your own shell that don't opt in, which in practice means other
+people's favicons and images rather than your fonts or your CDN, since those opt
+in already. `same-origin` cuts `window.opener`, so popup OAuth in your shell can
+stop working.
+
+Weigh that against what you get, which is a class of sites that otherwise dies. That trade, is retarded.
 
 There is one place Scramjet reaches for isolation in your own shell: the
-`syncxhr` flag, which is off by default and which allocates a
-`SharedArrayBuffer` when on. It is also unimplemented in 2.0.67-alpha.2 and
-throws for a second reason before isolation matters, so it isn't an argument for
+`syncxhr` flag, which is off by default and which should allocate a
+`SharedArrayBuffer` when on. But its currently broken, so it isn't an argument for
 the headers either way. See
 [config and flags](../reference/scramjet-config.md#flags).
 
@@ -90,9 +94,40 @@ CORS.
 Without this, you could embed a cross-origin image and read it through a timing
 side channel.
 
-**What it breaks:** every third-party asset that doesn't send CORP. Google
-Fonts, a CDN script, an analytics pixel, an external favicon, all blocked, and
-the console message isn't always obvious.
+**What it breaks is narrower than the warnings suggest**, because the big hosts
+fixed themselves years ago. Measured against a real `require-corp` page: Google
+Fonts, jsDelivr, cdnjs and unpkg all send
+`Cross-Origin-Resource-Policy: cross-origin` and load fine.
+
+What actually dies is other people's images, favicons above all:
+
+| Resource                                             | Sends              | Under `require-corp` |
+| ---------------------------------------------------- | ------------------ | -------------------- |
+| `fonts.googleapis.com`, `cdnjs`, `jsdelivr`, `unpkg` | CORP               | loads                |
+| `github.com/favicon.ico`                             | nothing            | blocked              |
+| `en.wikipedia.org/favicon.ico`                       | `ACAO: *`, no CORP | blocked              |
+| `cdn.discordapp.com` images                          | `ACAO: *`, no CORP | blocked              |
+| `google.com/s2/favicons`                             | CORP, after a 301  | blocked              |
+
+Two of those have a fix. When a host sends `Access-Control-Allow-Origin` but no
+CORP, the `crossorigin` attribute turns the request into a CORS one, which
+satisfies COEP:
+
+```html
+<img crossorigin src="https://en.wikipedia.org/favicon.ico" />
+```
+
+That makes Wikipedia and Discord's CDN load. It does nothing for `github.com`,
+which sends neither header, so a favicon from there has to be proxied or
+self-hosted like everything else.
+
+Favicon services redirect, and **the redirect itself has to carry CORP too**.
+`google.com/s2/favicons` answers `301` with no CORP and only then points at
+`t3.gstatic.com`, which does send it. Chrome blocks the hop it never got to, and
+tells you
+`ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep`, which
+is not a sentence. If your history or bookmarks page pulls favicons from a
+service, this is why they are all blank.
 
 There is a gentler value, `credentialless`, which sends cross-origin no-cors
 requests without credentials instead of requiring opt-in. It also grants

@@ -44,9 +44,9 @@ bundle. See [Config and flags](scramjet-config.md) and
 [URL parsing and history](../guides/url-parsing-and-history.md).
 
 **CookieJar**. In Scramjet 2.x, the single cookie store the controller owns,
-keyed by destination origin rather than yours. Persisted to IndexedDB and synced
-between tabs over a `BroadcastChannel`. Proxied pages never touch the browser's
-real cookie store. See
+keyed by the destination's domain and path rather than by your origin. Persisted
+to IndexedDB and synced between tabs over a `BroadcastChannel`. Proxied pages
+never touch the browser's real cookie store. See
 [Cookies and sessions](../guides/cookies-and-sessions.md).
 
 **Controller**. In Scramjet 2.x, the window-side object that owns the service

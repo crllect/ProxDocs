@@ -17,9 +17,14 @@ navigator.serviceWorker.controller?.scriptURL;
 performance.getEntriesByType("resource").filter(r => r.name.includes("wasm"));
 ```
 
-For Scramjet, the first value must be `true`, the second should name your
-`sw.js`, and the third should include the
-[rewriter](../concepts/how-proxies-work.md) WebAssembly file.
+The second should name your `sw.js` and the third should include the
+[rewriter](../concepts/how-proxies-work.md) WebAssembly file. Those two are
+pass/fail.
+
+The first you want `true`, but a `false` there does not stop Scramjet running.
+What it costs you is proxied sites that need `SharedArrayBuffer`, which is a
+smaller set than people assume and a miserable one to debug. See
+[cross-origin isolation](../concepts/cross-origin-isolation.md).
 
 ---
 
@@ -163,15 +168,23 @@ Cross-origin isolation. See above.
 
 ## Sites load but subresources 404 or are blocked
 
-**Under `require-corp`, cross-origin assets must opt in** with
-`Cross-Origin-Resource-Policy` or CORS. Google Fonts, CDN scripts, and external
-favicons in _your own shell_ will be blocked.
+**Under `require-corp`, cross-origin assets in _your own shell_ must opt in**
+with `Cross-Origin-Resource-Policy`, or be fetched with CORS.
 
-Self-host them, or try `Cross-Origin-Embedder-Policy: credentialless`, which
-still grants isolation but doesn't require opt-in. Chromium 96+ and Firefox 119+
-support it. **Safari does not, at any version**, and WebKit hasn't signalled
-that it intends to, so `credentialless` isn't a fix you can ship to everyone.
-Self-hosting is the portable answer.
+Your fonts and CDN scripts are almost certainly fine. Google Fonts, cdnjs,
+jsDelivr and unpkg all send CORP. The things that break are other people's
+images, favicons especially, and favicon services that redirect, because the
+redirect response needs CORP as well as the file it points at.
+
+If the host sends `Access-Control-Allow-Origin` but no CORP, add `crossorigin`
+to the tag and it loads. If it sends neither, proxy it or self-host it. The full
+table of what does and doesn't work is in
+[cross-origin isolation](../concepts/cross-origin-isolation.md#cross-origin-embedder-policy-require-corp).
+
+`Cross-Origin-Embedder-Policy: credentialless` is the other way out. It still
+grants isolation and sends no-cors requests without credentials rather than
+demanding opt-in. Chromium 96+ and Firefox 119+ support it, **Safari does not at
+any version**, so it isn't something you ship to everyone.
 
 This applies to **your shell's** assets. Assets of proxied pages go through the
 service worker and are same-origin by the time the browser sees them.

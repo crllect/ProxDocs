@@ -57,12 +57,15 @@ handling in a plugin, you are almost certainly reimplementing this.
 The jar is written to **IndexedDB**, in a database named
 `__scramjet_controller`, store `state`, under the key `cookies`.
 
-**Loading it is lazy, and you do not have to sequence it.** `controller.wait()`
-does _not_ wait for the jar. It waits for the service worker handshake and the
-wasm fetch. The jar loads on the first proxied request instead, and the
-controller holds that request until the load finishes. So a frame created before
-the jar is in memory still issues its first request with the right cookies; you
-can't race it.
+**`controller.wait()` waits for the jar.** The constructor builds one
+`Promise.all` over three things, the worker handshake, the wasm fetch, and
+`loadSavedCookies(true)`, and `wait()` resolves on that. So once `wait()` comes
+back, saved cookies are already in memory.
+
+Requests reload it defensively anyway, and the controller holds each proxied
+request until that finishes, so even a frame you created too early issues its
+first request with the right cookies. You can't really race this one, which is
+unusual for this codebase and worth enjoying.
 
 The persisted record is small:
 

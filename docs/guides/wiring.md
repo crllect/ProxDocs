@@ -208,9 +208,9 @@ complete its handshake and for the wasm to be fetched, and **nothing stops you
 calling `createFrame()` before either has happened**. The readiness guard inside
 it tests a promise the constructor always assigns, so it never fires; you get a
 frame back, the worker may not be routing its prefix yet, and the first
-navigation lands on your own 404. It does **not** wait for the cookie jar. That
-loads lazily on the first proxied request, which the controller holds until it
-is ready. See [Cookies and sessions](cookies-and-sessions.md) and the
+navigation lands on your own 404. It waits for the saved cookie jar too, which
+is in the same `Promise.all`, so that one you genuinely cannot get wrong. See
+[Cookies and sessions](cookies-and-sessions.md) and the
 [Controller API](../reference/controller-api.md#createframeelement-options).
 
 **Do not drop the `setInterval`.** Browsers terminate an idle service worker

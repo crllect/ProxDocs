@@ -128,7 +128,7 @@ and it throws instead.
 
 **The code**, in `core/src/client/shared/requests/xmlhttprequest.ts`:
 
-```js
+```ts
 export default function (client: ScramjetClient, self: Self) {
 	let worker;
 	// if (self.Worker && flagEnabled("syncxhr", client.url)) {
@@ -160,6 +160,26 @@ side resolves them.
 **Workaround: `skipLibCheck: true`**, which is the default in most setups and in
 every project this builder generates. The exported classes then type correctly.
 
+### `CookieJar.load()` ignores the object form its type allows
+
+**Symptom.** You hand `load()` a parsed record, as its signature says you can,
+and get nothing. No cookies, no throw, just `??` in the console.
+
+**The code**, in `core/src/shared/cookie.ts`:
+
+```ts
+load(cookies: string | Record<string, Cookie>) {
+	if (typeof cookies === "object") {
+		console.error("??");
+		return;
+	}
+	const parsed: Record<string, Cookie> = JSON_parse(cookies);
+```
+
+The type says string or record. The body accepts string only, and the error
+message is a shrug. Pass `jar.dump()` output, or `JSON.stringify` your record
+first. See [core API](core-api.md#cookiejar).
+
 ### `unrewriteUrl` doesn't round-trip `javascript:` URLs
 
 **Symptom.** You unrewrite a `javascript:` URL and get back exactly what you
@@ -167,7 +187,7 @@ passed in, rewritten body and all.
 
 **The code**, in `core/src/shared/rewriters/url.ts`:
 
-```js
+```ts
 export function unrewriteUrl(url: string | URL, context: ScramjetContext) {
 	url = String(url);
 	if (url.startsWith("javascript:")) {

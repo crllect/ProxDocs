@@ -183,17 +183,23 @@ jar.dump(): string;
 jar.clear(): void;
 ```
 
-`dump()` returns JSON, and `load()` accepts either that JSON or an
-already-parsed record. Those two are what the controller persists to IndexedDB
-and what the inject script carries into each document.
+`dump()` returns JSON, and `load()` takes that JSON **as a string**. Its
+signature also accepts `Record<string, Cookie>` and the runtime does not: hand
+it an object and it logs `??` and returns without loading anything. That is
+[a known bug](known-bugs.md#cookiejarload-ignores-the-object-form-its-type-allows),
+not a choice. Those two calls are what the controller persists to IndexedDB and
+what the inject script carries into each document.
 
 `fromJs` distinguishes a `document.cookie` read from a request header build, so
 `httpOnly` cookies are withheld from the page. Pass it correctly or you hand
 scripts a session cookie the real browser would have hidden.
 
-`sameSiteContext` defaults to `"strict"`, which is the conservative choice: it
-withholds `SameSite=Lax` and `None` cookies that a cross-site navigation should
-have sent. Pass the real context when you know it.
+`sameSiteContext` describes **the request**, not how strict you want the filter
+to be, and this is backwards from how everyone reads it at first. It is the
+answer to "how same-site is this?", so the default `"strict"` means a same-site
+request and everything is eligible. `"lax"` drops `SameSite=Strict` cookies.
+`"cross-site"` drops everything except `SameSite=None`. The permissive value is
+the one named `strict`.
 
 A `Cookie` is:
 
@@ -204,16 +210,19 @@ A `Cookie` is:
 | `path`     | `string?`  | Defaults to the URL's directory           |
 | `expires`  | `number?`  | Epoch milliseconds                        |
 | `maxAge`   | `number?`  |                                           |
-| `domain`   | `string?`  | Stored without the leading dot            |
+| `domain`   | `string?`  | Stored **with** a leading dot, see below  |
 | `hostOnly` | `boolean?` | Set when the cookie carried no `Domain`   |
 | `secure`   | `boolean?` | Parsed but **not enforced**, see below    |
 | `httpOnly` | `boolean?` | Enforced against `fromJs` reads           |
 | `sameSite` | `string?`  | Case varies by parser, compare lowercased |
 
-`secure` is deliberately not enforced on retrieval. Scramjet presents every
-proxied origin as HTTPS regardless of the real scheme, so enforcing it would
-drop cookies that the real browser would have sent. It is parsed and stored, so
-a plugin can still read it.
+`secure` is parsed, stored, and then never checked. The line that would enforce
+it is commented out, with upstream's reasoning right there: Scramjet presents
+every proxied origin as HTTPS regardless of what the real site uses, so the
+protocol check it would run is against the wrong scheme and would drop the wrong
+cookies. That is an emulation shortcut, not browser-equivalent behavior. A real
+browser will not send a `Secure` cookie to an `http:` destination, and Scramjet
+will. Plugins can still read the field.
 
 Cookie storage is per controller, not per frame. What that means for logins, and
 the three ways sessions break, is in
