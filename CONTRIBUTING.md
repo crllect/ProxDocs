@@ -85,7 +85,7 @@ and the page is a bug. Say so in the page rather than quietly working around it.
 
 **Upstream bugs go on [known bugs](docs/reference/known-bugs.md).** One entry
 per bug: the symptom a reader would actually see first, usually an error string
-or a behaviour, then the snippet that causes it, then the workaround. Give a fix
+or a behavior, then the snippet that causes it, then the workaround. Give a fix
 only when it is genuinely a line or two. Entries stay after upstream fixes them,
 annotated, because most people run an older release than you do.
 
