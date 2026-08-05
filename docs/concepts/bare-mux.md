@@ -22,10 +22,10 @@ Without coordination each context builds its own transport. That means:
 
 - **Several TLS stacks in memory.** Each wasm instance is megabytes.
 - **Several [Wisp](wisp-vs-bare.md) WebSockets** to your server, per user.
-- **Split state.** Connection reuse, cookies, and settings do not line up
-  between contexts.
+- **Split state.** Connection reuse, cookies, and settings don't line up between
+  contexts.
 - **Nothing to switch.** Changing transports would mean rebuilding it
-  everywhere, in contexts you do not hold a reference to.
+  everywhere, in contexts you don't hold a reference to.
 
 **bare-mux** ("bare multiplexer") fixes this by putting the transport in one
 **SharedWorker** and giving every context a thin client that talks to it over a
@@ -52,7 +52,7 @@ await connection.setTransport("/libcurl/index.mjs", [{ wisp: wispUrl }]);
 ```
 
 The first argument is a module path and the array contains constructor
-arguments. The transport is constructed inside the SharedWorker, so it cannot
+arguments. The transport is constructed inside the SharedWorker, so it can't
 receive an instance created by the page.
 
 That also explains a common confusion: the transport module gets fetched by the
@@ -64,7 +64,7 @@ worker, so the path must be one your **server** serves, not a bundler specifier.
 
 **`@mercuryworkshop/bare-mux` 2.1.9 carries a deprecation notice** pointing at
 `@mercuryworkshop/proxy-transports`. Scramjet 2.x depends on proxy-transports
-directly and does not use bare-mux at all.
+directly and doesn't use bare-mux at all.
 
 The name change reflects a scope change:
 
@@ -115,7 +115,7 @@ another WebAssembly client and another socket, so
 | --------------- | -------------------------------------------------------------------- |
 | Ultraviolet 3.x | **bare-mux.** UV has no other option; it is what UV 3.x is built on. |
 | Scramjet 1.x    | **bare-mux.** Same generation.                                       |
-| Scramjet 2.x    | **proxy-transports.** Already a dependency; do not add bare-mux.     |
+| Scramjet 2.x    | **proxy-transports.** Already a dependency; don't add bare-mux.      |
 
 Do not mix them. bare-mux-era transports (libcurl `^1`, epoxy `^2`) and
 proxy-transports-era transports (libcurl `^2`, epoxy `^3`) are separate package
@@ -145,12 +145,12 @@ That directory contains `index.js` (the `BareMux` global for your page) and
 
 ## Debugging
 
-**"BareMux is not defined"**. `/baremux/index.js` is not loaded, or loaded after
+**"BareMux is not defined"**. `/baremux/index.js` isn't loaded, or loaded after
 your script. It is a classic script, not a module, so ordering in your HTML
 matters.
 
 **Requests hang with no error**. The SharedWorker probably failed to construct
-the transport. SharedWorker errors do not appear in the page console; open
+the transport. SharedWorker errors don't appear in the page console; open
 `chrome://inspect/#workers` (or Firefox's `about:debugging`) and inspect it
 directly.
 

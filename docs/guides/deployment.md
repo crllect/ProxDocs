@@ -15,7 +15,7 @@ WebSocket open?** Everything else follows.
 | Outbound network      | Your server opens TCP sockets to arbitrary hosts             | Everyone                           |
 
 `localhost` is exempt from HTTPS, which is why development works and production
-sometimes does not.
+sometimes doesn't.
 
 ---
 
@@ -35,7 +35,7 @@ sometimes does not.
 | **GitHub Pages**                              | **No**                | Static files only, no server code                   |
 | **Replit**                                    | Unreliable            | Historically hostile to proxies; expect takedowns   |
 
-The two **No** rows are not dead ends, they just change the transport: a
+The two **No** rows aren't dead ends, they just change the transport: a
 serverless function can run Scramjet over Bare. That is free to start and fine
 at low traffic, and it is billed per GB of egress, which a proxy produces
 nothing but. [Serverless deployment](serverless.md) covers the tradeoff in full.
@@ -158,14 +158,14 @@ or yarn, use that package manager's frozen install (`npm ci --omit=dev`) against
 its own lockfile; mixing a lockfile with the wrong package manager either fails
 or silently resolves different versions.
 
-`--frozen-lockfile` is not optional in an image. Without it a rebuild can pick
-up a new transport minor, and transport packages are where the version-skew
+`--frozen-lockfile` isn't optional in an image. Without it a rebuild can pick up
+a new transport minor, and transport packages are where the version-skew
 breakage lives; see [the version matrix](../reference/versions.md).
 
 With `proxy-bootstrap`, note that it resolves packages **at runtime** on a fresh
 boot and caches them inside its installed directory. A replacement container or
 new deployment loses that cache and needs registry access. Bootstrap also needs
-`/app` writable by the runtime user, which the image above does not give it.
+`/app` writable by the runtime user, which the image above doesn't give it.
 
 For containers, prefer **manual wiring**, where everything is a normal
 dependency resolved at install time:
@@ -178,8 +178,8 @@ bun builder/cli.js --out ./my-proxy --wiring manual --features tabs,settings
 
 ## Capacity
 
-Wisp changes what you plan for. It is not requests per second, it is
-**concurrent connections and open sockets**.
+Wisp changes what you plan for. It isn't requests per second, it is **concurrent
+connections and open sockets**.
 
 Each active user holds one WebSocket to your server, and that WebSocket carries
 one TCP socket per stream the page has open. A page with a dozen concurrent
@@ -211,7 +211,7 @@ and your server is mostly moving bytes.
 ## The service worker cache
 
 The generated worker caches your own shell, meaning your HTML, CSS, JavaScript,
-and icons. Proxied content is not touched by it.
+and icons. Proxied content isn't touched by it.
 
 This is on by default, and it is worth understanding rather than deleting.
 
@@ -260,13 +260,13 @@ nothing at runtime.
 **The worker is already there.** You registered a service worker to run the
 proxy. Shell caching is a few lines in a file that has to exist anyway.
 
-**It survives a bad network.** The proxy will not work offline, but the shell
+**It survives a bad network.** The proxy won't work offline, but the shell
 loading and showing an error beats a browser error page with no explanation.
 
 ### What it deliberately skips
 
 The route check runs first, so proxied requests never reach the cache logic.
-Beyond that, the worker skips anything that is not a same-origin `GET`, its own
+Beyond that, the worker skips anything that isn't a same-origin `GET`, its own
 script, and every path the runtime itself is served from:
 
 ```js
@@ -283,10 +283,10 @@ const runtimeRoots = [
 ```
 
 Those are the engine bundle, the wasm, the controller, the transports, and the
-tunnel endpoints. Caching them looks harmless and is not: a version bump then
+tunnel endpoints. Caching them looks harmless and isn't: a version bump then
 serves a stale `scramjet.js` against a fresh `controller.api.js`, and the
 [version guard](../reference/controller-api.md#version-guards) throws at
-construction on a page you cannot fix without clearing storage. On Ultraviolet
+construction on a page you can't fix without clearing storage. On Ultraviolet
 the same rule covers the proxy prefix and `/bare/`.
 
 Two exclusions exist purely to stay out of the way during development:
@@ -302,7 +302,7 @@ strings, so caching those hands you a stale module and a confusing session.
 Built assets are fingerprinted in the path and carry no query, so production is
 unaffected by either rule.
 
-Never cache the worker itself. A stale worker cannot be replaced by a new
+Never cache the worker itself. A stale worker can't be replaced by a new
 deployment, which is why `sw.js` wants `Cache-Control: no-cache` from your
 server.
 
@@ -394,7 +394,7 @@ Public proxies attract abuse, and hosts respond to complaints. Expect:
 
 - **Takedowns.** Most free hosts' terms prohibit this. Have a backup.
 - **Domain blocklists.** Filtering vendors can add public proxy domains quickly.
-  `noindex` only asks search engines not to index a page; it does not prevent
+  `noindex` only asks search engines not to index a page; it doesn't prevent
   filtering vendors from discovering it.
 - **Abuse reports.** Your IP is the source of whatever users do. Rate limiting
   and a blocklist for abusive destinations should be in place before you need

@@ -11,7 +11,7 @@ them in a line, with a link to the page that goes deeper.
 ## The problem being solved
 
 You want `https://crllect.dev` to render inside a page you control, on a domain
-you control. The browser will not let you do that directly:
+you control. The browser won't let you do that directly:
 
 - **CORS** blocks reading `fetch("https://crllect.dev")` cross-origin.
 - **`X-Frame-Options` / `frame-ancestors`** blocks putting it in an `<iframe>`.
@@ -67,23 +67,23 @@ generation different from old server-side proxies:
   `importScripts`, and workers. The service worker intercepts the resulting HTTP
   requests; WebSocket shims use the transport directly.
 - JavaScript is rewritten too, not just HTML. `location.href`, `window.parent`,
-  `document.cookie` are all trapped so the page cannot tell it is being proxied
-  and cannot escape to your real origin.
+  `document.cookie` are all trapped so the page can't tell it is being proxied
+  and can't escape to your real origin.
 
 The rewriter is why `https://crllect.dev/foo` becomes
 `https://proxy.crllect.dev/~/sj/<controller>/<frame>/https%3A%2F%2Fcrllect.dev%2Ffoo`
 in a Scramjet 2 [frame](../guides/multiple-tabs.md).
 
 > **Why a service worker?** It is the only browser API that lets you intercept
-> and synthesise responses for requests you did not initiate, on your own
-> origin, including subresources. That is exactly the primitive an interception
-> proxy needs. The cost is that service workers require HTTPS (or `localhost`)
-> and have a scope, which is why [deployment](../guides/deployment.md) is
-> fussier than for a normal site.
+> and synthesise responses for requests you didn't initiate, on your own origin,
+> including subresources. That is exactly the primitive an interception proxy
+> needs. The cost is that service workers require HTTPS (or `localhost`) and
+> have a scope, which is why [deployment](../guides/deployment.md) is fussier
+> than for a normal site.
 
 ## Layer 3: the transport
 
-The controller now has a decoded request and needs the response bytes. It cannot
+The controller now has a decoded request and needs the response bytes. It can't
 just `fetch()` them, because CORS applies the same way in a page as in a service
 worker. So it hands the request to a **transport**: client-side code whose job
 is to get an arbitrary HTTP request executed somewhere unrestricted and hand the
@@ -106,7 +106,7 @@ Two separate jobs:
    **bare** server on an HTTP route.
 
 Static assets run anywhere. A Wisp relay needs a long-lived WebSocket, which
-request/response functions cannot hold open. The
+request/response functions can't hold open. The
 [serverless guide](../guides/serverless.md) covers the two ways around that: an
 all-in-one build over Bare, or a static frontend pointed at Wisp on another
 host.
@@ -123,9 +123,9 @@ You type `crllect.dev` and press enter.
    `iframe.src` to `/~/sj/<controller>/<frame>/https%3A%2F%2Fcrllect.dev`.
 3. The iframe navigates. Because it is on your origin and inside the service
    worker's scope, the **service worker** intercepts the request.
-4. The worker recognises the path as one of its registered frame prefixes and
+4. The worker recognizes the path as one of its registered frame prefixes and
    **forwards the request to your page**, over the `MessagePort` the controller
-   handed it at startup. It does not decode, rewrite, or fetch anything itself.
+   handed it at startup. It doesn't decode, rewrite, or fetch anything itself.
 5. The **controller**, in your page, decodes the path back to
    `https://crllect.dev` and builds the real outbound request, fixing up `Host`,
    `Referer`, `Origin` and cookies from its own jar. This is where
@@ -144,8 +144,10 @@ You type `crllect.dev` and press enter.
    worker turns it into a `Response`, and the iframe renders it. Every
    subsequent request it makes repeats from step 3.
 
+TL;DR: the worker routes, the page does everything else.
+
 Those nine steps identify where to start debugging a failed request. The handoff
-at step 4 is the one people do not expect: if you are looking for the code that
+at step 4 is the one people don't expect: if you are looking for the code that
 fetched or rewrote something, it is in the tab's console, not the worker's.
 
 ---
@@ -155,7 +157,7 @@ fetched or rewrote something, it is in the tab's console, not the worker's.
 **Buys you:**
 
 - JavaScript-created URLs and WebSockets can be handled at runtime.
-- With epoxy/libcurl, the Wisp relay does not terminate target TLS. The relay
+- With epoxy/libcurl, the Wisp relay doesn't terminate target TLS. The relay
   sees destinations, sizes, timing, and encrypted bytes. An operator that also
   controls the client code could still modify it to expose plaintext.
 
@@ -166,7 +168,7 @@ fetched or rewrote something, it is in the tab's console, not the worker's.
   every serious deployment should send, because they are what let proxied sites
   use `SharedArrayBuffer`. See
   [Cross-origin isolation](cross-origin-isolation.md).
-- Wisp needs a **persistent WebSocket**, so request/response functions cannot
+- Wisp needs a **persistent WebSocket**, so request/response functions can't
   host the relay. The client and relay may be deployed separately.
 - Rewriting JavaScript correctly is hard. This is a common reason sites break,
   and the reason [the engine](engines.md) is the part of the stack that took the

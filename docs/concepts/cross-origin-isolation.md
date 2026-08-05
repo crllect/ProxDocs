@@ -15,7 +15,7 @@ Cross-Origin-Embedder-Policy: require-corp
 
 Setting these headers makes **your** page cross-origin isolated, which is what
 grants access to `SharedArrayBuffer`. That much is ordinary web platform
-behaviour. The part that matters for a proxy is what happens next: when your
+behavior. The part that matters for a proxy is what happens next: when your
 shell is isolated, Scramjet stamps `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp` onto every proxied document,
 iframe, worker, sharedworker, script and stylesheet on the way back out.
@@ -33,7 +33,7 @@ Your server sends COOP + COEP
 
 Skip the headers and that chain never starts. The engine itself keeps running,
 since Scramjet's wasm [rewriter](how-proxies-work.md) is single-threaded and
-does not use `SharedArrayBuffer`. What you lose is every proxied site that wants
+doesn't use `SharedArrayBuffer`. What you lose is every proxied site that wants
 it: `ffmpeg.wasm` video tools, emulators, wasm-threaded ML, some editors.
 
 Be realistic about the size of that set. Most sites never touch
@@ -41,17 +41,17 @@ Be realistic about the size of that set. Most sites never touch
 single-threaded path instead of failing, so the usual symptom is "much slower
 than it should be" rather than a hard break. When it does break, it breaks from
 inside the frame, in somebody else's minified code, with nothing pointing back
-at a header you did not send.
+at a header you didn't send.
 
-That is the argument for sending them: the cost is two lines and self-hosting
-your own assets, the failure is silent and unattributable, and you cannot add
-the headers retroactively for a user who already hit the problem.
+So send them. It costs you two lines and self-hosting your own assets, and the
+alternative is a failure nobody can trace back to you. You also can't go back
+and add them for someone who already hit the problem and left.
 
 There is one place Scramjet reaches for isolation in your own shell: the
 `syncxhr` flag, which is off by default and which allocates a
 `SharedArrayBuffer` when on. It is also unimplemented in 2.0.67-alpha.2 and
-throws for a second reason before isolation matters, so it is not an argument
-for the headers either way. See
+throws for a second reason before isolation matters, so it isn't an argument for
+the headers either way. See
 [config and flags](../reference/scramjet-config.md#flags).
 
 **Ultraviolet does the same thing**, and does it correctly. Its service worker
@@ -78,8 +78,8 @@ Without this, a cross-origin opener could share your process.
 
 **What it breaks:** OAuth popups and payment flows that post back to
 `window.opener`. If your site has a "Sign in with…" popup, it stops working.
-`same-origin-allow-popups` relaxes this for windows _you_ open, but it is not
-sufficient for isolation, so it is not an option if you need Scramjet.
+`same-origin-allow-popups` relaxes this for windows _you_ open, but it isn't
+sufficient for isolation, so it isn't an option if you need Scramjet.
 
 ### `Cross-Origin-Embedder-Policy: require-corp`
 
@@ -90,9 +90,9 @@ CORS.
 Without this, you could embed a cross-origin image and read it through a timing
 side channel.
 
-**What it breaks:** every third-party asset that does not send CORP. Google
+**What it breaks:** every third-party asset that doesn't send CORP. Google
 Fonts, a CDN script, an analytics pixel, an external favicon, all blocked, and
-the console message is not always obvious.
+the console message isn't always obvious.
 
 There is a gentler value, `credentialless`, which sends cross-origin no-cors
 requests without credentials instead of requiring opt-in. It also grants
@@ -135,7 +135,7 @@ to your shell and to everything you proxy. Check in order:
 1. **Both headers present** on the _document_ response, not just on assets. Look
    at the Network tab, select the document request, read the response headers.
 2. **Secure context.** `https://`, or `http://localhost`. A LAN address like
-   `http://192.168.1.5:8080` is _not_ a secure context and will not isolate.
+   `http://192.168.1.5:8080` is _not_ a secure context and won't isolate.
 3. **Nothing stripping them.** Cloudflare, an nginx `proxy_pass`, or a hosting
    layer can drop or override response headers.
 4. **Every embedded resource sends CORP** under `require-corp`, or is
@@ -145,16 +145,17 @@ to your shell and to everything you proxy. Check in order:
 
 ## The symptoms
 
-The failure is bad because it is silent, late, and happens in someone else's
-code. Your shell loads. The UI renders. Sites proxy fine. Then one particular
-site throws `SharedArrayBuffer is not defined` from inside its own bundle, and
-nothing in that message mentions a header on your server.
+What makes this one annoying is that everything works right up until it doesn't,
+and when it breaks it breaks inside somebody else's minified bundle. Your shell
+loads, sites proxy fine, and then one site throws
+`SharedArrayBuffer is not defined` at you from code you have never read. Nothing
+in that message mentions a header on your server.
 
 Common presentations:
 
 | Symptom                                                    | Cause                                                            |
 | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| `SharedArrayBuffer is not defined` _inside a proxied site_ | Your shell is not isolated, so the frame is not either           |
+| `SharedArrayBuffer is not defined` _inside a proxied site_ | Your shell isn't isolated, so the frame isn't either             |
 | `crossOriginIsolated === false` but headers look right     | Not a secure context, or something stripped them                 |
 | Works on localhost, breaks in production                   | HTTPS missing, or your host rewrites headers                     |
 | Google Fonts / CDN assets 404 or blocked                   | `require-corp` blocking them. Self-host, or try `credentialless` |
@@ -172,8 +173,8 @@ first, since the engine runs fine without isolation.
 ## Practical consequences
 
 **Self-host your assets.** Under `require-corp`, fonts, icons, and scripts from
-a CDN need CORP headers you do not control. Self-hosting is simpler than
-fighting it, and faster anyway.
+a CDN need CORP headers you don't control. Self-hosting is simpler than fighting
+it, and faster anyway.
 
 **Your proxy page cannot be embedded casually.** COOP/COEP constrain how other
 pages interact with yours. If you intend to embed your proxy in another site,

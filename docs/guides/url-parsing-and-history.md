@@ -36,7 +36,7 @@ Three lines, and it fails on all of these:
 | `javascript:alert(1)`     | Navigates to `https://javascript:alert(1)` | Refuses, shows a message                  |
 | `data:text/html,x`        | Navigates to `https://data:text/html,x`    | Refuses, shows a message                  |
 
-The last four rows are the ones people miss. A scheme the proxy cannot carry is
+The last four rows are the ones people miss. A scheme the proxy can't carry is
 not an error and not a search: `mailto:` and `tel:` get handed to the browser
 with `location.assign()`, which opens the user's mail or dial handler the way a
 normal link would. `javascript:` and `data:` are refused outright, because both
@@ -191,7 +191,7 @@ const forward = () => element.contentWindow?.history.forward();
 const reload = () => element.contentWindow?.location.reload();
 ```
 
-The proxy shell cannot use that history alone. Its initial new-tab and settings
+The proxy shell can't use that history alone. Its initial new-tab and settings
 pages are `srcdoc` documents, not engine navigations. The browser has no useful
 document-history entry that connects a proxied page back to that generated
 new-tab page.
@@ -226,8 +226,8 @@ the forward branch.
 
 The engine URL event feeds this top-level list, so links, redirects, and SPA URL
 changes still update the shell address bar. Its purpose is only to select the
-next shell view and compute whether controls should be enabled; it cannot and
-does not reproduce in-document form or state history.
+next shell view and compute whether controls should be enabled; it can't and
+doesn't reproduce in-document form or state history.
 
 When selecting a previous entry, render or proxy-navigate it without recording a
 new entry. Otherwise Back itself creates a new history branch. Ignore late URL
@@ -236,9 +236,9 @@ page can finish asynchronously after the shell has already changed views.
 
 #### Why not use `history.length`?
 
-`history.length` includes entries outside the proxy frame and does not tell you
+`history.length` includes entries outside the proxy frame and doesn't tell you
 which direction is available. The Navigation API exposes `canGoBack` and
-`canGoForward` in Chromium, but it is not portable and still cannot represent an
+`canGoForward` in Chromium, but it isn't portable and still can't represent an
 internal `srcdoc` new-tab page:
 
 ```js
@@ -254,7 +254,7 @@ The per-tab shell list is therefore the cross-browser source of control state.
 The engine's document history remains the source of in-document state.
 
 The persisted visit log remains separate. It records visits for a history page;
-it is not the current tab's Back/Forward stack.
+it isn't the current tab's Back/Forward stack.
 
 ### The visit log, you do own this
 
@@ -320,7 +320,7 @@ one, that polling loop is yours to keep. See
 
 ### Let people turn it off
 
-A proxy is often used because someone does not want a local record. Ship a
+A proxy is often used because someone doesn't want a local record. Ship a
 `saveHistory` setting, honor it, and delete entries when the user clears them:
 
 ```js
@@ -374,4 +374,4 @@ byte-for-byte inverses** for every input including unicode and already-encoded
 sequences. A codec that round-trips imperfectly produces failures that look like
 rewriter bugs and are very hard to trace.
 
-Do not tell users a codec hides their browsing. It does not.
+Do not tell users a codec hides their browsing. It doesn't.

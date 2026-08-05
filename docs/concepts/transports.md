@@ -5,7 +5,7 @@ A **transport** is the client-side code that performs a request. The
 headers" and expects a response back. How it gets one is the transport's
 business.
 
-That indirection is the point: the rewriter does not care whether the bytes came
+That indirection is the point: the rewriter doesn't care whether the bytes came
 over wisp, over bare, or from somewhere else entirely.
 
 ---
@@ -56,13 +56,13 @@ to [wisp](wisp-vs-bare.md).
 
 It is curl. That means decades of accumulated correctness about HTTP: redirect
 edge cases, chunked encoding, content negotiation, cookie handling, HTTP/2,
-weird server behaviour that only shows up on real sites.
+weird server behavior that only shows up on real sites.
 
 - **Broad protocol compatibility.** It includes curl's handling for redirects,
   content negotiation, and unusual HTTP behavior.
 - **Heaviest.** It is curl plus Mbed TLS in WebAssembly; the initial load is
   noticeable.
-- Supports an upstream HTTP proxy via a `proxy` option, which epoxy does not.
+- Supports an upstream HTTP proxy via a `proxy` option, which epoxy doesn't.
 
 ```js
 const { default: LibcurlClient } = await import("/libcurl/index.mjs");
@@ -99,7 +99,7 @@ WebAssembly, no WebSocket, and no client TLS stack.
 **Get the package name right.** The one you want is
 `@mercuryworkshop/bare-transport`. There is an older
 `@mercuryworkshop/bare-as-module3`, still on npm, which implements the bare-mux
-interface instead and which Scramjet cannot use.
+interface instead and which Scramjet can't use.
 
 The old name decodes as "the TompHTTP **Bare** client, packaged **as a**
 bare-mux **module**, speaking Bare protocol version **3**". That `3` is the
@@ -114,7 +114,7 @@ the old URL still redirects.
 A new npm name means a fresh version series, so the live package is **1.0.0**
 while the dead one sits at **2.2.5**. The wrong answer looks newer.
 
-`proxy-bootstrap` cannot wire it either; it ships a stub that throws
+`proxy-bootstrap` can't wire it either; it ships a stub that throws
 `"Bare transport not implemented yet"`. Bare builds use
 [manual wiring](../guides/wiring.md).
 
@@ -153,9 +153,10 @@ differently between their HTTP/TLS implementations. That is why
 
 ### What each one costs to download
 
-The transport is the largest thing your users download, by a wide margin.
-Measured from the published packages at the pinned versions, gzipped, as a
-browser would fetch them:
+The transport is the biggest thing you ship. It isn't close.
+
+Measured off the published packages at the pinned versions, gzipped, the way a
+browser actually pulls them:
 
 | Package                   | Client bundle |
 | ------------------------- | ------------- |
@@ -163,15 +164,18 @@ browser would fetch them:
 | `epoxy-transport` 3.0.1   | 737 KB        |
 | `bare-transport` 1.0.0    | under 20 KB   |
 
-For context, the engine itself is about 291 KB gzipped (`scramjet.js` at 88 KB
-plus the rewriter wasm at 203 KB), and the controller and utils bundles add
-roughly 10 KB between them. So a libcurl build is about **1.15 MB** before your
-own code, an epoxy build about **1.04 MB**, and a Bare build about **310 KB**.
+The engine is about 291 KB gzipped on top of that, `scramjet.js` at 88 plus the
+wasm rewriter at 203, and the controller and utils are a rounding error at maybe
+10 KB together. Add it up: libcurl is roughly **1.15 MB** before you write a
+single line, epoxy is **1.04 MB**, Bare is **310 KB**.
 
-Two things follow. Shipping both Wisp transports does not double that, because
-[the import is lazy](#switching-at-runtime) and only the selected one is
-fetched. And Bare being small is a real advantage on slow connections, which is
-worth weighing against everything it gives up in
+You are asking a browser to do TLS, which is a ridiculous thing to be doing and
+the entire reason any of this works.
+
+Shipping both wisp transports doesn't double it, thankfully. The import is
+[lazy](#switching-at-runtime), so only the one your user picked gets fetched.
+And Bare being tiny genuinely matters on a school connection, which is worth
+putting on the scale next to everything Bare gives up in
 [Wisp vs Bare](wisp-vs-bare.md).
 
 ---
@@ -179,7 +183,7 @@ worth weighing against everything it gives up in
 ## Version compatibility
 
 This trips people up constantly. There are **two generations** of the transport
-packages, and they are not interchangeable:
+packages, and they aren't interchangeable:
 
 | Interface          | Used by                  | epoxy | libcurl |
 | ------------------ | ------------------------ | ----- | ------- |
@@ -335,7 +339,7 @@ There are little reasons for building your own transport, but some common ones
 are: routing through infrastructure you already have, a different tunnel
 protocol, or instrumentation such as logging, metrics, and request rewriting.
 
-Before you start, know what the hard part is. It is not the interface, which is
+Before you start, know what the hard part is. It isn't the interface, which is
 two methods. It is HTTP correctness: redirects, chunked encoding, content
 negotiation, and header edge cases are where naive implementations break on real
 sites. libcurl exists precisely because that is a lot of work.
@@ -455,9 +459,9 @@ parts that catch people out:
   holds whole responses in memory, which is noticeable on video.
 - **`signal` is currently always `undefined`.** Both callers in this stack,
   `BareCompatibleClient.fetch` and the controller's remote-transport bridge,
-  pass `undefined` for it. Honour it if you get one, but do not build anything
-  on the assumption that a closed frame aborts your requests, because today it
-  does not.
+  pass `undefined` for it. Honour it if you get one, but don't build anything on
+  the assumption that a closed frame aborts your requests, because today it
+  doesn't.
 - **`connect` returns synchronously** with `[send, close]`, before the socket is
   open. Queue anything sent before `onopen` fires.
 

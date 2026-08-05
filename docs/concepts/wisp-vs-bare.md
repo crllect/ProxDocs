@@ -1,6 +1,6 @@
 # Wisp vs Bare
 
-Both answer the same question: _the browser will not let me request this URL, so
+Both answer the same question: _the browser won't let me request this URL, so
 how do the bytes get out?_ They answer it very differently, and the difference
 determines where you can host, whether WebSocket-based sites work, and whether
 your server can read user traffic.
@@ -36,7 +36,7 @@ The specification is
 ### What Bare is good at
 
 **It is ordinary HTTP.** That property lets an all-in-one build run on
-request/response functions that cannot hold a socket open. See
+request/response functions that can't hold a socket open. See
 [Serverless deployment](../guides/serverless.md).
 
 It is also easy to reason about and easy to debug: every request is visible in
@@ -47,12 +47,12 @@ your server logs as a normal request.
 - **Your server sees everything.** Not a theoretical concern, it is the whole
   design. You are asking users to trust you with plaintext traffic.
 - **It looks exactly like what it is.** A stream of requests to one endpoint
-  with an `X-Bare-URL` header is recognisable in your server and terminating
+  with an `X-Bare-URL` header is recognizable in your server and terminating
   proxy logs. HTTPS prevents passive network observers from reading the header.
 - **Websockets are second-class.** They work, but the tunnel is bolted on, and
-  on serverless hosts they do not work at all.
+  on serverless hosts they don't work at all.
 - **Per-request overhead.** Each proxied request is a fresh HTTP request to your
-  server, with headers re-serialised as JSON.
+  server, with headers re-serialized as JSON.
 
 ---
 
@@ -84,7 +84,7 @@ handshake happens in the browser**, between the WebAssembly TLS stack
 no target TLS and crosses the relay as plaintext.
 
 For HTTPS, the Wisp relay sees an encrypted byte stream, the destination host
-and port, connection timing, and traffic sizes. It does not passively see HTTP
+and port, connection timing, and traffic sizes. It doesn't passively see HTTP
 paths, headers, cookies, or response bodies inside target TLS.
 
 That gives a passive relay less application data than Bare. The site operator
@@ -95,10 +95,10 @@ It also means:
 
 - **Websockets to the target site are native.** They are just another TCP
   stream. Nothing is bolted on, so sites that depend on WebSockets work.
-- **UDP works too**, which bare cannot do at all. The spec makes UDP optional
-  for both ends and negotiates it through an extension, so it is not guaranteed
-  by "speaks wisp" alone. In practice the relays you are likely to run do
-  support it, and `wisp-js` ships `allow_udp_streams: true` by default.
+- **UDP works too**, which bare can't do at all. The spec makes UDP optional for
+  both ends and negotiates it through an extension, so it isn't guaranteed by
+  "speaks wisp" alone. In practice the relays you are likely to run do support
+  it, and `wisp-js` ships `allow_udp_streams: true` by default.
 - **One connection is reused** for everything, so there is no per-request
   connection setup.
 
@@ -106,7 +106,7 @@ It also means:
 
 **A persistent WebSocket:**
 
-- Serverless functions cannot host it. Other serverless runtimes need a
+- Serverless functions can't host it. Other serverless runtimes need a
   Wisp-compatible WebSocket and outbound-socket implementation.
 - Any proxy or load balancer between you and the user must pass WebSockets
   through, correctly, without an aggressive idle timeout.
@@ -137,10 +137,10 @@ WebAssembly, which is a meaningful download and some startup cost.
 
 **Wisp, unless you cannot.**
 
-Use Bare for an all-in-one deployment whose backend cannot hold a WebSocket
-open. Scramjet runs over Bare through `@mercuryworkshop/bare-transport`. The
-better option, if you can take it, is to keep Wisp on a separate host and point
-a Scramjet client at it. See [Serverless deployment](../guides/serverless.md).
+Use Bare for an all-in-one deployment whose backend can't hold a WebSocket open.
+Scramjet runs over Bare through `@mercuryworkshop/bare-transport`. The better
+option, if you can take it, is to keep Wisp on a separate host and point a
+Scramjet client at it. See [Serverless deployment](../guides/serverless.md).
 
 If you run Bare, tell users that your server terminates target TLS and can
 inspect their requests and responses.
@@ -170,15 +170,15 @@ The Wisp handler only routes streams. Target TLS and HTTP are implemented by the
 client transport in the browser.
 
 **The trailing slash is not cosmetic.** wisp-js branches on the raw `req.url`: a
-path ending in `/` gets a Wisp connection, and a path that does not gets a
-legacy `wsproxy` connection, where the path itself names one destination. A
-client pointed at `/wisp` against a server mounted at `/wisp/` therefore gets no
-error. It gets a different protocol, and the failure surfaces later as a socket
-that opens and then does nothing useful.
+path ending in `/` gets a Wisp connection, and a path that doesn't gets a legacy
+`wsproxy` connection, where the path itself names one destination. A client
+pointed at `/wisp` against a server mounted at `/wisp/` therefore gets no error.
+It gets a different protocol, and the failure surfaces later as a socket that
+opens and then does nothing useful.
 
 **That is also why `req.url` is reassigned before routing.** `/wisp/?token=x`
-matches on pathname but does not end in `/` as a raw string, so wisp-js takes
-the wsproxy branch and tries to resolve `?token=x` as a hostname. The handshake
+matches on pathname but doesn't end in `/` as a raw string, so wisp-js takes the
+wsproxy branch and tries to resolve `?token=x` as a hostname. The handshake
 still returns `101`, so the client sees a connected socket, and the only
 evidence is `getaddrinfo ENOTFOUND ?token=x` in your server log. Assigning the
 parsed pathname back onto `req.url` before calling `routeRequest` makes a
@@ -191,14 +191,14 @@ a throw inside an `upgrade` listener is an uncaught exception rather than a
 failed request. The base is discarded the moment you read `.pathname`, so it may
 as well be a literal.
 
-`socket.end()` on everything else is not optional either. Upgrades left hanging
+`socket.end()` on everything else isn't optional either. Upgrades left hanging
 accumulate half-open sockets, and sockets are the resource a proxy runs out of
 first.
 
 Version negotiation is automatic. A client that sends `Sec-WebSocket-Protocol`
 gets v2 where the server allows it, everything else gets v1, and a v2 server
 still accepts v1 clients, so `wisp.options.wisp_version` is worth changing only
-against a client you cannot update.
+against a client you can't update.
 
 Everything else is configured through `wisp.options`, a plain object read at
 connection time, so an assignment applies to the next connection with no
@@ -207,7 +207,7 @@ restart. The settings that decide what your server can be used to reach are in
 
 Other Wisp server implementations exist, including faster ones in other
 languages, if you would rather run the relay as its own process. They speak the
-same protocol, so the browser side does not change.
+same protocol, so the browser side doesn't change.
 
 > **Run your own.** Public wisp servers exist and are convenient for testing.
 > They can also see which hosts you connect to, and they can disappear without
@@ -223,4 +223,4 @@ same protocol, so the browser side does not change.
 - [bare-mux and proxy-transports](bare-mux.md). The layer that lets you swap
   them
 - [Known bugs](../reference/known-bugs.md). Including the wisp-js log error that
-  looks alarming and is not
+  looks alarming and isn't

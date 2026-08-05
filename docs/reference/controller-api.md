@@ -28,7 +28,7 @@ name in their own scope. Which one you get depends on which file you loaded.
 | `controller.inject.js` | proxied pages | `load()`, called by injected bootstrap only                           |
 
 So `$scramjetController.Controller` in a service worker is `undefined`, and
-`$scramjetController.route` on the page is too. They are not the same object.
+`$scramjetController.route` on the page is too. They aren't the same object.
 
 Read the global at call time, never at module scope. The npm entry point is a
 stub that destructures the global when the module evaluates, which loses a race
@@ -39,7 +39,7 @@ the same applies to every name on this page.
 
 You never call `controller.inject.js` yourself. Scramjet injects it into each
 proxied document, and its `load()` receives a serialized copy of the config,
-prefix, and cookie jar. It is listed here so you recognise it in a network tab.
+prefix, and cookie jar. It is listed here so you recognize it in a network tab.
 
 ---
 
@@ -63,12 +63,12 @@ handshake, the wasm fetch, and the first cookie-jar load. All three are what
 [`wait()`](#wait) waits for.
 
 It throws immediately, before any of that, if `$scramjet` is missing or its
-version does not match the build. See [version guards](#version-guards).
+version doesn't match the build. See [version guards](#version-guards).
 
 ### How the two configs merge
 
 Both go through `@fastify/deepmerge`, but not in the same direction, and the
-difference is visible in behaviour.
+difference is visible in behavior.
 
 **`config` merges the way you expect.** Your values win over the defaults, key
 by key, so passing `{ prefix: "/p/" }` leaves every path default intact.
@@ -86,7 +86,7 @@ const scramjetConfig = {
 
 That `allowFailedIntercepts: true` never survives. `defaultConfig.flags` sets it
 to `false`, the merge applies that afterwards, and the flag is `false` on every
-controller that does not set it explicitly. If you want the behaviour the
+controller that doesn't set it explicitly. If you want the behavior the
 controller appears to be asking for, pass it yourself:
 
 ```js
@@ -142,7 +142,7 @@ Resolves once the worker has acknowledged the handshake and the wasm has been
 fetched and installed. Call it before creating frames.
 
 It does **not** wait for the cookie jar. That loads lazily and the controller
-holds proxied requests until it is ready, so you do not have to sequence it. See
+holds proxied requests until it is ready, so you don't have to sequence it. See
 [Cookies and sessions](../guides/cookies-and-sessions.md).
 
 ### `createFrame(element?, options?)`
@@ -177,7 +177,7 @@ A frame created before `wait()` resolves is therefore returned normally, with
 the wasm possibly not yet installed and the worker possibly not yet routing its
 prefix. The symptom is a frame that loads nothing, or a first navigation that
 lands on your own 404. Await `wait()`; the error you were counting on to catch
-this does not exist.
+this doesn't exist.
 
 ### `setTransport(transport)`
 
@@ -187,8 +187,8 @@ controller.setTransport(new LibcurlClient({ wisp: wispUrl }));
 
 Replaces the transport on the controller and walks `controller.frames`,
 reassigning it on every frame's fetch handler. Existing in-flight requests are
-not migrated, and the old transport is not closed. Dropping the reference is
-your job.
+not migrated, and the old transport isn't closed. Dropping the reference is your
+job.
 
 Because `frames` never shrinks, this walks every frame you have ever created,
 including ones whose iframes are long gone. Call it on an actual transport
@@ -251,7 +251,7 @@ alone.
 | `fetchHandler` | `ScramjetFetchHandler`   | The per-frame request pipeline          |
 | `context`      | `ScramjetContext`        | Getter, rebuilt on every access         |
 
-`hooks.fetch` is not the frame's own object. It is `fetchHandler.hooks.fetch`,
+`hooks.fetch` isn't the frame's own object. It is `fetchHandler.hooks.fetch`,
 re-exposed. `hooks.init` and `hooks.error` are `Tap` instances the frame creates
 itself. All three are documented field by field in
 [the hooks](plugins-and-hooks.md#the-hooks).
@@ -266,14 +266,14 @@ frame.reload();
 ```
 
 `go()` is synchronous: it rewrites the URL against the frame's context and
-assigns `element.src`. It does not wait for the load, and it does not validate
-the input. Pass it a bare `example.com` and you get a relative navigation. Parse
+assigns `element.src`. It doesn't wait for the load, and it doesn't validate the
+input. Pass it a bare `example.com` and you get a relative navigation. Parse
 before you call it, per
 [URL parsing and history](../guides/url-parsing-and-history.md).
 
 The other three drive `element.contentWindow.history` directly and silently do
-nothing when the frame has not loaded a document yet. There is no
-`canGoBack`-style state to read; Scramjet does not expose one, and reading
+nothing when the frame hasn't loaded a document yet. There is no
+`canGoBack`-style state to read; Scramjet doesn't expose one, and reading
 `history.length` from the parent gives you the proxied document's own count.
 
 ### `getPlugin(name)`
@@ -338,7 +338,7 @@ import type { Frame, Config } from "@mercuryworkshop/scramjet-controller";
 ```
 
 That import is erased at compile time, which is why it is safe when
-[reading the value side is not](plugins-and-hooks.md#reading-scramjets-exports).
+[reading the value side isn't](plugins-and-hooks.md#reading-scramjets-exports).
 
 **Most of the package's types are not importable by name.** They live in
 `src/types.d.ts`, and `index.ts` imports them without re-exporting, so they
@@ -372,7 +372,7 @@ than the last two. The `types.d.ts` group is exported from its own file and then
 dropped on the way out of the package; `ControllerInit` and `FrameOptions` are
 declared in `index.ts` without `export` at all. The effect is the same.
 
-It is worse than a missing export. The published package does not ship
+It is worse than a missing export. The published package doesn't ship
 `types.d.ts` at all, and `dist/types/index.d.ts` still imports from `./types`,
 so that import dangles. Under `skipLibCheck: true`, the default in most setups
 and in every project this builder generates, TypeScript swallows the dangling
@@ -389,7 +389,7 @@ type Req = Frame["hooks"]["error"]["request"]["context"]["rawrequest"];
 ```
 
 `Controller` and `Frame` themselves are typed properly: misspell a member and
-`tsc` catches it. Anything reached through `frame.hooks` is not. Restate the
+`tsc` catches it. Anything reached through `frame.hooks` isn't. Restate the
 shape from the tables below instead, which at least type-checks:
 
 ```ts
@@ -490,7 +490,7 @@ channel, the one a proxied document uses when it needs the tunnel directly:
 
 `connect` resolves with `{ result: "success", protocol, extensions }` or
 `{ result: "failure", error }`. It never rejects, so a failed WebSocket comes
-back as a value and not a thrown error. That is deliberate: the RPC layer cannot
+back as a value and not a thrown error. That is deliberate: the RPC layer can't
 clone an `Error` with its stack.
 
 Data on an open socket then flows over the `MessagePort` as `WebSocketMessage`:
@@ -541,7 +541,7 @@ type FrameErrorHooks = {
 };
 ```
 
-`props: {}` on the init hooks is not a placeholder for a future field. There is
+`props: {}` on the init hooks isn't a placeholder for a future field. There is
 nothing to set, and the second callback argument is an empty object at runtime.
 Everything you do in an init hook, you do to `context.window`.
 
@@ -588,7 +588,7 @@ messages below are how the two sides recover.
 | `$sw$initRemoteTransport`    | page → SW | Hands a transport port to the right controller    |
 | `"keepalive"` (plain string) | page → SW | Resets the idle timer and runs no handler         |
 
-Both worker-side listeners return early on anything that is not an object, which
+Both worker-side listeners return early on anything that isn't an object, which
 is why the keepalive is deliberately a bare string.
 
 ---
@@ -629,7 +629,7 @@ order. Load order is core, controller, then utils. See the
 
 ## Where to go next
 
-- [Known bugs](known-bugs.md). The members on this page that do not do what they
+- [Known bugs](known-bugs.md). The members on this page that don't do what they
   look like, collected with the code behind each one.
 - [Config and flags](scramjet-config.md). What every value in `config` and
   `scramjetConfig` actually changes.

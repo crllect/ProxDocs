@@ -1,7 +1,7 @@
 # Inside Scramjet
 
 Everything else on this site treats Scramjet as a dependency. This page treats
-it as a codebase: what the packages are, where a given behaviour lives, how to
+it as a codebase: what the packages are, where a given behavior lives, how to
 build it, and how to run its tests.
 
 Read it if you are about to file a bug with a diagnosis attached, patch
@@ -26,12 +26,12 @@ cd packages/core && pnpm rewriter:build && pnpm build && cd ../..
 pnpm dev
 ```
 
-**`pnpm install` on its own is not enough, and `pnpm dev` will not run after
-it.** `rspack.config.ts` reads `packages/core/dist/scramjet.wasm` while the
-config itself is evaluating, and that file is not in the repository, so every
-build and the dev server fail on a fresh clone until the rewriter has been built
-once. That is the step above, and it needs the Rust toolchain described in the
-next section.
+**`pnpm install` on its own isn't enough, and `pnpm dev` won't run after it.**
+`rspack.config.ts` reads `packages/core/dist/scramjet.wasm` while the config
+itself is evaluating, and that file isn't in the repository, so every build and
+the dev server fail on a fresh clone until the rewriter has been built once.
+That is the step above, and it needs the Rust toolchain described in the next
+section.
 
 `pnpm dev` starts the development server in `devserver.ts`: Vite for the demo
 page, rspack in watch mode for the bundles, and a wisp-js server in the same
@@ -56,7 +56,7 @@ other's versions at load; see
 
 ---
 
-## Where behaviour lives
+## Where behavior lives
 
 The question this page exists to answer is "I am seeing X, which file do I
 open".
@@ -65,7 +65,7 @@ open".
 | -------------------------------------- | ---------------------------------------------------- |
 | A flag, or what a flag defaults to     | `core/src/types.ts`, `core/src/index.ts`             |
 | A URL that encoded wrong               | `core/src/shared/rewriters/url.ts`                   |
-| A cookie that did not stick            | `core/src/shared/cookie.ts`                          |
+| A cookie that didn't stick             | `core/src/shared/cookie.ts`                          |
 | Headers added or stripped              | `core/src/shared/headers.ts`, `core/src/fetch/`      |
 | A request that took the wrong path     | `core/src/fetch/fetch.ts`, `core/src/fetch/parse.ts` |
 | A patched global misbehaving on a site | `core/src/client/`                                   |
@@ -87,8 +87,8 @@ global instead of the snapshot is a bug, and there is an ESLint rule
 
 ## The rewriter is Rust
 
-The part that rewrites JavaScript is not JavaScript. `packages/core/rewriter/`
-is a Cargo workspace built on [oxc](https://oxc.rs), compiled to
+The part that rewrites JavaScript isn't JavaScript. `packages/core/rewriter/` is
+a Cargo workspace built on [oxc](https://oxc.rs), compiled to
 `wasm32-unknown-unknown` and shipped as `scramjet.wasm`.
 
 | Crate            | Job                                              |
@@ -181,7 +181,7 @@ report says which one your case belongs next to:
 | --------------------------------------------- | ----------------------------------------------- |
 | `sanity.ts`                                   | The proxy loads at all                          |
 | `rewrites.ts`, `rewriter-css.ts`              | Rewriter output                                 |
-| `cookies.ts`                                  | Jar behaviour end to end                        |
+| `cookies.ts`                                  | Jar behavior end to end                         |
 | `eval.ts`, `documentwrite.ts`                 | Dynamic code paths                              |
 | `postmessage.ts`, `foreigncontext.ts`         | Cross-context messaging                         |
 | `websockets.ts`                               | Tunnelled sockets                               |
@@ -193,7 +193,7 @@ report says which one your case belongs next to:
 | `site/`                                       | Real sites, which fail for reasons of their own |
 
 The harness serves two of its own targets (`harness/scramjet`, `harness/bare`)
-so most tests do not depend on the public internet. `site/` does, and a failure
+so most tests don't depend on the public internet. `site/` does, and a failure
 there is often the site changing rather than a regression; see
 [site compatibility](../reference/site-compatibility.md).
 
@@ -222,7 +222,7 @@ A report that gets fixed quickly has, roughly in order of value:
    [getting the rewriter to tell you what it is doing](../reference/troubleshooting.md#getting-the-rewriter-to-tell-you-what-it-is-doing).
 
 Scramjet is AGPL-3.0-only, and so is anything you build on it that users can
-reach over a network. What that obliges you to publish is summarised in
+reach over a network. What that obliges you to publish is summarized in
 [official docs and licensing](../reference/official-docs.md).
 
 ---

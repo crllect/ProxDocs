@@ -21,7 +21,7 @@ line that caused it.
 
 Scramjet ships as a classic script that assigns a `$scramjet` global. The npm
 package's `main`, `module`, and `exports["."]` all point at
-`dist/scramjet-external.mjs`. That file is not the library. Its entire body is a
+`dist/scramjet-external.mjs`. That file isn't the library. Its entire body is a
 re-export of the global:
 
 ```js
@@ -37,8 +37,8 @@ evaluates before the classic script has run, `globalThis.$scramjet` is still
 Cannot destructure property 'BareResponse' of 'globalThis.$scramjet' as it is undefined
 ```
 
-Under a bundler's dev server the ordering is not guaranteed either way. ESM
-module-graph evaluation is not sequenced against `<script defer>` tags, so the
+Under a bundler's dev server the ordering isn't guaranteed either way. ESM
+module-graph evaluation isn't sequenced against `<script defer>` tags, so the
 same code can work in a production build and fail in dev, or work on one machine
 and fail on another.
 
@@ -73,8 +73,8 @@ loaded. If you follow [manual wiring](../guides/wiring.md), that is inside
 
 ## Two plugin base classes
 
-There are two, they are not interchangeable, and picking the wrong one produces
-a confusing failure.
+There are two, they aren't interchangeable, and picking the wrong one produces a
+confusing failure.
 
 | Class           | From                  | Constructor            | Use for                             |
 | --------------- | --------------------- | ---------------------- | ----------------------------------- |
@@ -82,8 +82,8 @@ a confusing failure.
 | `ManagedPlugin` | `$scramjetController` | `(name, dependencies)` | Anything passed to `createFrame()`  |
 
 `ManagedPlugin` is defined in `scramjet-controller` and re-exported by
-`scramjet-utils`, so `$scramjetUtils.ManagedPlugin` works too. You do not need
-to load utils to subclass it.
+`scramjet-utils`, so `$scramjetUtils.ManagedPlugin` works too. You don't need to
+load utils to subclass it.
 
 `ManagedPlugin` extends `Plugin` and adds two things: a `dependencies` array and
 an `install(frame)` method.
@@ -103,7 +103,7 @@ for (const plugin of this.plugins) {
 Two things follow from that:
 
 - A bare `Plugin` in that array throws on `plugin.dependencies` being
-  `undefined`, because `for…of` cannot iterate it.
+  `undefined`, because `for…of` can't iterate it.
 - Dependencies are checked by **name against the same array**, not resolved from
   anywhere else. It asserts load order within one
   [frame](../guides/multiple-tabs.md) and does no resolution.
@@ -152,11 +152,11 @@ class TitlePlugin extends globalThis.$scramjetUtils.ManagedPlugin {
 What that shape is obeying:
 
 1. **Pass both constructor arguments.** `dependencies` has no default.
-2. **Tap inside `install`, not in the constructor.** The frame does not exist
-   yet when the constructor runs, and hooks live on the frame.
+2. **Tap inside `install`, not in the constructor.** The frame doesn't exist yet
+   when the constructor runs, and hooks live on the frame.
 3. **One instance per frame.** `ManagedPlugin.install(frame)` stores
    `this.frame`, so sharing an instance across frames leaves it pointing at
-   whichever installed last. The class can be shared; the instance cannot.
+   whichever installed last. The class can be shared; the instance can't.
 4. **Call `super.install(frame)` if you override `install`.** That is what sets
    `this.frame`. Some of the shipped plugins skip it and close over the `frame`
    argument instead, which works but leaves `this.frame` unset.
@@ -182,8 +182,8 @@ hook would otherwise fight. An early-response tap has to run before a caching
 tap, or the cache stores a response that was never fetched.
 
 `Plugin` also takes a `tapOrder` as its second constructor argument, which
-becomes the default for every tap that does not pass its own. `ManagedPlugin`
-does not: its second argument is `dependencies`, and it passes only the name up
+becomes the default for every tap that doesn't pass its own. `ManagedPlugin`
+doesn't: its second argument is `dependencies`, and it passes only the name up
 to `Plugin`. On a `ManagedPlugin`, set ordering per tap.
 
 ---
@@ -229,7 +229,7 @@ answer the request without any of Scramjet's normal handling.
 | `context.parsed`  | `ScramjetFetchParsed`   |
 | `props.response`  | `ScramjetFetchResponse` |
 
-Use it to block a request outright, or to serve something Scramjet should not
+Use it to block a request outright, or to serve something Scramjet shouldn't
 touch. It is the earliest and bluntest of the four.
 
 ### `fetch.request`
@@ -253,7 +253,7 @@ go here.
 `earlyResponse` is what makes [fake origins](../guides/custom-protocols.md)
 work: you invent an origin, match on `context.parsed.url.origin`, and hand back
 a `Response` for a site that has no server. A native `Response` is fine here;
-Scramjet converts it with `BareResponse.fromNativeResponse` if you did not
+Scramjet converts it with `BareResponse.fromNativeResponse` if you didn't
 already hand it a `BareResponse`.
 
 ```js
@@ -360,7 +360,7 @@ mid-load, so without that check every fast click shows an error page. The
 whole document.
 
 `TransferResponse` is a plain object rather than a `Response`. It has to cross a
-`postMessage` boundary to the service worker, and a `Response` is not
+`postMessage` boundary to the service worker, and a `Response` isn't
 [structured-cloneable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
 
 ### `client.hooks.lifecycle.navigate`
@@ -440,8 +440,8 @@ From `$scramjetUtils`. All are `ManagedPlugin`s, so they go straight into
 | `EventHandlerPlugin`      | `(options?)`              | `event-handler`       | nothing         |
 | `LinkHandlerPlugin`       | `(onNewTab, options?)`    | `link-handler`        | `event-handler` |
 
-- **`HttpCachePlugin`** caches subresources so a reload does not pull every
-  asset back through the tunnel.
+- **`HttpCachePlugin`** caches subresources so a reload doesn't pull every asset
+  back through the tunnel.
 - **`UrlWatcherPlugin`** calls back with the frame's URL on every change.
 - **`CatchEscapedLinksPlugin`** takes `(url: URL) => string | URL` and redirects
   navigations that would leave the proxy to whatever you return.
@@ -491,7 +491,7 @@ message; routing back through your own shell lets you open it in a new tab.
 - [Custom protocols](../guides/custom-protocols.md). `fetch.request` and
   `earlyResponse` applied to internal pages.
 - [Cookies and sessions](../guides/cookies-and-sessions.md). What the controller
-  owns, and why plugins should not manage cookies themselves.
+  owns, and why plugins shouldn't manage cookies themselves.
 - [`packages/utils/src/`](https://github.com/MercuryWorkshop/scramjet/tree/main/packages/utils/src)
   upstream is five readable plugins, and the best templates you will find. When
   this page and that source disagree, the source wins.

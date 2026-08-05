@@ -42,14 +42,14 @@ Cross-Origin-Embedder-Policy: require-corp
 
 Check the **document** response in the Network tab, not just assets. Then check
 you are on `https://` or `http://localhost`, a LAN address like
-`http://192.168.1.5:8080` is not a secure context and cannot isolate.
+`http://192.168.1.5:8080` isn't a secure context and can't isolate.
 
 If the headers are set but isolation is still false, something between you and
 the browser is stripping them: Cloudflare, an nginx `proxy_pass`, or a hosting
 layer.
 
 **No service worker [controller](../guides/wiring.md).** If
-`navigator.serviceWorker.controller` is `undefined`, the worker has not claimed
+`navigator.serviceWorker.controller` is `undefined`, the worker hasn't claimed
 the page. Reload once. If it stays undefined, look for registration errors and
 confirm `sw.js` is served from the **root** of your origin. A worker at
 `/js/sw.js` can never control `/~/sj/…`.
@@ -67,7 +67,7 @@ import("/js/app.js").then(() => "ok").catch(e => e.message);
 ## `Cannot GET /~/sj/...` after the tab has been sitting idle
 
 An upstream bug that affects every transport. On Wisp it is a papercut; on Bare
-it is worse. Either way it is worth recognising, because the error text points
+it is worse. Either way it is worth recognizing, because the error text points
 at your server rather than at the cause.
 
 The symptom: your proxy works, you leave the tab alone for a minute or two, then
@@ -91,7 +91,7 @@ returns `false` for every proxied URL.
 Upstream anticipates this. On activation the worker posts a
 `$controller$swrevive` message to every client, and the controller is supposed
 to re-register its prefix in response. In `scramjet-controller` 0.0.14 that
-handshake does not fire in time for the navigation that woke the worker, so the
+handshake doesn't fire in time for the navigation that woke the worker, so the
 first one after an idle period is lost.
 
 ### Reproducing it
@@ -100,7 +100,7 @@ first one after an idle period is lost.
 2. Leave it alone for about 75 seconds.
 3. Navigate again.
 
-Confirmed on both libcurl over Wisp and `bare-transport`, so **it is not
+Confirmed on both libcurl over Wisp and `bare-transport`, so **it isn't
 transport-specific**. A busy page can mask it, because any request through the
 worker resets the idle timer; a page that goes quiet will hit it.
 
@@ -120,7 +120,7 @@ clears it, and normal use rarely goes quiet long enough to trigger it in the
 first place. The usual way to see it at all is pressing Back after a pause.
 
 On the Bare transport it is worse. There, a full page reload is needed, so a
-user who hits it cannot recover from your in-page controls.
+user who hits it can't recover from your in-page controls.
 
 **Generated projects already handle this.** The engine adapter pings the worker
 every 15 seconds, which keeps it from going idle in the first place:
@@ -168,10 +168,10 @@ Cross-origin isolation. See above.
 favicons in _your own shell_ will be blocked.
 
 Self-host them, or try `Cross-Origin-Embedder-Policy: credentialless`, which
-still grants isolation but does not require opt-in. Chromium 96+ and Firefox
-119+ support it. **Safari does not, at any version**, and WebKit has not
-signalled that it intends to, so `credentialless` is not a fix you can ship to
-everyone. Self-hosting is the portable answer.
+still grants isolation but doesn't require opt-in. Chromium 96+ and Firefox 119+
+support it. **Safari does not, at any version**, and WebKit hasn't signalled
+that it intends to, so `credentialless` isn't a fix you can ship to everyone.
+Self-hosting is the portable answer.
 
 This applies to **your shell's** assets. Assets of proxied pages go through the
 service worker and are same-origin by the time the browser sees them.
@@ -211,7 +211,7 @@ See [Breaking changes](breaking-changes.md).
 
 The controller asserts the core version in its constructor, so this throws
 before a single request goes out. The two packages are versioned together and
-the controller will not run against a core it was not built against.
+the controller won't run against a core it wasn't built against.
 
 Three causes, in the order they are worth checking:
 
@@ -220,7 +220,7 @@ Three causes, in the order they are worth checking:
 2. **A cached `scramjet.js`.** Your own service worker outlived a deploy and is
    serving the previous bundle from `Cache Storage` while the page loads the new
    controller. Unregister the worker and hard-reload; see
-   [changes to sw.js do not take effect](#changes-to-swjs-do-not-take-effect).
+   [changes to sw.js don't take effect](#changes-to-swjs-do-not-take-effect).
 3. **Two copies on the page.** A bundler resolved `@mercuryworkshop/scramjet`
    into your app bundle while a `<script>` tag also loaded the classic build.
    Only the script tag should load it.
@@ -238,7 +238,7 @@ Load order is core, controller, then utils. See
 
 ## `BareMux is not defined`
 
-`/baremux/index.js` did not load, or loaded after your script. It is a classic
+`/baremux/index.js` didn't load, or loaded after your script. It is a classic
 script, not a module, so order in your HTML matters:
 
 ```html
@@ -258,7 +258,7 @@ app.use("/baremux/", express.static(baremuxPath));
 ## Requests hang with no error (bare-mux)
 
 The transport probably failed to construct **inside the SharedWorker**, and
-SharedWorker errors do not appear in the page console.
+SharedWorker errors don't appear in the page console.
 
 Open `chrome://inspect/#workers` (or Firefox's `about:debugging`) and inspect
 the worker directly. It is the best bare-mux debugging trick there is, and
@@ -270,7 +270,7 @@ almost nobody knows it.
 
 **Check the path matches exactly.** A very common bug:
 
-A proxied URL can contain `/wisp/` in its path, so do not use
+A proxied URL can contain `/wisp/` in its path, so don't use
 `req.url.includes("/wisp/")`. Match the parsed pathname:
 
 ```js
@@ -287,7 +287,7 @@ discarded when you read `.pathname`. Use a constant like this rather than
 makes `new URL()` throw, and a throw inside an `upgrade` listener is an uncaught
 exception rather than a failed request.
 
-**Check the scheme.** An `https://` page cannot open a `ws://` socket. The
+**Check the scheme.** An `https://` page can't open a `ws://` socket. The
 browser blocks it as mixed content.
 
 ```js
@@ -313,18 +313,17 @@ And confirm the upgrade headers are forwarded, see
 In this order:
 
 1. **Try another transport.** libcurl and epoxy use different HTTP/TLS
-   implementations, and bare does not terminate TLS in the browser at all, so a
+   implementations, and bare doesn't terminate TLS in the browser at all, so a
    site can work on one and not another. Shipping more than one transport turns
    on [transport switching](../concepts/transports.md) and gives users that
    fallback themselves.
 2. **Try Scramjet if you are on Ultraviolet.** UV's JavaScript rewriter breaks
-   on more sites, and it has not had a release since October 2024, so most of
-   those breakages are not getting fixed for you. Check UV's `main` branch
-   before giving up though, since a few fixes landed there after the last npm
-   release. See
-   [breaking changes](breaking-changes.md#ultraviolet-is-unmaintained).
+   on more sites, and it hasn't had a release since October 2024, so most of
+   those breakages aren't getting fixed for you. Check UV's `main` branch before
+   giving up though, since a few fixes landed there after the last npm release.
+   See [breaking changes](breaking-changes.md#ultraviolet-is-unmaintained).
 3. **Check whether the site needs WebSockets.** If you are on a Bare deployment,
-   they will not work at all.
+   they won't work at all.
 4. **Check the console inside the frame.** Select the iframe's context in the
    devtools context dropdown. Rewriter failures usually show up as a syntax
    error in a rewritten script.
@@ -334,7 +333,7 @@ In this order:
 
 `rewriterLogs` is off by default and is the single most useful flag when you
 suspect the rewriter rather than your own code. Scope it to the failing site so
-you are not drowning in output from every request:
+you aren't drowning in output from every request:
 
 ```js
 scramjetConfig: {
@@ -364,9 +363,9 @@ same way. Consistent `really slow` on one site is the signal to reach for
 `disableComputedWrap` through `siteFlags`. See
 [the flags that matter](scramjet-config.md#individual-flags).
 
-Some sites will not work. Heavy anti-bot protection, aggressive integrity
-checking, and DRM video are the usual categories, and no amount of configuration
-changes that.
+Some sites won't work. Heavy anti-bot protection, aggressive integrity checking,
+and DRM video are the usual categories, and no amount of configuration changes
+that.
 
 [Site compatibility](site-compatibility.md) works through the categories in
 order, so you can tell which one you are hitting before spending time on it.
@@ -398,7 +397,7 @@ actually present:
 const url = ctx.args[2] ? String(ctx.args[2]) : undefined;
 ```
 
-That is on `main` and is not in any published release, so it does not help you
+That is on `main` and isn't in any published release, so it doesn't help you
 yet. Check whether it has shipped before carrying the workaround forward.
 
 Until then, the generated Scramjet adapter installs a frame-local compatibility
@@ -440,11 +439,11 @@ Almost always one of:
 | Websockets not forwarded        | Test a site that needs them                     |
 | Reverse-proxy timeout too low   | Connection drops after ~60s                     |
 | Stale `sw.js` cached            | Serve it with `Cache-Control: no-cache`         |
-| Host blocks outbound sockets    | Wisp cannot connect anywhere                    |
+| Host blocks outbound sockets    | Wisp can't connect anywhere                     |
 
 ---
 
-## Changes to sw.js do not take effect
+## Changes to sw.js don't take effect
 
 Service workers update on their own schedule. Force it:
 

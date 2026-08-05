@@ -6,7 +6,7 @@ second, which is how you get a settings page that can brick the app.
 
 ## Popup or custom protocol
 
-Settings, history, and bookmarks need somewhere to render, but they do not need
+Settings, history, and bookmarks need somewhere to render, but they don't need
 to become tab destinations. The builder supports two modes:
 
 | Custom protocols | Menu behavior                                | Browser history        |
@@ -36,12 +36,12 @@ const openPopup = name => {
 This is the smaller choice for a one-tab proxy, a proxy without browser
 controls, or a design that wants settings in a sidebar. To make a sidebar, keep
 the same renderer and message boundary and replace the dialog shell with an
-`aside`; the settings module does not need to change.
+`aside`; the settings module doesn't need to change.
 
 Enable custom protocols when menu pages should have honest addresses, occupy a
 tab, and participate in internal Back and Forward navigation. Clicking an HTTP
 bookmark or history result still navigates intentionally in either mode; merely
-opening the menu does not.
+opening the menu doesn't.
 
 ---
 
@@ -59,7 +59,7 @@ That value decides **which Wisp server carries every request**. If it is
 garbage, navigation stops until someone clears storage. A different Wisp server
 also learns the destinations, sizes, and timing of those connections.
 
-Storage is not trustworthy input. It can be stale from an older version, edited
+Storage isn't trustworthy input. It can be stale from an older version, edited
 by hand, corrupted by a failed write, or set by a proxied page, remember that
 proxied sites run on **your origin** and can read and write your `localStorage`.
 
@@ -152,8 +152,8 @@ Every clause earns its place:
 - **Credentials are rejected.** `wss://user:pass@attacker.crllect.dev/` is a
   valid URL and not something a settings field should ever accept.
 - **A query string is rejected**, because wisp-js branches on the raw request
-  path: `/wisp/?x` does not end in `/`, so the server hands the connection to
-  its legacy `wsproxy` path and tries to resolve the query as a hostname. The
+  path: `/wisp/?x` doesn't end in `/`, so the server hands the connection to its
+  legacy `wsproxy` path and tries to resolve the query as a hostname. The
   handshake still returns `101`, so the user sees a connected socket that never
   works. Rejecting it here turns a silent dead end into a rejected setting. See
   [running a wisp server](../concepts/wisp-vs-bare.md#running-a-wisp-server).
@@ -295,7 +295,7 @@ export const clearAll = () => {
 `localStorage` is right for settings: synchronous, universally available, and a
 few hundred bytes. Move to **IndexedDB** when you start storing page content,
 large history, or anything binary. It is asynchronous, has a much larger quota,
-and does not block the main thread.
+and doesn't block the main thread.
 
 Some projects use the **Storage Buckets API** for separate eviction and quota
 management. Browser support is limited, so check it before depending on it.
@@ -390,8 +390,8 @@ The two open buttons call `window.open()` directly from their click handler.
 Moving that call into an asynchronous `postMessage` handler causes browsers to
 treat it as a popup and block it.
 
-Cloaking only changes what is visible in the tab and address bar. It does not
-change the Wisp or Bare connection, and it does not restrict browser extensions
+Cloaking only changes what is visible in the tab and address bar. It doesn't
+change the Wisp or Bare connection, and it doesn't restrict browser extensions
 or device-management software. Network visibility depends on the transport, not
 the cloak.
 
@@ -399,7 +399,7 @@ the cloak.
 
 ## Verifying iframe messages
 
-Both menu modes use an iframe document that does not share the shell's existing
+Both menu modes use an iframe document that doesn't share the shell's existing
 module scope, so settings changes cross the boundary with `postMessage`. The
 source check differs by mode: a protocol page must also be the active internal
 tab, while a popup message must come from the dedicated popup frame.
@@ -431,7 +431,7 @@ addEventListener("message", event => {
 **Check the expected source, origin, and shape of every message.** For protocol
 pages, also check the current URL. Proxied frames are same-origin and keep the
 same `contentWindow` after navigation, so origin and active-frame source checks
-alone do not identify an internal settings document. The popup has a separate,
+alone don't identify an internal settings document. The popup has a separate,
 stable `contentWindow`, so an exact comparison identifies it without requiring
 the active URL to be internal. Validate every accepted value in either mode.
 

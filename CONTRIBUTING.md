@@ -16,6 +16,28 @@ match the generator. It has to pass before a pull request is reviewed.
 
 ---
 
+## For skids
+
+If you find an issue, or would like to make a change. But you don't how to
+document or apply your changes correctly, I would rather you DM me on Discord
+`@crllect` with a screenshot than make a slop PR. All help and feedback is
+appreciated, just work within your means.
+
+---
+
+## AI
+
+You can absolutely use AI to help make PRs or find issues, but only if you
+actually check and verify everything yourself. If you submit a slop PR or issue,
+everything else you submit will be auto closed.
+
+My biggest tip, (as I did this while writing the docs) is to write a doc page
+yourself, keep the typos and whatever else. Then ask AI to rewrite it to sound
+more professional or coherent. AI written docs kinda suck, but people written
+docs with better clarity is great.
+
+---
+
 ## What a documentation change has to prove
 
 Every factual claim on this site is traceable to a file and a line in an
@@ -24,7 +46,7 @@ these pages from the guesswork they exist to replace.
 
 **Cite the source in the pull request.** `packages/core/src/shared/cookie.ts:64`
 is a review that takes a minute. "I tested it and it works" is a review that
-takes an hour.
+takes 30.
 
 To have those paths locally, clone upstream into `references/`, which is
 gitignored for exactly this:

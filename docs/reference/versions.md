@@ -27,13 +27,13 @@ Or let `@mercuryworkshop/proxy-bootstrap@0.0.5` fetch all of it at runtime.
 
 Add `"@mercuryworkshop/bare-transport": "^1.0.0"` and a Bare server instead of
 `wisp-js` if you want Scramjet without a WebSocket. **Not** `bare-as-module3`,
-which is the bare-mux-era package and will not work here. See
+which is the bare-mux-era package and won't work here. See
 [the two Bare packages](../concepts/transports.md#bare).
 
 ### Ultraviolet 3.x, for reference only
 
 Not a recommendation. This is here so you can tell at a glance whether a
-codebase you have inherited is on the old generation, and so you do not
+codebase you have inherited is on the old generation, and so you don't
 accidentally install half of it alongside Scramjet. See
 [proxy engines](../concepts/engines.md#ultraviolet).
 
@@ -56,7 +56,7 @@ and `^3`. That is the mismatch that bites people who copy one line out of an old
 
 ---
 
-## The trap: `latest` is not the newest Scramjet
+## The trap: `latest` isn't the newest Scramjet
 
 ```bash
 bun add @mercuryworkshop/scramjet     # installs 1.1.0, not 2.x
@@ -136,7 +136,7 @@ app.use(
 );
 ```
 
-`require.resolve` only resolves a path; it does not execute the module. That
+`require.resolve` only resolves a path; it doesn't execute the module. That
 matters because the newer transports are browser-only and **throw if you import
 them in Node**. libcurl throws `"environment detection error"` from its
 Emscripten runtime, epoxy with something else from wasm-bindgen.
@@ -186,9 +186,9 @@ work in Express and Fastify.
 | `wisp-server-node`                     | 1.1.8              | 2025-11-04 |
 | `chemicaljs`                           | 2.6.4              | 2024-12-26 |
 
-Two things to read off this table: **Ultraviolet has not shipped since October
+Two things to read off this table: **Ultraviolet hasn't shipped since October
 2024**, and its README now calls it superseded by Scramjet, though the
-repository is not archived, and `main` has commits newer than 3.2.10. And
+repository isn't archived, and `main` has commits newer than 3.2.10. And
 **bare-mux 2.1.9 carries a deprecation notice** pointing at `proxy-transports`,
 even though UV 3.x still depends on it.
 

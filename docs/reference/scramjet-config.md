@@ -28,7 +28,7 @@ Verified against `@mercuryworkshop/scramjet` 2.0.67-alpha.2 and
 ## `config`: paths and codec
 
 The controller's own config. Every value has a default, but the defaults assume
-a file layout you probably do not have, so nearly every project sets at least
+a file layout you probably don't have, so nearly every project sets at least
 three of them.
 
 | Key               | Default                            | What it is                                     |
@@ -45,8 +45,8 @@ three of them.
 Every proxied page lives under this path. `https://crllect.dev` becomes
 `/~/sj/<controller-id>/<frame-id>/<encoded-url>`.
 
-The per-frame segment is why the prefix is not the whole story: each `Frame`
-gets `config.prefix + controllerId + "/" + frameId + "/"`, which is what
+The per-frame segment is why the prefix isn't the whole story: each `Frame` gets
+`config.prefix + controllerId + "/" + frameId + "/"`, which is what
 `frame.prefix` returns. If you are stripping a prefix off a URL to recover the
 destination, use `frame.prefix`, not `config.prefix`.
 
@@ -80,7 +80,7 @@ $scramjetController.config.wasmPath = "/scram/scramjet.wasm";
 ```
 
 Both work. Passing `config` avoids mutating shared state, so two controllers on
-one page cannot fight over it.
+one page can't fight over it.
 
 > `wasmPath` is fetched and compiled with
 > [`WebAssembly`](https://developer.mozilla.org/en-US/docs/WebAssembly). If it
@@ -115,7 +115,7 @@ Three things it has to satisfy:
 
 ### What Scramjet builds around your codec
 
-A proxied URL is not just `prefix + encode(url)`. The real shape is:
+A proxied URL isn't just `prefix + encode(url)`. The real shape is:
 
 ```text
 <prefix><encode(url without hash)>?<scramjet's own params>#<encode(hash)>
@@ -133,8 +133,8 @@ codec guards with `if (!url) return url` for exactly this reason.
 `$`-prefixed parameters carrying request metadata: `$rfp` for referrer policy,
 `$module`, `$tf` and `$pf` for the top and parent frame, `$iframe`, `$mode`,
 `$cred`, `$dest`, `$io` for the initiating origin, and a few more. You will see
-them in the address bar and in devtools. They are not junk, and stripping them
-breaks referrer handling and `sec-fetch-*` behaviour.
+them in the address bar and in devtools. They aren't junk, and stripping them
+breaks referrer handling and `sec-fetch-*` behavior.
 
 **Decoding relies on `?` and `#` being structural.** `unrewriteUrl` recovers the
 destination by slicing off the prefix and then clearing `search` and `hash`
@@ -143,18 +143,18 @@ everything after it is discarded as query parameters; if it contains a `#`, the
 rest is treated as the fragment and fed to `decode()` on its own. Either way the
 URL is silently truncated, and it will look like a rewriter bug.
 
-Percent-encoding and base64url both satisfy this. Raw base64 does not, and
-neither does anything emitting raw bytes certainly does not.
+Percent-encoding and base64url both satisfy this. Raw base64 doesn't, and
+neither does anything emitting raw bytes certainly doesn't.
 
 ### What never reaches your codec
 
-These bypass it entirely, so do not expect to see them: `mailto:` and `about:`
+These bypass it entirely, so don't expect to see them: `mailto:` and `about:`
 URLs pass through untouched, as does any non-`http(s)` scheme, so custom
 protocols can still hand off to an installed app. `javascript:` URLs get their
 body rewritten as JavaScript instead. `blob:` and `data:` URLs are prefixed
 verbatim rather than encoded, and a `data:` URL close to the 2 MB mark is
-converted to a blob first, because Chrome will not accept a service worker
-request with a URL that long.
+converted to a blob first, because Chrome won't accept a service worker request
+with a URL that long.
 
 **A codec is obfuscation, not encryption.** The implementation ships in your
 client bundle, so anyone can decode it. It defeats naive substring matching on
@@ -163,11 +163,11 @@ client bundle, so anyone can decode it. It defeats naive substring matching on
 
 ---
 
-## `scramjetConfig`: rewriter behaviour
+## `scramjetConfig`: rewriter behavior
 
 | Key           | Type                                     | What it is                         |
 | ------------- | ---------------------------------------- | ---------------------------------- |
-| `flags`       | `ScramjetFlags`                          | Rewriter behaviour switches        |
+| `flags`       | `ScramjetFlags`                          | Rewriter behavior switches         |
 | `siteFlags`   | `Record<string, Partial<ScramjetFlags>>` | Per-origin flag overrides          |
 | `globals`     | `Record<string, string>`                 | Names of injected helper functions |
 | `maskedfiles` | `string[]`                               | Files hidden from the proxied page |
@@ -176,8 +176,8 @@ client bundle, so anyone can decode it. It defeats naive substring matching on
 
 Scramjet rewrites `location` into a call to a helper function, and `globals`
 names those helpers. The defaults all start with `$scramjet`: `wrapfn` is
-`$scramjet$wrap`, `importfn` is `$scramjet$import`, and so on. Two do not follow
-the `$scramjet$` shape exactly, so do not derive them: `wrappropertybase` is
+`$scramjet$wrap`, `importfn` is `$scramjet$import`, and so on. Two don't follow
+the `$scramjet$` shape exactly, so don't derive them: `wrappropertybase` is
 `$scramjet__` and `wrappropertyfn` is `$scramjet$prop`.
 
 You rename them for one reason: a proxied site that sniffs for `$scramjet` in
@@ -208,7 +208,7 @@ rest at their `$scramjet$` defaults and defeats the point.
 
 ### `maskedfiles`
 
-Filenames hidden from the proxied page, so a site cannot list them and see
+Filenames hidden from the proxied page, so a site can't list them and see
 Scramjet's runtime. The controller sets `["inject.js", "scramjet.wasm.js"]` by
 default.
 
@@ -250,11 +250,11 @@ sites that need sync XHR break either way.
 
 ### Individual flags
 
-**`sourcemaps`** is badly named and is not what it sounds like. It has nothing
-to do with `.map` files or stack traces. What it does is record the rewriter's
-edit list for every script, then patch `Function.prototype.toString` so that
-calling it on rewritten code returns the **original** source instead of the
-rewritten source.
+**`sourcemaps`** is badly named and isn't what it sounds like. It has nothing to
+do with `.map` files or stack traces. What it does is record the rewriter's edit
+list for every script, then patch `Function.prototype.toString` so that calling
+it on rewritten code returns the **original** source instead of the rewritten
+source.
 
 That matters for two reasons, and both are correctness rather than convenience:
 
@@ -262,8 +262,8 @@ That matters for two reasons, and both are correctness rather than convenience:
   re-evaluates its own source, and plenty do, then gets that rewritten output
   fed back through the rewriter a second time. Upstream's comment on the hook
   says it plainly: double rewrites, which are bad.
-- Sites that hash or fingerprint their own functions see code they did not
-  write, and behave accordingly.
+- Sites that hash or fingerprint their own functions see code they didn't write,
+  and behave accordingly.
 
 Leave it on. It is on by default. The flag you want for stack traces is
 `cleanErrors`.
@@ -296,8 +296,7 @@ rewrite failures surface instead of passing through.
 
 **`encapsulateWorkers`** is on by default. Turn it off and workers the page
 creates run unproxied: they fetch directly, fail on CORS, and take a site
-feature down with them. Leave it alone unless you are debugging worker
-behaviour.
+feature down with them. Leave it alone unless you are debugging worker behavior.
 
 ---
 
@@ -332,9 +331,9 @@ return value;
 
 Four consequences, all of which catch people out:
 
-1. **Keys are regex source strings, not globs.** `*.google.com` is not a
-   pattern, it is a regex that will not compile the way you expect. Escape your
-   dots: `\\.` in a JS string literal.
+1. **Keys are regex source strings, not globs.** `*.google.com` isn't a pattern,
+   it is a regex that won't compile the way you expect. Escape your dots: `\\.`
+   in a JS string literal.
 2. **Matched against `url.href`**, the whole URL including scheme and query. An
    unanchored pattern like `discord` matches any URL containing that substring
    anywhere.
@@ -376,12 +375,12 @@ block out of someone's repository.
 ## Where to go next
 
 - [Plugins and hooks](plugins-and-hooks.md). The other half of controlling
-  Scramjet, and where behaviour you cannot get from a flag comes from.
+  Scramjet, and where behavior you can't get from a flag comes from.
 - [Controller and Frame API](controller-api.md). The objects these two config
   values are passed to, and how the merge actually resolves.
 - [Known bugs](known-bugs.md). `syncxhr` and the `allowFailedIntercepts` merge,
   with the code behind both.
 - [Site compatibility](site-compatibility.md). Which sites need which flags, and
-  which are not a flag problem at all.
+  which aren't a flag problem at all.
 - [Bootstrap or manual wiring](../guides/wiring.md). Where these paths come
   from.

@@ -6,14 +6,14 @@ there are concrete reasons to, beyond it looking nice.
 
 ---
 
-## What you cannot do
+## What you can't do
 
 Be clear about this first, because it saves you an afternoon.
 
 **You cannot register a real URL scheme.** `navigator.registerProtocolHandler`
 only accepts a short allowlist (`mailto`, `web+*`, a few others), requires user
-consent, and routes to an HTTPS URL anyway. Service workers cannot intercept a
-scheme the browser does not already route over HTTP.
+consent, and routes to an HTTPS URL anyway. Service workers can't intercept a
+scheme the browser doesn't already route over HTTP.
 
 So `myproxy://settings` is **not a URL** as far as the network stack is
 concerned. Typing it into the real browser address bar does nothing.
@@ -22,7 +22,7 @@ concerned. Typing it into the real browser address bar does nothing.
 
 A **routing convention**, resolved entirely inside your app:
 
-1. Your URL parser recognises the scheme and returns `{ kind: "internal" }`.
+1. Your URL parser recognizes the scheme and returns `{ kind: "internal" }`.
 2. A registry maps the host part to a renderer.
 3. The renderer's HTML goes into the tab's iframe via `srcdoc`.
 
@@ -33,11 +33,11 @@ Three steps, all in your own code, no browser cooperation needed.
 **It gives internal pages an address that can never collide with a proxied
 site.** Without a scheme, you end up with `/settings` as a real route, and now
 you have to make sure a proxied page can never be at `/settings`, that your
-service worker does not intercept it, and that navigating to it does not leave
-the proxy shell.
+service worker doesn't intercept it, and that navigating to it doesn't leave the
+proxy shell.
 
 With a scheme, the URL parser routes it **before the proxy engine is ever
-involved**, so it cannot collide with a proxied HTTP route.
+involved**, so it can't collide with a proxied HTTP route.
 
 It also gives you shareable, typeable addresses for internal pages, and it makes
 the address bar honest. The user sees `myproxy://history`, not a blank bar or a
@@ -46,7 +46,7 @@ lie.
 This feature is optional. If settings, history, or bookmarks should behave like
 an overlay or sidebar instead of a destination, leave custom protocols off. The
 builder opens those pages in a separate popup iframe, so the active tab and its
-Back/Forward history do not change. See
+Back/Forward history don't change. See
 [Settings: Popup or custom protocol](settings.md#popup-or-custom-protocol).
 
 ---
@@ -127,9 +127,9 @@ const openInternal = url => {
 
 Internal pages occupy a tab like any other page, so tab switching and the tab
 strip work normally. They do need a per-tab internal history stack because
-successive `srcdoc` assignments do not give the custom URLs useful native
-history entries. Clear that stack in `tab.go()` before handing an HTTP URL to
-the proxy engine. See
+successive `srcdoc` assignments don't give the custom URLs useful native history
+entries. Clear that stack in `tab.go()` before handing an HTTP URL to the proxy
+engine. See
 [URL parsing and history](url-parsing-and-history.md#document-history-the-engine-owns-this).
 
 ### Keep data-backed pages live
@@ -153,7 +153,7 @@ bookmarks.onChange(() => refreshInternalPages(["bookmarks"]));
 ```
 
 Do this only for protocol-backed internal pages. Popup-menu builds already have
-their own refresh path and should not replace the active proxy tab.
+their own refresh path and shouldn't replace the active proxy tab.
 
 ---
 
@@ -162,8 +162,8 @@ their own refresh path and should not replace the active proxy tab.
 This is the security-relevant decision.
 
 A `srcdoc` assignment navigates the iframe to an `about:srcdoc` document, but it
-does not make a network request and the service worker does not receive one.
-This means:
+doesn't make a network request and the service worker doesn't receive one. This
+means:
 
 **A proxied site cannot fetch your settings page.** If internal pages lived at
 `/internal/settings`, a proxied page, running on your origin, remember, could
@@ -175,7 +175,7 @@ to the shell. It just has no address.
 
 ---
 
-## Fake origins, and why internal pages do not use them
+## Fake origins, and why internal pages don't use them
 
 Scramjet can intercept a request before it leaves for the network and answer it
 locally. A plugin taps the fetch hook on a [frame](multiple-tabs.md) and sets
@@ -219,15 +219,15 @@ of one inlined document.
 The generated builds still use `srcdoc`, for two reasons.
 
 **Fetch hooks are Scramjet-only.** Ultraviolet has no equivalent, so internal
-pages built this way would not exist in an Ultraviolet build. `srcdoc` is an
-iframe attribute; it does not depend on the engine at all, which is why custom
+pages built this way wouldn't exist in an Ultraviolet build. `srcdoc` is an
+iframe attribute; it doesn't depend on the engine at all, which is why custom
 protocols are offered as a feature independent of your engine choice.
 
 **It fails when Scramjet does.** A fake-origin response is produced by a plugin
 tapped onto a frame that `controller.createFrame()` returned, which runs in your
 page rather than in the service worker, and only after the shell registered the
 worker, loaded every bundle, and built the transport. If any of that is broken,
-the fake origin cannot be served. That is the failure an error page exists to
+the fake origin can't be served. That is the failure an error page exists to
 explain, so the mechanism that renders your error page must not depend on the
 machinery that just failed. `srcdoc` depends on none of it.
 
@@ -236,7 +236,7 @@ transport, so the response goes back through the service worker without ever
 touching the network; there is no CORS layer in front of it, so a proxied page
 can read a fake-origin URL that a plugin serves. You can narrow this by checking
 `context.parsed.destination` and serving only navigations. With `srcdoc` the
-question does not arise, because there is no address to request.
+question doesn't arise, because there is no address to request.
 
 Use fake origins for plugins. Use `srcdoc` for internal pages unless you know
 what you are doing.
@@ -245,7 +245,7 @@ what you are doing.
 
 ## Talking to the shell
 
-A `srcdoc` document does not share the parent document's existing module scope.
+A `srcdoc` document doesn't share the parent document's existing module scope.
 It could import modules by URL, but the generated page keeps the boundary small
 and uses `postMessage`:
 

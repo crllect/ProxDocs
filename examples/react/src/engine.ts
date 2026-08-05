@@ -313,9 +313,6 @@ class ScramjetSession implements ProxySession {
 		this.#onLoad = () => {
 			if (!this.#destroyed) this.#handlers.ready?.();
 		};
-		// ready fires from two places on purpose: the url watcher, which
-		// reports as soon as a document exists, and load, which many real
-		// sites never reach because one request stays open forever.
 
 		this.#frame.element.addEventListener("load", this.#onLoad);
 	}
@@ -409,17 +406,17 @@ const errorPage = (error: unknown): string => {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Page unavailable</title>
 <style>
-  html { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
-  main { width: min(32rem, calc(100% - 3rem)); }
-  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
-  p { margin: 0 0 .75rem; color: GrayText; }
-  code { font-size: .875rem; }
+	html { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
+	body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+	main { width: min(32rem, calc(100% - 3rem)); }
+	h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+	p { margin: 0 0 .75rem; color: GrayText; }
+	code { font-size: .875rem; }
 </style>
 <main>
-  <h1>This page could not be loaded</h1>
-  <p>The proxy reached the network but the request failed.</p>
-  <p><code>${message}</code></p>
+	<h1>This page could not be loaded</h1>
+	<p>The proxy reached the network but the request failed.</p>
+	<p><code>${message}</code></p>
 </main>`;
 };
 

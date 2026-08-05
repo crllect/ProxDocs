@@ -3,7 +3,7 @@
 [Deployment](deployment.md) gets you online. This page is about the weeks after
 that, which almost nobody writes down and everybody discovers the hard way.
 
-If you are running something only you use, most of this does not apply. It
+If you are running something only you use, most of this doesn't apply. It
 becomes relevant the moment you give the link to somebody else.
 
 ---
@@ -56,7 +56,7 @@ subscribe to. Getting on one is a matter of time and popularity. They run
 crawlers, they accept submissions, and a proxy being used on a filtered network
 gets noticed by the filter.
 
-You cannot appeal your way off these lists. What people do instead is rotate
+You can't appeal your way off these lists. What people do instead is rotate
 domains, which works, and works for a shorter stretch each time.
 
 **Destination sites** block you directly, by IP. A datacenter IP address making
@@ -66,7 +66,7 @@ the network level it is indistinguishable. Symptoms are captchas everywhere,
 [site compatibility](../reference/site-compatibility.md).
 
 `noindex` on your pages asks search engines not to list you. It does nothing
-about either mechanism above, because filtering vendors are not search engines.
+about either mechanism above, because filtering vendors aren't search engines.
 
 ---
 
@@ -75,8 +75,8 @@ about either mechanism above, because filtering vendors are not search engines.
 Worth having before you need it, because you will want it in a hurry.
 
 [Wisp](../concepts/wisp-vs-bare.md) connections are long-lived WebSockets, so
-per-request limiting does not fit. Limit **concurrent connections per IP** at
-the upgrade:
+per-request limiting doesn't fit. Limit **concurrent connections per IP** at the
+upgrade:
 
 ```js
 const connectionsPerIp = new Map();
@@ -111,7 +111,7 @@ header instead, and only trust it because you control the proxy setting it.
 
 wisp-js does the same thing internally for its own logging, and its defaults are
 already correct: `parse_real_ip` is `true`, and `parse_real_ip_from` is
-`["127.0.0.1"]`, so the header is honoured only from a peer on the same host.
+`["127.0.0.1"]`, so the header is honored only from a peer on the same host.
 Widen that list to an address your users can reach directly and any of them can
 claim any IP, at which point every log line and every IP-based block you have is
 fiction. Add your load balancer and nothing else.
@@ -120,7 +120,7 @@ fiction. Add your load balancer and nothing else.
 
 ## A destination blocklist
 
-You are the exit node for whatever your users do. A blocklist is not censorship
+You are the exit node for whatever your users do. A blocklist isn't censorship
 policy, it is the thing that keeps your server from being the source of traffic
 you want no part of.
 
@@ -132,6 +132,8 @@ import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 wisp.options.hostname_blacklist = [/^metadata\.google\.internal$/];
 wisp.options.allow_direct_ip = false;
+
+// DONT TOUCH THESE TWO
 wisp.options.allow_loopback_ips = false;
 wisp.options.allow_private_ips = false;
 ```
@@ -157,7 +159,7 @@ touches your hostname rules. Turn it off in the same change, and accept that it
 breaks the few sites that hand out bare IPs.
 
 **Whitelists supersede blacklists rather than combining with them.** Setting
-both is not an error, and the blacklist is silently ignored. That is a good way
+both isn't an error, and the blacklist is silently ignored. That is a good way
 to believe you have two layers when you have one.
 
 **The private and loopback defaults are `false`, and they must stay that way.**
@@ -170,15 +172,15 @@ and a wisp server makes an excellent one.
 
 They are written explicitly above because a config file is a better place to be
 reminded of them than a changelog. If you have enabled either for local
-development, make sure it did not follow you into production. This is the one
+development, make sure it didn't follow you into production. This is the one
 item on this page that is a security bug rather than a preference.
 
-Two more that look like abuse controls and are not. `stream_limit_per_host` and
+Two more that look like abuse controls and aren't. `stream_limit_per_host` and
 `stream_limit_total` both default to `-1`, meaning no limit, and both count
 **per connection**, not per user. One browser tab is one wisp connection, so a
 user with five tabs gets five times whatever you set, and a script opening
 connections in a loop is unbounded either way. They stop one page from opening a
-thousand sockets. They are not the rate limiter above.
+thousand sockets. They aren't the rate limiter above.
 
 `client_ip_blacklist` and `client_ip_whitelist` exist on the options object and
 are marked not implemented in the source. Setting them does nothing; block
@@ -194,15 +196,15 @@ what the destination saw.
 What tends to work:
 
 - **Answer.** An ignored complaint escalates to suspension; an answered one
-  usually does not.
+  usually doesn't.
 - **Say what the service is.** "This is a web proxy, the traffic originated from
   a user" is a normal answer that abuse desks understand.
 - **Show a control.** Rate limiting and a blocklist demonstrate you are running
   something rather than hosting an open relay.
 - **Block the specific destination** if the complaint is about one.
 
-What does not work is claiming you have logs you do not have, or that you can
-identify a user you cannot. Do not invent capabilities under pressure.
+What doesn't work is claiming you have logs you don't have, or that you can
+identify a user you can't. Do not invent capabilities under pressure.
 
 ---
 
@@ -233,18 +235,18 @@ outgrown hobby scale and the privacy policy needs to be a real document.
 ## Tell your users what this is
 
 A short, honest page is most of what separates a proxy people should trust from
-one they should not.
+one they shouldn't.
 
 > This proxy routes your traffic through our server. We can see which sites you
-> connect to. It hides your browsing from your network, not from us. It does not
-> make you anonymous. Video from paid streaming services will not work. We keep
+> connect to. It hides your browsing from your network, not from us. It doesn't
+> make you anonymous. Video from paid streaming services won't work. We keep
 > connection counts for a week and nothing else.
 
 Every sentence there is checkable. A proxy that says nothing still makes a
 claim, because users read silence as "this is private."
 
 [Practices worth knowing](site-best-practices.md) covers what the pieces do and
-do not hide, in more detail.
+don't hide, in more detail.
 
 ---
 
@@ -259,7 +261,7 @@ consequence lands on whoever ran it. Hosting providers' terms frequently
 prohibit open proxies outright, which is why the takedown in the timeline above
 is such a common ending.
 
-This is not a warning against building one. Building a proxy teaches you more
+This isn't a warning against building one. Building a proxy teaches you more
 about how the web actually works than most projects will. It is a suggestion to
 know which rules you are operating under, rather than finding out from an email.
 
@@ -270,6 +272,6 @@ know which rules you are operating under, rather than finding out from an email.
 - [Deployment](deployment.md). Hosting, HTTPS, capacity, and the go-live
   checklist.
 - [Site compatibility](../reference/site-compatibility.md). Which failures are
-  yours and which are not.
+  yours and which aren't.
 - [Practices worth knowing](site-best-practices.md). Storage, disclosure,
   performance, accessibility.

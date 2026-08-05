@@ -22,14 +22,14 @@ run a bare deployment, say so.
 **A passive Wisp relay does not terminate target TLS, but it sees metadata.**
 The relay knows that a connection to `night-network.org:443` opened, plus timing
 and traffic sizes. The operator also serves the client and could modify it to
-expose plaintext, so this is not a boundary against a malicious operator.
+expose plaintext, so this isn't a boundary against a malicious operator.
 
 **Nothing here defeats a device management profile.** If the browser or OS is
 managed, it can screenshot, log keystrokes, and inspect traffic before it is
 encrypted. No web proxy touches that.
 
-Write a short "what this does and does not do" page and link it from your
-footer, especially if other people use the service.
+Write a short "what this does and doesn't do" page and link it from your footer,
+especially if other people use the service.
 
 ---
 
@@ -51,7 +51,7 @@ Mitigations, in order of value:
    selectively.
 3. **Never `eval` or inject anything from storage** into your shell.
 4. **Do not put secrets there.** There is nowhere on this origin that a proxied
-   page cannot reach.
+   page can't reach.
 
 Scramjet emulates storage per proxied site to reduce collisions, but the
 security boundary is still the origin, and the origin is shared. Design as

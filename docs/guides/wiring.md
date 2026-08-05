@@ -88,7 +88,7 @@ Three lines in the upgrade handler are load-bearing, and all three are explained
 in [Wisp vs Bare](../concepts/wisp-vs-bare.md#running-a-wisp-server): parse
 against a constant base rather than the client-controlled `Host` header,
 reassign `req.url` to the bare pathname before routing, and end every upgrade
-you do not recognise.
+you don't recognize.
 
 ### Service worker
 
@@ -184,12 +184,12 @@ setInterval(() => {
 Those three paths have to match where you mounted the packages, because the
 defaults assume a different layout. You will also see them written as
 `api.config.wasmPath = …` before construction; both work, but passing `config`
-does not mutate shared global state. Every option is listed in
+doesn't mutate shared global state. Every option is listed in
 [Config and flags](../reference/scramjet-config.md).
 
 ### The keepalive
 
-That `setInterval` is not decoration, and it is not something Scramjet asks for.
+That `setInterval` isn't decoration, and it isn't something Scramjet asks for.
 It works around a live upstream bug: the browser terminates an idle service
 worker, Scramjet's worker loses the frame prefixes it was routing, and every
 navigation after that lands on your own 404 until the page is reloaded.
@@ -201,7 +201,7 @@ margin to survive a throttled background tab.
 It is a workaround, so treat it as one. It costs a resident service worker
 process per open tab, which is a real if small cost on mobile, and it should be
 deleted once the upstream handshake is fixed. See
-[the bug and how to recognise it](../reference/troubleshooting.md#cannot-get-sj-after-the-tab-has-been-sitting-idle).
+[the bug and how to recognize it](../reference/troubleshooting.md#cannot-get-sj-after-the-tab-has-been-sitting-idle).
 
 Do not skip `await controller.wait()`. It waits for the service worker to
 complete its handshake and for the wasm to be fetched, and **nothing stops you
@@ -215,10 +215,10 @@ is ready. See [Cookies and sessions](cookies-and-sessions.md) and the
 
 **Do not drop the `setInterval`.** Browsers terminate an idle service worker
 after about thirty seconds, and Scramjet's worker keeps its routing table in
-module scope, so a cold worker cannot route and the first navigation after a
+module scope, so a cold worker can't route and the first navigation after a
 quiet period lands on your own 404. The ping keeps it warm. A plain string
 payload is deliberate: both of the worker's `message` listeners return early on
-anything that is not an object, so this wakes the worker and runs no handler.
+anything that isn't an object, so this wakes the worker and runs no handler.
 Generated projects include it. See
 [the idle service worker bug](../reference/troubleshooting.md#cannot-get-sj-after-the-tab-has-been-sitting-idle).
 

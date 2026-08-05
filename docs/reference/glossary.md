@@ -10,7 +10,7 @@ request/response serverless hosts. See
 
 **bare-mux**. A library that puts one transport in a SharedWorker and lets every
 context (window, iframes, service worker) share it. Introduced in Ultraviolet
-3.0 to make transports swappable. Deprecated as of 2.1.9 in favour of
+3.0 to make transports swappable. Deprecated as of 2.1.9 in favor of
 proxy-transports. See [bare-mux and proxy-transports](../concepts/bare-mux.md).
 
 **bare-as-module3**. The Bare-protocol transport for **bare-mux**, so
@@ -25,7 +25,7 @@ below.
 transport for **proxy-transports**, so usable from Scramjet 2.x. Published 1.0.0
 in December 2025. The only transport that works without a WebSocket, which makes
 it the one that lets a proxy run all-in-one on request/response serverless
-hosts. `proxy-bootstrap` cannot wire it yet.
+hosts. `proxy-bootstrap` can't wire it yet.
 
 Same project as `bare-as-module3`, renamed in both places: the GitHub repository
 is now `MercuryWorkshop/bare-transport`, and the npm package is a **new name**,
@@ -34,8 +34,8 @@ happened because "as a bare-mux module" stopped being true once it was rewritten
 against `proxy-transports`. See [Transports](../concepts/transports.md#bare).
 
 **Chemical**. A meta-framework wrapping Ultraviolet, Scramjet and Rammerhead
-behind one API. Fastest path if you do not care which engine you get; less
-useful if you want to understand the stack.
+behind one API. Fastest path if you don't care which engine you get; less useful
+if you want to understand the stack.
 
 **Codec**. The function pair encoding a real URL into a proxied path and back.
 Ultraviolet defaults to `xor`; Scramjet's controller defaults to
@@ -90,7 +90,7 @@ per document or failure. Each callback gets a read-only `context` and a mutable
 
 **Interception proxy**. The current architecture: a service worker on your
 origin intercepts requests from proxied pages and rewrites the responses. Named
-in contrast to server-side rewriting proxies, which cannot see requests made by
+in contrast to server-side rewriting proxies, which can't see requests made by
 JavaScript at runtime.
 
 **libcurl**. A build of curl compiled to WebAssembly, speaking wisp. The
@@ -101,7 +101,7 @@ best-compatibility transport, and the heaviest. See
 taps a frame's hooks. The supported way to observe navigation, handle errors, or
 add caching. `HttpCachePlugin`, `UrlWatcherPlugin`, `CatchEscapedLinksPlugin`
 ship in `scramjet-utils`. A bare `Plugin` is a different thing: it can tap a
-hook but cannot be passed to `createFrame`. See
+hook but can't be passed to `createFrame`. See
 [Plugins and hooks](plugins-and-hooks.md).
 
 **Prefix**. The path all proxied URLs live under. `__uv$config.prefix` in
@@ -120,7 +120,7 @@ transports implement (`request` and `connect`). Successor to bare-mux's
 transport interface; a direct dependency of Scramjet 2.x.
 
 **Rammerhead**. A different proxy design, server-side session-based rather than
-service-worker-based. Occasionally works where interception proxies do not.
+service-worker-based. Occasionally works where interception proxies don't.
 
 **Rewriter**. The component that transforms HTML, CSS and JavaScript so URLs and
 trapped globals point back through the proxy. Ultraviolet's is JavaScript;
@@ -152,7 +152,7 @@ uniform per-tab object the engine adapter exposes (`go`, `back`, `forward`,
 **siteFlags**. Per-origin flag overrides, keyed by regular expression source
 strings tested against the full URL. First match wins, and only for flags
 present in that entry. The right tool when one site needs different rewriter
-behaviour. See [Config and flags](scramjet-config.md).
+behavior. See [Config and flags](scramjet-config.md).
 
 **Transport**. Client-side code that performs requests. epoxy, libcurl, bare.
 Chosen independently of the rewriter. See
@@ -162,7 +162,7 @@ Chosen independently of the rewriter. See
 TitaniumNetwork. JavaScript rewriter, bare-mux transports. Unmaintained, last
 released October 2024 at 3.2.10; the repository is open but its README points at
 Scramjet. Still widely deployed, and the option for an all-in-one build whose
-backend cannot host Wisp. See [Scramjet vs Ultraviolet](../concepts/engines.md).
+backend can't host Wisp. See [Scramjet vs Ultraviolet](../concepts/engines.md).
 
 **UrlWatcherPlugin**. The Scramjet 2.x plugin that reports the real URL of a
 frame. There is no `urlchange` event; this is how you know where the page went.
@@ -171,7 +171,7 @@ Fires for navigations, hash changes, and `history.pushState`. See
 
 **Wisp**. A multiplexing protocol carrying many TCP/UDP streams over one
 WebSocket. For HTTPS destinations, target TLS terminates in the browser and the
-relay sees ciphertext plus connection metadata. HTTP destinations are not
+relay sees ciphertext plus connection metadata. HTTP destinations aren't
 encrypted end to end. Wisp requires a persistent WebSocket, which rules out most
 request/response serverless hosting. See
 [Wisp vs Bare](../concepts/wisp-vs-bare.md).

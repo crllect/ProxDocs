@@ -61,7 +61,7 @@ page stays alive.
 The other instinct is to keep a single proxy frame and re-navigate it when the
 user switches tabs, storing each tab's URL.
 
-That is not a tab system, it is a bookmark list. Every switch is a full
+That isn't a tab system, it is a bookmark list. Every switch is a full
 navigation, and back/forward history is shared across all of them, so going back
 in tab 2 can take you to a page from tab 1.
 
@@ -126,9 +126,9 @@ class Tab {
 ```
 
 **`allow-same-origin` is required.** The proxy runs the page on your origin and
-the engine needs to reach into `contentWindow`. Removing it does not harden
+the engine needs to reach into `contentWindow`. Removing it doesn't harden
 anything; it stops the proxy working. If you were hoping `sandbox` isolates the
-proxied site from your app. It cannot, because the whole design depends on
+proxied site from your app. It can't, because the whole design depends on
 same-origin access. Treat proxied content as running with your origin's
 privileges, because it is.
 
@@ -169,7 +169,7 @@ const ensureSession = async tab => {
 `loading` and `ready` drive a per-tab spinner, and `ready` deliberately fires
 from **two** places: the iframe's `load` event, and the URL watcher.
 
-That looks redundant and is not. Wiring it to `load` alone is the obvious choice
+That looks redundant and isn't. Wiring it to `load` alone is the obvious choice
 and it hangs on real sites: DuckDuckGo's results page keeps a telemetry request
 open, so its document sits at `readyState: "interactive"` forever, the iframe
 never fires `load`, and the tab reads "loading" under a page the user is already
@@ -314,7 +314,7 @@ addEventListener("keydown", event => {
 });
 ```
 
-Browsers reserve `Ctrl/Cmd+W`, so a page cannot reliably replace it with an
+Browsers reserve `Ctrl/Cmd+W`, so a page can't reliably replace it with an
 internal tab close. Use the close button or middle-click instead.
 
 ---

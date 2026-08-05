@@ -29,16 +29,19 @@ const scramjet = () => globalThis.$scramjet;
 The full failure, its error message, and why type-only imports are safe are in
 [reading Scramjet's exports](plugins-and-hooks.md#reading-scramjets-exports).
 
-**You need `skipLibCheck: true` for the type-only import to work.** The
-published `dist/types/` still contains the build's internal path aliases,
-`@/shared`, `@/fetch`, `@rewriters/url`, `@client/events`, and nothing resolves
-them on your side, so a strict `tsconfig.json` reports a wall of `TS2307` errors
-from inside `node_modules` and then claims `@mercuryworkshop/scramjet` has no
-exported member `ScramjetFetchHandler`. The controller's declarations have the
-same problem plus an import of `./types`, which is not shipped at all. With
-`skipLibCheck` on, the default in most setups and in every project this builder
-generates, all of it is suppressed and the exported classes type correctly. What
-you lose is covered in
+**You need `skipLibCheck: true`**, and not because of anything you wrote.
+
+The published `dist/types/` still has the build's own path aliases sitting in
+it, `@/shared`, `@/fetch`, `@rewriters/url`, `@client/events`, and nothing on
+your machine has any idea what those are. Turn `skipLibCheck` off and tsc
+wanders into `node_modules`, throws a wall of `TS2307` at you, and signs off by
+telling you `@mercuryworkshop/scramjet` has no exported member
+`ScramjetFetchHandler`. Which is a hell of a claim about a package whose entire
+job is exporting that. The controller is the same, plus an import of `./types`
+that was never shipped.
+
+Leave it on. It already is in most setups and in everything this builder
+generates. The exported classes type fine that way. What you quietly lose is in
 [every type in the package](controller-api.md#every-type-in-the-package).
 
 Two other entry points exist for bundler users, declared in the package's
@@ -278,10 +281,10 @@ class Blocker extends utils().ManagedPlugin {
 }
 ```
 
-Three behaviours to know, because none of them are obvious from the signatures:
+Three behaviors to know, because none of them are obvious from the signatures:
 
 - **`dispatch()` returns `null`** when nothing is tapped, not an empty promise.
-  Awaiting it is fine; branching on truthiness is not.
+  Awaiting it is fine; branching on truthiness isn't.
 - **Callbacks run concurrently**, through `Promise.all`. Ordering constrains the
   order they are _called_ in, not the order they finish. Two async callbacks
   that both mutate `props` can interleave.
@@ -324,8 +327,8 @@ when you have no client, which is the case on the controller side.
 | `parentFrameName` | `string?` | Frame targeting for `_parent`      |
 | `referrerPolicy`  | `string?` | Policy in force for this document  |
 
-`origin` and `base` are usually the same, and are not when the document carries
-a `<base href>`. Getting these wrong produces URLs that look right and resolve
+`origin` and `base` are usually the same, and aren't when the document carries a
+`<base href>`. Getting these wrong produces URLs that look right and resolve
 against the wrong host, which is the single most common way a hand-rolled
 rewrite goes wrong.
 
@@ -381,7 +384,7 @@ type ScramjetInterface = {
 `getInjectScripts` is what decides which files land in every proxied document,
 in what order. The controller's implementation is serialized into the page as
 source text, which is why it is written as a standalone function that closes
-over nothing: anything it captures would not survive `toString()`.
+over nothing: anything it captures wouldn't survive `toString()`.
 
 `ScramjetConfig` itself, its `flags`, `globals`, `siteFlags`, and `maskedfiles`,
 is documented value by value in [Config and flags](scramjet-config.md).
@@ -482,7 +485,7 @@ generic they take.
 | `LifecycleHooks`                    | `client.hooks.lifecycle`                        | `navigate`                                                        |
 | `FrameInitHooks`, `FrameErrorHooks` | `frame.hooks`                                   | Controller package, see [there](controller-api.md#the-hook-types) |
 
-`HtmlRewriterHooks` is reachable in two places that are not the same object. The
+`HtmlRewriterHooks` is reachable in two places that aren't the same object. The
 frame's handler has one (`fetchHandler.hooks.rewriter.html`), and each proxied
 document's client has its own. Tapping the handler's copy from a plugin's
 `install()` covers every document that frame fetches; tapping

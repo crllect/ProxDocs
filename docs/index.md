@@ -24,7 +24,7 @@ architecture looks the way it does.
 A proxy has two independent jobs, and nearly every confusing question comes from
 conflating them:
 
-1. **Fetching** bytes from a server the browser will not let you reach directly.
+1. **Fetching** bytes from a server the browser won't let you reach directly.
 2. **Rewriting** those bytes so every URL, script, and cookie inside them points
    back through the proxy.
 
@@ -32,7 +32,7 @@ conflating them:
 
 **Scramjet** solves problem 2. It is the [engine](concepts/engines.md).
 
-They are chosen independently. "Should I use Scramjet or wisp?" is not a
+They are chosen independently. "Should I use Scramjet or wisp?" isn't a
 question. You use Scramjet _over_ wisp.
 
 ---
@@ -53,21 +53,21 @@ question. You use Scramjet _over_ wisp.
 
 ### Guides
 
-| Page                                                         | What you build                                           |
-| ------------------------------------------------------------ | -------------------------------------------------------- |
-| [Quickstart](guides/quickstart.md)                           | A working proxy in about two minutes                     |
-| [Multiple tabs](guides/multiple-tabs.md)                     | Real tabs that keep their pages alive                    |
-| [Settings](guides/settings.md)                               | Validated, persisted settings that cannot brick your app |
-| [URL parsing and history](guides/url-parsing-and-history.md) | An address bar that behaves like a browser's             |
-| [Custom protocols](guides/custom-protocols.md)               | Internal pages on your own scheme                        |
-| [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break         |
-| [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev   |
-| [Wiring Scramjet](guides/wiring.md)                          | Serving the engine, its service worker, and Wisp         |
-| [Serverless deployment](guides/serverless.md)                | An all-in-one deployment over Bare, and what it costs    |
-| [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun     |
-| [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                      |
-| [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch    |
-| [Practices worth knowing](guides/site-best-practices.md)     | Shared storage, performance, accessibility               |
+| Page                                                         | What you build                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------- |
+| [Quickstart](guides/quickstart.md)                           | A working proxy in about two minutes                    |
+| [Multiple tabs](guides/multiple-tabs.md)                     | Real tabs that keep their pages alive                   |
+| [Settings](guides/settings.md)                               | Validated, persisted settings that can't brick your app |
+| [URL parsing and history](guides/url-parsing-and-history.md) | An address bar that behaves like a browser's            |
+| [Custom protocols](guides/custom-protocols.md)               | Internal pages on your own scheme                       |
+| [Cookies and sessions](guides/cookies-and-sessions.md)       | Where logins live, and the three ways they break        |
+| [Search engines](guides/search-engines.md)                   | Which ones survive a proxy, and which only work in dev  |
+| [Wiring Scramjet](guides/wiring.md)                          | Serving the engine, its service worker, and Wisp        |
+| [Serverless deployment](guides/serverless.md)                | An all-in-one deployment over Bare, and what it costs   |
+| [Framework integrations](guides/frameworks.md)               | React, Astro, Fastify, Vite, Next.js, SvelteKit, Bun    |
+| [Deployment](guides/deployment.md)                           | Hosting, HTTPS, and platform limits                     |
+| [Running a proxy](guides/running-a-proxy.md)                 | Bandwidth, blocking, abuse, and logging, after launch   |
+| [Practices worth knowing](guides/site-best-practices.md)     | Shared storage, performance, accessibility              |
 
 ### Reference
 
@@ -92,7 +92,7 @@ question. You use Scramjet _over_ wisp.
 
 The builder at `/build` composes a project from parts. Every part is a real file
 in `builder/parts/`, readable on its own. The generator only strips the blocks
-you did not ask for and fills in a few names.
+you didn't ask for and fills in a few names.
 
 It asks about the stack:
 
@@ -121,11 +121,11 @@ It also asks about the features:
 - **Cloaking and custom protocol pages**
 - **Quiet service worker:** silence log, info and debug inside the worker
 
-Choices that cannot work together are greyed out with the reason, rather than
+Choices that can't work together are greyed out with the reason, rather than
 letting you pick them and quietly changing them afterwards. Picking an
-all-in-one serverless host selects the Bare transport, because those hosts
-cannot hold Wisp's WebSocket open; a static frontend may instead point at Wisp
-hosted elsewhere. See [Serverless deployment](guides/serverless.md).
+all-in-one serverless host selects the Bare transport, because those hosts can't
+hold Wisp's WebSocket open; a static frontend may instead point at Wisp hosted
+elsewhere. See [Serverless deployment](guides/serverless.md).
 
 Or from the terminal:
 

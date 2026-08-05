@@ -5,11 +5,11 @@ that cookie lives, who owns it, and the three ways people accidentally destroy
 it.
 
 Scramjet 2.x handles almost all of this for you. The value of knowing the
-mechanism is that when a login does not stick, you can tell which layer broke.
+mechanism is that when a login doesn't stick, you can tell which layer broke.
 
 ---
 
-## Why cookies cannot just work
+## Why cookies can't just work
 
 A proxied page runs on **your** origin. From the browser's point of view there
 is one site, yours, and every proxied page is part of it.
@@ -20,8 +20,8 @@ would leak its session cookie to the next site you visited, and two sites using
 the same cookie name would overwrite each other. It would also mean a proxied
 page could read your own app's cookies.
 
-So Scramjet does not use the browser's cookie store for proxied content. It
-keeps its own.
+So Scramjet doesn't use the browser's cookie store for proxied content. It keeps
+its own.
 
 ---
 
@@ -62,7 +62,7 @@ does _not_ wait for the jar. It waits for the service worker handshake and the
 wasm fetch. The jar loads on the first proxied request instead, and the
 controller holds that request until the load finishes. So a frame created before
 the jar is in memory still issues its first request with the right cookies; you
-cannot race it.
+can't race it.
 
 The persisted record is small:
 
@@ -117,14 +117,14 @@ this.
 
 ## The service worker
 
-The service worker sees requests too, and it needs the same cookies. It does not
+The service worker sees requests too, and it needs the same cookies. It doesn't
 get its own jar; the controller pushes to it over the message channel
 established at construction, and the worker acknowledges when applied.
 
 Practical consequence: **the controller is the source of truth, and it lives in
 the page.** If the service worker is alive but no page holds a controller, which
-happens when the worker gets revived independently, cookie state is not
-available to it until a controller reconnects. This is why the controller guards
+happens when the worker gets revived independently, cookie state isn't available
+to it until a controller reconnects. This is why the controller guards
 service-worker revival for the first few seconds after boot instead of
 immediately rebuilding its message port.
 
@@ -146,7 +146,7 @@ await controller.wait();
 const frame = controller.createFrame(iframe, { plugins });
 ```
 
-The symptom is specific and recognisable: the **first** page load after a
+The symptom is specific and recognizable: the **first** page load after a
 refresh is logged out, and everything after it is fine.
 
 ### A second controller
@@ -197,14 +197,14 @@ response the proxy handled.
 
 ---
 
-## What this does not give you
+## What this doesn't give you
 
 **Separate identities per tab.** One jar, one controller, one set of logins. Two
-tabs cannot be signed into the same site as different users. That needs separate
+tabs can't be signed into the same site as different users. That needs separate
 controllers on separate origins, which is a much larger design.
 
-**Isolation from your own app.** The jar is not the browser's cookie store, so
-proxied sites cannot read your app's cookies through `document.cookie`. But it
+**Isolation from your own app.** The jar isn't the browser's cookie store, so
+proxied sites can't read your app's cookies through `document.cookie`. But it
 lives in IndexedDB on your origin, and a proxied page runs on your origin, so a
 hostile page can reach the database directly. See
 [Practices worth knowing](site-best-practices.md).
@@ -218,6 +218,6 @@ the client. See [Wisp vs Bare](../concepts/wisp-vs-bare.md).
 
 - [Multiple tabs](multiple-tabs.md). One controller, many frames, and why.
 - [Site compatibility](../reference/site-compatibility.md). Logins that fail for
-  reasons that are not cookies.
+  reasons that aren't cookies.
 - [Practices worth knowing](site-best-practices.md). What proxied pages can
   reach on your origin.

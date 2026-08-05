@@ -4,7 +4,7 @@ Whatever you set as the default search engine is the first proxied page most
 people will ever load, so if it renders badly your proxy looks broken before
 anyone has typed a real URL.
 
-They do not all behave the same through a proxy, and the one that works on your
+They don't all behave the same through a proxy, and the one that works on your
 laptop is often not the one that works in production.
 
 ## DuckDuckGo
@@ -12,8 +12,8 @@ laptop is often not the one that works in production.
 Template: `https://duckduckgo.com/?q=%s`.
 
 **This is the default in generated projects.** It works most of the time, does
-not punish you for coming from a datacentre IP the way Google does, and does not
-have Brave's captcha behaviour on bare. It has two quirks worth knowing.
+not punish you for coming from a datacentre IP the way Google does, and doesn't
+have Brave's captcha behavior on bare. It has two quirks worth knowing.
 
 The results page is heavily client-rendered, so it leans on the JavaScript
 rewriter. Under Scramjet that is usually fine.
@@ -39,7 +39,7 @@ captchaing you. I don't know why, and frankly I don't care. Pretty weird though.
 
 Template: `https://www.google.com/search?q=%s`.
 
-Works fine in development and usually does not in production, which makes it a
+Works fine in development and usually doesn't in production, which makes it a
 trap. On `localhost` you look like an ordinary browser on a residential
 connection and everything is fine. Once your proxy is on a server, requests
 arrive from a datacentre IP that has already served a lot of automated traffic,
@@ -47,7 +47,7 @@ and you start getting consent walls, interstitials, and eventually a CAPTCHA
 that no amount of rewriting will get you past.
 
 Nothing is wrong with your proxy when this happens. Google is deciding your
-server's IP is not a person. Know that before you spend an evening debugging the
+server's IP isn't a person. Know that before you spend an evening debugging the
 [rewriter](../concepts/how-proxies-work.md).
 
 ## Startpage and Bing
@@ -84,10 +84,10 @@ Four checks will tell you most of what you need:
 2. A phrase with quotes and punctuation, to check the query is encoded correctly
    rather than truncated at the first special character.
 3. Clicking through to a result, to check the outbound link is rewritten and
-   does not escape the proxy.
+   doesn't escape the proxy.
 4. If you are using proxy frame controls, make sure that navigating back and
    forwards also works without broken cache states
 
 If the third one leaves your proxy, the search engine is wrapping results in a
-redirector your rewriter is not handling. That is a proxy problem, not a search
+redirector your rewriter isn't handling. That is a proxy problem, not a search
 engine problem.

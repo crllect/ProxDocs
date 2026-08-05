@@ -3,8 +3,12 @@
 Upstream bugs in the packages this site documents, each with the symptom you
 would actually see, the code responsible, and what to do about it.
 
-Nothing here is a bug in your project. If a symptom on this page matches what
-you are looking at, stop debugging your own code.
+Nothing here is a bug in your project.
+
+_its not you._
+
+If a symptom on this page matches what you are looking at, stop debugging your
+own code.
 
 Every entry was verified against the **published** package, not `main`. Versions
 in each heading. When upstream ships a fix, the entry stays with a note rather
@@ -13,7 +17,7 @@ think.
 
 > **Found another one?** Open an issue with the symptom, the snippet, and the
 > version. The rule for this page is symptom first, then proof: an entry without
-> a line of code behind it is a rumour.
+> a line of code behind it is a rumor.
 
 ---
 
@@ -46,16 +50,16 @@ Three separate paths set `this.socket = null`: the socket's `close` handler, its
 `end` handler, and `close()`. Any queued WebSocket-to-TCP write that lands after
 the destination hung up dereferences null.
 
-**It is benign.** `ServerStream.setup()` wraps both pump tasks in `.catch()`, so
-the error is caught, that one stream closes, and the process and the Wisp
-connection are unaffected. The paired `tcp_to_ws` task still calls
-`close_stream(id, Voluntary)`, so the client is told and the stream table does
-not leak. The only cost is that bytes still queued for that stream are dropped,
-which does not matter because the peer was already gone.
+**It is fine.** Loud, but fine. `ServerStream.setup()` wraps both pump tasks in
+a `.catch()`, so the throw gets swallowed, that one stream dies, and nothing
+else in the process notices. The paired `tcp_to_ws` task still calls
+`close_stream(id, Voluntary)`, so the client gets told properly and the stream
+table doesn't leak. All you actually lose is whatever bytes were still queued
+for a socket that had already hung up on you, which isn't a loss.
 
-**Worry only if it repeats in a tight loop.** That is a client retry storm or a
-peer resetting every connection, and the log line is the symptom rather than the
-cause.
+The one version I would worry about is this line repeating in a tight loop. That
+is a client retrying into a wall, or a peer resetting every connection you open,
+and the error is the symptom rather than the thing wrong with you.
 
 **Fix**, if you are patching locally or sending a PR upstream:
 
@@ -136,7 +140,7 @@ export default function (client: ScramjetClient, self: Self) {
 there and will probably land in a later alpha. Until then, sites that need sync
 XHR break either way. See [config and flags](scramjet-config.md#flags).
 
-### The published type declarations do not resolve
+### The published type declarations don't resolve
 
 **Symptom.** A TypeScript project with `skipLibCheck: false` gets a wall of
 errors from inside `node_modules`, ending with the confusing claim that the
@@ -156,7 +160,7 @@ side resolves them.
 **Workaround: `skipLibCheck: true`**, which is the default in most setups and in
 every project this builder generates. The exported classes then type correctly.
 
-### `unrewriteUrl` does not round-trip `javascript:` URLs
+### `unrewriteUrl` doesn't round-trip `javascript:` URLs
 
 **Symptom.** You unrewrite a `javascript:` URL and get back exactly what you
 passed in, rewritten body and all.
@@ -212,10 +216,10 @@ public isReady: boolean = false;
 That is the only occurrence in the file. Nothing ever assigns it. Use
 `await controller.wait()`.
 
-### `createFrame()` cannot catch you calling it too early
+### `createFrame()` can't catch you calling it too early
 
 **Symptom.** A frame created before the controller is ready comes back normally,
-and then the first navigation lands on your own 404 because the worker is not
+and then the first navigation lands on your own 404 because the worker isn't
 routing that prefix yet.
 
 **The code**:
@@ -229,7 +233,7 @@ createFrame(element?: HTMLIFrameElement, options: FrameOptions = {}): Frame {
 
 `this.ready` is a `Promise` the constructor always assigns, so it is always
 truthy and the guard can never fire. The error message describes a check that
-does not happen. Await `wait()`; nothing will remind you.
+doesn't happen. Await `wait()`; nothing will remind you.
 
 ### The controller's own `allowFailedIntercepts` is reverted by the merge
 
@@ -250,10 +254,10 @@ this.scramjetConfig = deepMerge(scramjetConfig, scramjetDefaultConfig);
 
 `@fastify/deepmerge` lets the second argument win, so upstream's default `false`
 is applied _after_ the controller's `true`. Set it yourself if you want it. Full
-merge behaviour, including why `maskedfiles` survives, is in
+merge behavior, including why `maskedfiles` survives, is in
 [config and flags](scramjet-config.md#flags).
 
-### Most of the package's types cannot be imported
+### Most of the package's types can't be imported
 
 **Symptom.**
 `import type { TransferRequest } from "@mercuryworkshop/scramjet-controller"`
@@ -266,7 +270,7 @@ type Req = Frame["hooks"]["error"]["request"]["context"]["rawrequest"];
 ```
 
 **The cause.** `index.ts` imports from `./types` without re-exporting, so those
-names never reach `typesEntry.d.ts`, and the published package does not ship
+names never reach `typesEntry.d.ts`, and the published package doesn't ship
 `types.d.ts` at all while `dist/types/index.d.ts` still imports from it. The
 `exports` map declares only `"."`, so there is no deep import either.
 
@@ -326,7 +330,7 @@ Make your handler idempotent. The generated `record()` already is. See
 ### The default local-IP filter misses IPv6 literals
 
 **Symptom.** With `blockLocal` at its default `true`, a request to
-`http://127.0.0.1:9200` is refused and `http://[::1]:9200` is not.
+`http://127.0.0.1:9200` is refused and `http://[::1]:9200` isn't.
 
 **The code**, in `src/createServer.ts`:
 

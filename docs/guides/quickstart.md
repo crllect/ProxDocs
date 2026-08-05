@@ -7,7 +7,7 @@ A working Scramjet proxy, from nothing, in about two minutes.
 - **Node 22.13 or newer** to run this repository's builder. Check with
   `node -v`.
 - A host that can hold a WebSocket open. Your own machine qualifies; serverless
-  functions do not, though a static host may serve the client while Wisp runs
+  functions don't, though a static host may serve the client while Wisp runs
   elsewhere. See [Deployment](deployment.md).
 
 ## Generate a project
@@ -36,7 +36,10 @@ gives you its commands instead.
 
 ## What you got
 
-Eleven files. The interesting ones:
+Eleven files. You can read all of them in about ten minutes, and you should,
+because that is the entire point of the minimal preset.
+
+The interesting ones:
 
 ```text
 server.js               static files + the wisp endpoint
@@ -124,8 +127,8 @@ sequence line by line.
 
 What the three plugins do:
 
-- **`HttpCachePlugin`** caches subresources so a reload does not pull every
-  asset back through the tunnel.
+- **`HttpCachePlugin`** caches subresources so a reload doesn't pull every asset
+  back through the tunnel.
 - **`UrlWatcherPlugin`** is the only reliable way to learn where the page went.
   Scramjet 2.x has no `urlchange` event. It fires for real navigations, hash
   changes, and `history.pushState`.
@@ -167,7 +170,7 @@ node builder/cli.js --out ./my-proxy \
 
 ---
 
-## If it does not work
+## If it doesn't work
 
 Run this in the browser console first:
 
@@ -184,7 +187,7 @@ Then check whether the service worker took control:
 navigator.serviceWorker.controller?.scriptURL;
 ```
 
-`undefined` means it has not claimed the page yet, reload once. If it stays
+`undefined` means it hasn't claimed the page yet, reload once. If it stays
 undefined, look for registration errors in the console.
 
 Full list: [Troubleshooting](../reference/troubleshooting.md). Unfamiliar

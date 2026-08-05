@@ -5,7 +5,7 @@ worst-answered. The honest answer is that sites fail for about six distinct
 reasons, they need completely different responses, and telling them apart takes
 about a minute once you know what to look for.
 
-This page is that minute. It does not promise any specific site works, because
+This page is that minute. It doesn't promise any specific site works, because
 that changes weekly and no honest page can promise it.
 
 ---
@@ -29,7 +29,7 @@ Does any site work?
 
 Open the **frame's** console, not the top page's. In Chrome devtools that is the
 context dropdown at the top of the console panel; pick the proxied
-[frame](../guides/multiple-tabs.md). Errors inside a proxied page do not appear
+[frame](../guides/multiple-tabs.md). Errors inside a proxied page don't appear
 in the parent console, and people spend hours looking at the wrong one.
 
 ---
@@ -42,24 +42,24 @@ Netflix, Spotify, Disney+, and most paid video are
 [Widevine](https://developer.mozilla.org/en-US/docs/Web/API/Encrypted_Media_Extensions_API)
 or an equivalent. The browser negotiates a license with the site's server, and
 the negotiation is bound to the real origin and a device identity the browser
-will not hand out to a page it does not trust.
+won't hand out to a page it doesn't trust.
 
 A proxy changes the origin. That is the entire point of a proxy, and it is
 exactly what DRM checks. There is no flag, no plugin, and no rewriter
 improvement that fixes this. Anyone claiming their proxy plays Netflix is
 running it somewhere other than in the proxy.
 
-**YouTube is not this.** Regular YouTube video is not DRM-protected and does
-work through a proxy, subject to everything below.
+**YouTube is not this.** Regular YouTube video isn't DRM-protected and does work
+through a proxy, subject to everything below.
 
 ### Bot detection
 
 Cloudflare Turnstile, reCAPTCHA, and the commercial fingerprinting services all
-work by measuring things a proxied page cannot present honestly: the actual
-origin, the TLS fingerprint of the connection, timing that is not distorted by a
-tunnel, and a browser environment that has not been rewritten.
+work by measuring things a proxied page can't present honestly: the actual
+origin, the TLS fingerprint of the connection, timing that isn't distorted by a
+tunnel, and a browser environment that hasn't been rewritten.
 
-Scramjet rewrites the JavaScript environment thoroughly, but "thoroughly" is not
+Scramjet rewrites the JavaScript environment thoroughly, but "thoroughly" isn't
 "undetectably." A determined fingerprinter will notice.
 
 You can sometimes improve your odds:
@@ -69,7 +69,7 @@ You can sometimes improve your odds:
 - Use libcurl rather than epoxy, since its TLS handshake is curl's and more
   ordinary than a hand-rolled Rust stack's.
 
-You cannot win this in general, and you should not build a product on top of
+You can't win this in general, and you shouldn't build a product on top of
 assuming you have. The companies doing the detecting have more staff on it than
 this entire ecosystem has contributors.
 
@@ -95,9 +95,9 @@ feature-policy                       x-permitted-cross-domain-policies
 x-powered-by
 ```
 
-Know what that means. CSP is one of the page's defences against script
+Know what that means. CSP is one of the page's defenses against script
 injection, and it is gone for every site you proxy. That is defensible, since
-you are already running foreign code on your own origin, but it is not your
+you are already running foreign code on your own origin, but it isn't your
 decision to make and there is no opt-out.
 
 The in-document routes are covered too: a
@@ -115,7 +115,7 @@ break if their workers escape the proxy. An unproxied worker fetches directly,
 gets a CORS failure, and takes a feature down with it.
 
 `encapsulateWorkers` handles this and is **on by default**. If workers are
-broken, check you have not turned it off. See [flags](scramjet-config.md#flags).
+broken, check you haven't turned it off. See [flags](scramjet-config.md#flags).
 
 Nested workers and some `SharedWorker` usage are still rough. That is an
 upstream limitation, not something to fix in your app.
@@ -136,9 +136,9 @@ Run that in the console on the deployed site. `false` is your answer. See
 
 ### Sites that need a flag
 
-A small set of sites break because of a specific rewriter behaviour rather than
+A small set of sites break because of a specific rewriter behavior rather than
 any of the above. The symptom is a page that loads but is subtly wrong: a script
-threw, a widget did not initialise.
+threw, a widget didn't initialize.
 
 Use the frame's console to find the actual error, then reach for
 [`siteFlags`](scramjet-config.md#siteflags) so the change applies to that site
@@ -163,7 +163,7 @@ Scramjet's maintainers want real bug reports, and a good one is rare enough to
 be welcome. A good one has ruled out everything on this page:
 
 - `crossOriginIsolated` is `true`
-- Some other site works, so the setup is not the problem
+- Some other site works, so the setup isn't the problem
 - The error is from the **frame's** console, quoted exactly
 - Engine and version from `package.json`, not "latest"
 - Which transport, and whether the other one behaves differently
@@ -172,17 +172,17 @@ be welcome. A good one has ruled out everything on this page:
   isolates your app from the engine
 
 Do the last one first. If it reproduces in the demo, it is an engine bug and
-they will want it. If it does not, it is yours, and you have narrowed the search
+they will want it. If it doesn't, it is yours, and you have narrowed the search
 to your own code.
 
 ---
 
 ## Setting expectations in your UI
 
-If other people use your proxy, say what does not work. A one-line notice
+If other people use your proxy, say what doesn't work. A one-line notice
 prevents most support questions:
 
-> Video from paid streaming services will not play. Sites with bot detection may
+> Video from paid streaming services won't play. Sites with bot detection may
 > block access. Everything else usually works.
 
 Users who know the limits report the interesting failures. Users who were
@@ -198,4 +198,4 @@ promised everything report all of them, and stop trusting anything you say.
   site.
 - [Config and flags](scramjet-config.md). The per-site escape hatch.
 - [Plugins and hooks](plugins-and-hooks.md). Where response rewriting that
-  Scramjet does not already do for you belongs.
+  Scramjet doesn't already do for you belongs.

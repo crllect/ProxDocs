@@ -44,8 +44,8 @@ The package now ships a deprecation notice pointing at
 `@mercuryworkshop/proxy-transports`.
 
 **What to do:** on Scramjet 2.x, nothing. It already uses proxy-transports, and
-you should not add bare-mux. On Ultraviolet 3.x, keep using bare-mux; UV has no
-other option and is not going to get one.
+you shouldn't add bare-mux. On Ultraviolet 3.x, keep using bare-mux; UV has no
+other option and isn't going to get one.
 
 See [bare-mux and proxy-transports](../concepts/bare-mux.md).
 
@@ -65,14 +65,14 @@ under a new name**, restarting at 1.0.0:
 | `@mercuryworkshop/bare-transport`  | `proxy-transports` | Scramjet 2.x |
 
 Both are still on npm and neither is deprecated, so nothing warns you.
-Installing the familiar name on Scramjet gets you a transport it cannot use.
+Installing the familiar name on Scramjet gets you a transport it can't use.
 
 The version numbers make it worse: the replacement is `1.0.0` and the old one is
 `2.2.5`, so the dead package looks newer.
 
 **What this changes:** Scramjet no longer requires a WebSocket. Over Bare it
 runs on request/response serverless hosts, which used to be the one thing only
-Ultraviolet could do. `proxy-bootstrap` cannot wire it yet, so use
+Ultraviolet could do. `proxy-bootstrap` can't wire it yet, so use
 [manual wiring](../guides/wiring.md).
 
 ---
@@ -205,7 +205,7 @@ const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
 await connection.setTransport("/libcurl/index.mjs", [{ wisp: wispUrl }]);
 ```
 
-`__uv$config.bare` did not survive that change. **Nothing in UV 3.x reads it**,
+`__uv$config.bare` didn't survive that change. **Nothing in UV 3.x reads it**,
 not even on a [bare](../concepts/wisp-vs-bare.md) deployment. The Bare URL is an
 argument to `setTransport()` now. Leaving it set is harmless and does nothing.
 Nearly every config in the wild still has it.
@@ -233,7 +233,7 @@ has been superseded by Scramjet."
 The repository is **not** archived, despite how often that gets repeated. It is
 open, it still accepts issues, and commits have landed since. What stopped is
 releases, and that gap matters, because `main` now carries fixes that npm 3.2.10
-does not:
+doesn't:
 
 | Landed     | Change                                        |
 | ---------- | --------------------------------------------- |
@@ -246,13 +246,13 @@ So if you are on UV and hitting one of those, installing from the git `main`
 branch rather than npm is a real option. Do not expect a review on your PR
 quickly.
 
-It still works, and it remains the option for an all-in-one backend that cannot
+It still works, and it remains the option for an all-in-one backend that can't
 hold Wisp's WebSocket open. A separately hosted Wisp relay removes that hosting
 constraint. See [Scramjet vs Ultraviolet](../concepts/engines.md).
 
 ---
 
-## Things that are not breaking changes but look like it
+## Things that aren't breaking changes but look like it
 
 **`frame.go()` returns nothing.** In Scramjet 2.x it is synchronous, it rewrites
 the URL and assigns `iframe.src`. Some examples `await` it; that is harmless but
@@ -263,6 +263,6 @@ some production proxy codebases. They are **not upstream API**, they are local
 patches to a forked Scramjet. Do not expect them on the published packages.
 
 **`navigator.serviceWorker.ready` resolving early.** It resolves when a worker
-becomes active, which is not the same as it controlling the current document. On
+becomes active, which isn't the same as it controlling the current document. On
 a first load the page is uncontrolled and every proxied request misses the
 worker. Wait for `controllerchange` as well.

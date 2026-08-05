@@ -1,6 +1,6 @@
 # Official documentation and licensing
 
-This site is not the authority on any of these projects. When it disagrees with
+This site isn't the authority on any of these projects. When it disagrees with
 upstream, upstream is right.
 
 ## Licensing, first
@@ -11,14 +11,14 @@ libcurl-transport packages are AGPL, while Ultraviolet and proxy-transports are
 MIT. Check every installed package's current license before distributing a
 project.
 
-The AGPL is not the MIT licence. The part that catches people:
+The AGPL isn't the MIT license. The part that catches people:
 
 > If you run a modified version on a server and let other users interact with it
 > over a network, you must offer those users the source of your version.
 
 The AGPL includes source-offer requirements for modified software used over a
 network. Generated projects include `LICENSE`; keep it and review the license
-text for your distribution and deployment. This page is not legal advice.
+text for your distribution and deployment. This page isn't legal advice.
 
 None of this is a problem if you publish your repository, which is what most
 people in this space do anyway. It is a problem if you were planning not to.
@@ -37,7 +37,7 @@ main branch has moved to the controller and proxy-transports architecture that
 this site documents. Both are real; check which one a page means. See
 [breaking changes](breaking-changes.md).
 
-The most useful things in that repository are not the README:
+The most useful things in that repository aren't the README:
 
 - `packages/create-proxy-app/templates/default` is the canonical minimal app. If
   this site and that template disagree about an API call, the template wins.
@@ -56,7 +56,7 @@ The most useful things in that repository are not the README:
 | npm        | `@titaniumnetwork-dev/ultraviolet`                                          |
 
 Last released October 2024 at 3.2.10, and the README now points at Scramjet. The
-repository is not archived and `main` is ahead of the last npm release, so check
+repository isn't archived and `main` is ahead of the last npm release, so check
 it before assuming a bug is permanent but for all intents and purposes UV is
 archived. The changelog is still the best short account of how the transport
 layer evolved.
@@ -89,10 +89,10 @@ list there usually contains the answer anyway.
 Every page footer names the exact package versions it was checked against, and
 the date. That comes from
 [`builder/versions.js`](https://github.com/crllect/ProxDocs/blob/main/builder/versions.js),
-so it cannot drift page by page: bump the pins, and every page restamps.
+so it can't drift page by page: bump the pins, and every page restamps.
 
-The checking is not editorial. Upstream sources are cloned locally and claims
-are traced to a file and a line before they get written down. `bun run check`
+The checking isn't editorial. Upstream sources are cloned locally and claims are
+traced to a file and a line before they get written down. `bun run check`
 enforces what can be automated: links and heading anchors resolve, version pins
 in prose match `builder/versions.js`, and all 58 generator combinations still
 compile and type-check.
@@ -110,6 +110,6 @@ say which one they mean.
 
 ## Contributing back
 
-These projects exist because people published their work under a licence that
+These projects exist because people published their work under a license that
 keeps it published. If you fix something, send it upstream. If you build
 something on top, publish it.

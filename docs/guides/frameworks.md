@@ -249,9 +249,9 @@ server as shown above.
 
 ## Next.js
 
-Next's App Router does not give you the HTTP server, so there is nowhere to
+Next's App Router doesn't give you the HTTP server, so there is nowhere to
 attach an upgrade listener. You need a custom server, which disables some of
-Next's deployment optimisations.
+Next's deployment optimizations.
 
 ```js
 import next from "next";
@@ -281,8 +281,8 @@ server.listen(3000);
 ```
 
 Serve the engine bundles by copying them into `public/` in a `postinstall`
-script. `next/static` will not serve arbitrary `node_modules` directories. Do
-not close unmatched upgrades in development; Next uses them for hot reload.
+script. `next/static` won't serve arbitrary `node_modules` directories. Do not
+close unmatched upgrades in development; Next uses them for hot reload.
 
 Also set the headers in `next.config.js` so they apply to Next's own routes:
 
@@ -308,7 +308,7 @@ export default {
 **This custom server cannot run in a serverless function**, since the persistent
 Wisp upgrade handler is the point. A static host can still serve the client when
 Wisp is hosted separately. If you are using Next because you like React,
-consider Vite instead; the proxy shell is not a content site and gains little
+consider Vite instead; the proxy shell isn't a content site and gains little
 from Next.
 
 ---
@@ -367,7 +367,7 @@ In development, use a Vite plugin as above. SvelteKit's dev server is Vite.
 
 Bun is worth using as a **runtime**. Installs and startup are noticeably faster,
 and it runs your TypeScript server directly with no `tsx` and no build step. But
-its `node:http` compatibility layer is not uniform across these frameworks, and
+its `node:http` compatibility layer isn't uniform across these frameworks, and
 the failures are quiet rather than loud.
 
 Tested directly, with a real wisp tunnel and a real proxied page:
@@ -380,7 +380,7 @@ Tested directly, with a real wisp tunnel and a real proxied page:
 
 Fastify's failure is `@fastify/static`'s file streaming not surviving Bun's
 `node:http` shim: the status and `Content-Type` are right and the body is zero
-bytes, which looks like a routing bug and is not one. Hono's is
+bytes, which looks like a routing bug and isn't one. Hono's is
 `@hono/node-server` never taking ownership of the server, so Bun's own default
 handler answers instead.
 
@@ -400,7 +400,7 @@ wisp.routeRequest(req, socket, head);
 handlers. A completely different shape, with no raw socket and no adapter in
 `@mercuryworkshop/wisp-js`. You would have to reimplement the wisp server to use
 it. If you only need static files and no tunnel, `Bun.serve` is lovely; for a
-proxy it cannot carry the part that matters.
+proxy it can't carry the part that matters.
 
 ### Running the generated project on Bun
 

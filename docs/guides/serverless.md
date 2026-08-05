@@ -1,28 +1,37 @@
 # Serverless deployment
 
-Serverless function platforms cannot hold a WebSocket open. That rules out
+Serverless function platforms can't hold a WebSocket open. That rules out
 [Wisp](../concepts/wisp-vs-bare.md), which is one long-lived socket carrying
 every stream. The way around it is the [Bare](../concepts/wisp-vs-bare.md)
 transport: ordinary HTTP, one request in and one response out, which is exactly
 the shape a function has.
 
+its fine... _if ur broke_
+
+###### Brokie
+
 This works, and for a lot of projects it is the right call. If you have no
 server, no budget, and a handful of users, serverless is the only way to put a
 whole proxy somewhere for free, and the costs below never come due at that size.
 
-What it is not is a path that scales. Read the tradeoffs before you commit, so
+What it isn't is a path that scales. Read the tradeoffs before you commit, so
 that if the project grows the move is planned rather than forced. My first ever
 proxy landed me a $600 monthly bill on a serverless host. Do not make that
 mistake.
 
 Fair warning that this is a shrinking corner of the ecosystem. Most proxies run
-on a cheap VPS now, because it is cheaper, faster, and does not lose WebSocket
+on a cheap VPS now, because it is cheaper, faster, and doesn't lose WebSocket
 sites. If you have the option, skip to
 [the alternative](#the-alternative-worth-considering).
 
 ```bash
 node builder/cli.js --out ./my-proxy --preset serverless
 ```
+
+> [!IMPORTANT] If you are doing serverless, look at your analytics. I got a 600
+> dollar monthly bill from vercel because I was running serverless, and I got a
+> few too many users. If you cant afford a VPS, you sure as hell cant afford a
+> 600 dollar bill from vercel.
 
 ---
 
@@ -39,10 +48,10 @@ bare-transport    (plain HTTP, no WebSocket)
 `@mercuryworkshop/bare-transport` is the Bare transport for `proxy-transports`,
 which is the interface Scramjet 2.x uses. **It is not `bare-as-module3`**,
 despite that being the name most search results give you. That one is the older
-bare-mux version and Scramjet cannot use it. See
+bare-mux version and Scramjet can't use it. See
 [the two Bare packages](../concepts/transports.md#bare).
 
-`proxy-bootstrap` cannot wire Bare; it ships a stub that throws
+`proxy-bootstrap` can't wire Bare; it ships a stub that throws
 `"Bare transport not implemented yet"`. Serverless builds use
 [manual wiring](wiring.md), which is what you want anyway.
 
@@ -137,10 +146,10 @@ concurrent subresource fetches, so one user loading one media-heavy site trips
 it alone. The symptom is a page that loads halfway and then stalls for
 `blockDuration` seconds, which reads as "Bare is slow" rather than as a limit
 you set. The generated projects raise it to 2000 with a 10 second block: high
-enough not to fire in normal use, short enough that a burst does not lock
-someone out for a minute. It is a runaway guard, not your abuse control. Per-IP
-also means per **apparent** IP, and a school or office behind one NAT arrives as
-a single client.
+enough not to fire in normal use, short enough that a burst doesn't lock someone
+out for a minute. It is a runaway guard, not your abuse control. Per-IP also
+means per **apparent** IP, and a school or office behind one NAT arrives as a
+single client.
 
 **`blockLocal` defaults to `true`, and it is two separate defaults you can knock
 out one at a time.** With it on, the server installs its own `filterRemote`,
@@ -212,7 +221,7 @@ The `export default handleRequest` is what the platform invokes. The
 ```
 
 Everything routes to the one exported function. `includeFiles` matters more than
-it looks: the bundler traces imports to decide what to ship, and it cannot see
+it looks: the bundler traces imports to decide what to ship, and it can't see
 that `express.static(dirOf(...))` needs those directories at runtime. Leave a
 package out and you get 404s on the engine files with a server that started
 fine. Other platforms have an equivalent setting under a different name.
@@ -246,12 +255,12 @@ of the transport abstraction. See [Transports](../concepts/transports.md).
 
 ## What you are giving up
 
-### WebSocket sites will not work
+### WebSocket sites won't work
 
 Not "will be slow". Will not work. Discord, most chat apps, live dashboards,
 collaborative editors, anything with real-time updates. The Bare spec does
 define WebSocket tunnelling, and `bare-transport` implements it, but it needs a
-connection the function cannot hold open.
+connection the function can't hold open.
 
 This rules out a large fraction of what people want a proxy for.
 
@@ -261,7 +270,7 @@ The Bare server terminates TLS with the target site. It can read every URL,
 cookie, form post, and response that passes through the function.
 
 With Wisp, HTTPS target TLS terminates in the browser and the relay sees
-ciphertext plus connection metadata. Plain HTTP destinations are not encrypted
+ciphertext plus connection metadata. Plain HTTP destinations aren't encrypted
 end to end either way.
 
 If you deploy this, tell your users. It is a legitimate engineering tradeoff and
@@ -273,7 +282,7 @@ Every byte of every proxied page crosses the function twice, in from the target
 and out to the user, and serverless egress is billed at a premium rate per GB. A
 proxy is nothing but egress.
 
-At low traffic this genuinely does not matter, which is why plenty of small
+At low traffic this genuinely doesn't matter, which is why plenty of small
 proxies run this way without trouble. It matters once traffic grows, and it
 grows faster than people expect: one person watching an hour of video can move
 several GB.

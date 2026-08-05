@@ -8,7 +8,7 @@ UI, exists to feed the engine or to display what it produces.
 
 This site documents **Scramjet**, and the builder generates Scramjet projects
 only. This page explains why, and what the other names you will run into
-actually were, so that reading someone else's proxy does not leave you guessing.
+actually were, so that reading someone else's proxy doesn't leave you guessing.
 
 ---
 
@@ -17,7 +17,7 @@ actually were, so that reading someone else's proxy does not leave you guessing.
 Rewriting HTML is easy. `<a href="/foo">` becomes
 `<a href="/prefix/https%3A%2F%2Fcrllect.dev%2Ffoo">`, and you are done.
 
-JavaScript is not like that. Consider:
+JavaScript isn't like that. Consider:
 
 ```js
 location.href = "/dashboard";
@@ -35,10 +35,12 @@ _expressions_ that produce URLs at runtime. To handle them an engine must:
    `document.cookie`, `Worker`, `XMLHttpRequest`, `WebSocket`, `import()`.
 3. Rewrite them to go through the proxy's shims.
 4. Emit valid JavaScript, preserving semantics exactly.
-5. Do all of that fast enough that pages do not visibly stall.
+5. Do all of that fast enough that pages don't visibly stall.
 
 Step 5 is where engines have historically diverged. **Every large site ships
 megabytes of JavaScript**, and all of it goes through this on every load.
+
+TL;DR: it is a JavaScript compiler, and it has to be fast.
 
 ---
 
@@ -46,7 +48,7 @@ megabytes of JavaScript**, and all of it goes through this on every load.
 
 The current generation, from Mercury Workshop. Its rewriter is written in **Rust
 and compiled to WebAssembly**, which is what lets it do the work above at a
-speed a JavaScript rewriter cannot match on large bundles.
+speed a JavaScript rewriter can't match on large bundles.
 
 What you get beyond the rewriter:
 
@@ -58,13 +60,13 @@ What you get beyond the rewriter:
   without hacking around the engine. The fetch hooks can also answer a request
   locally instead of sending it, which lets a plugin serve an entire origin that
   has no server behind it. See
-  [fake origins](../guides/custom-protocols.md#fake-origins-and-why-internal-pages-do-not-use-them).
+  [fake origins](../guides/custom-protocols.md#fake-origins-and-why-internal-pages-dont-use-them).
 - **Cookie handling** synchronised across frames and persisted in IndexedDB.
 - **Escaped-link interception**, so `window.open` and `target="_blank"` stay
   inside your proxy.
 
 It runs over [Wisp](wisp-vs-bare.md) by default, and over
-[Bare](wisp-vs-bare.md) when your host cannot hold a WebSocket open. See
+[Bare](wisp-vs-bare.md) when your host can't hold a WebSocket open. See
 [Serverless deployment](../guides/serverless.md).
 
 The costs, stated plainly: the rewriter wasm is **203 KB gzipped** on top of an
@@ -78,8 +80,7 @@ versions. See [the version matrix](../reference/versions.md).
 
 You will run into these in other people's code, in old guides, and in Discord
 answers. None of them are documented here as a path to build on, and the builder
-will not generate them. This is only so you can recognise what you are looking
-at.
+won't generate them. This is only so you can recognize what you are looking at.
 
 ### Ultraviolet
 
@@ -89,7 +90,7 @@ JavaScript rewriter using `meriyah` to parse and `astring` to generate.
 **It is dead.** Last release 3.2.10 in October 2024, README pointing at Scramjet
 as its successor, and an ecosystem that has largely moved on and would like the
 copy-pasted UV forks to stop appearing. Its one remaining virtue is being about
-**126 KB gzipped** against Scramjet's 291 KB, which is not a good enough reason
+**126 KB gzipped** against Scramjet's 291 KB, which isn't a good enough reason
 to build on an engine nobody is fixing.
 
 You are here because you know UV and want to know what the Scramjet equivalent
@@ -118,16 +119,16 @@ Version-specific gotchas, if you are reading old UV code, are in
 
 A different design entirely: server-side and session-based rather than
 service-worker-based. It rewrites on the server and keeps per-session state
-there. Occasionally works on sites where interception proxies do not, and fails
+there. Occasionally works on sites where interception proxies don't, and fails
 on things they handle easily. Worth knowing it exists; not comparable
 feature-for-feature.
 
 ### Chemical
 
 Not an engine. A meta-framework that wraps Ultraviolet, Scramjet and Rammerhead
-behind one API. It is the fastest way to get something running if you do not
-care what is underneath, which is precisely the opposite of what this site is
-for. If you want to understand your own proxy, do not start here.
+behind one API. It is the fastest way to get something running if you don't care
+what is underneath, which is precisely the opposite of what this site is for. If
+you want to understand your own proxy, don't start here.
 
 ---
 
