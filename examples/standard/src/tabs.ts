@@ -17,6 +17,7 @@ export class Tab {
 
 	#manager: TabManager;
 	#sessionPending: Promise<ProxySession> | null = null;
+	#destroyed = false;
 
 	constructor(manager: TabManager, options: { url?: string } = {}) {
 		this.id = `tab-${++seq}`;
@@ -70,20 +71,31 @@ export class Tab {
 			}
 		});
 
+		const pending = this.#sessionPending;
 		try {
-			this.session = await this.#sessionPending;
+			const session = await pending;
+			if (this.#destroyed) {
+				session.destroy();
+				return session;
+			}
+			this.session = session;
 		} finally {
-			this.#sessionPending = null;
+			if (this.#sessionPending === pending) this.#sessionPending = null;
 		}
 
 		return this.session;
 	}
 
 	async go(url: string): Promise<void> {
+		if (this.#destroyed) return;
 		this.element.removeAttribute("srcdoc");
-		await this.ensureSession();
+		const session = await this.ensureSession();
+		if (this.#destroyed) {
+			session.destroy();
+			return;
+		}
 		this.record(url);
-		this.session!.go(url);
+		session.go(url);
 		this.#manager.emit();
 	}
 
@@ -134,7 +146,14 @@ export class Tab {
 	}
 
 	destroy(): void {
+		if (this.#destroyed) return;
+		this.#destroyed = true;
 		this.session?.destroy();
+		this.session = null;
+		void this.#sessionPending?.then(
+			session => session.destroy(),
+			() => {}
+		);
 		this.element.remove();
 	}
 }

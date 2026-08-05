@@ -173,9 +173,15 @@ class ScramjetSession {
     #frame;
     #handlers;
     #destroyed = false;
+    #onLoad;
     constructor(frame, handlers) {
         this.#frame = frame;
         this.#handlers = handlers;
+        this.#onLoad = () => {
+            if (!this.#destroyed)
+                this.#handlers.ready?.();
+        };
+        this.#frame.element.addEventListener("load", this.#onLoad);
     }
     get element() {
         return this.#frame.element;
@@ -199,7 +205,10 @@ class ScramjetSession {
             this.#frame.reload();
     }
     destroy() {
+        if (this.#destroyed)
+            return;
         this.#destroyed = true;
+        this.#frame.element.removeEventListener("load", this.#onLoad);
         const index = controller?.frames.indexOf(this.#frame) ?? -1;
         if (index !== -1)
             controller.frames.splice(index, 1);
@@ -225,7 +234,6 @@ export const engine = {
                 new u.UrlWatcherPlugin((url) => {
                     session.url = url;
                     handlers.url?.(url);
-                    handlers.ready?.();
                 }),
                 new u.CatchEscapedLinksPlugin((url) => {
                     handlers.escape?.(url.href);

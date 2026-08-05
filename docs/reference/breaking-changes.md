@@ -22,17 +22,17 @@ Both are real. 1.x is the npm `latest` and what most community code uses; 2.x is
 where development happens. Neither is wrong. Just check which one a given guide
 means.
 
-| 1.x                                                        | 2.x                                                       |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| `const { ScramjetController } = $scramjetLoadController()` | `const { Controller } = window.$scramjetController`       |
-| `new ScramjetController({ prefix, flags, codec })`         | `new Controller({ serviceworker, transport })`            |
-| `await scramjet.init()`                                    | `await controller.wait()`                                 |
-| `scramjet.createFrame()`, creates the iframe               | `controller.createFrame(element, { plugins })`, takes one |
-| `frame.frame` is the element                               | `frame.element` is the element                            |
-| `frame.addEventListener("urlchange", cb)`                  | `new UrlWatcherPlugin(cb)` in `plugins`                   |
-| `frame.url`                                                | Track it from the `UrlWatcherPlugin` callback             |
-| `scramjet.encodeUrl(url)`                                  | `frame.go(url)` does it                                   |
-| Transports via bare-mux                                    | Transport object passed to `Controller`                   |
+| 1.x                                                        | 2.x                                                                                |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `const { ScramjetController } = $scramjetLoadController()` | `const { Controller } = window.$scramjetController`                                |
+| `new ScramjetController({ prefix, flags, codec })`         | `new Controller({ serviceworker, transport })`                                     |
+| `await scramjet.init()`                                    | `await controller.wait()`                                                          |
+| `scramjet.createFrame()`, creates the iframe               | `controller.createFrame(element?, { plugins })`, takes one or makes a detached one |
+| `frame.frame` is the element                               | `frame.element` is the element                                                     |
+| `frame.addEventListener("urlchange", cb)`                  | `new UrlWatcherPlugin(cb)` in `plugins`                                            |
+| `frame.url`                                                | Track it from the `UrlWatcherPlugin` callback                                      |
+| `scramjet.encodeUrl(url)`                                  | `frame.go(url)` does it                                                            |
+| Transports via bare-mux                                    | Transport object passed to `Controller`                                            |
 
 ---
 

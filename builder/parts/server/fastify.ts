@@ -16,6 +16,7 @@ import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 //#endif
 //#if transportBare
 import { createBareServer } from "@tomphttp/bare-server-node";
+import ipaddr from "ipaddr.js";
 //#endif
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,15 @@ const { routeRequest, routeUpgrade } = await bootstrap({
 //#endif
 //#if transportBare
 const bareServer = createBareServer("/bare/", {
+	filterRemote(url) {
+		const hostname = url.hostname.replace(/^\[|\]$/g, "");
+		if (
+			ipaddr.isValid(hostname) &&
+			ipaddr.parse(hostname).range() !== "unicast"
+		) {
+			throw new RangeError("Forbidden IP");
+		}
+	},
 	connectionLimiter: {
 		maxConnectionsPerIP: 2000,
 		windowDuration: 60,
@@ -65,10 +75,10 @@ const app = Fastify({
 			}
 			//#endif
 			//#if transportWisp
-			if (
-				new URL(req.url ?? "/", `http://${req.headers.host}`)
-					.pathname === "/wisp/"
-			) {
+			const wispPath = new URL(req.url ?? "/", "http://localhost")
+				.pathname;
+			if (wispPath === "/wisp/") {
+				req.url = wispPath;
 				wisp.routeRequest(req, socket, head);
 				return;
 			}

@@ -5,6 +5,7 @@ import express from "express";
 import { createRequire } from "node:module";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { createBareServer } from "@tomphttp/bare-server-node";
+import ipaddr from "ipaddr.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticRoot = path.join(__dirname, "public");
 const app = express();
@@ -27,6 +28,13 @@ app.use(express.static(staticRoot, {
     }
 }));
 const bareServer = createBareServer("/bare/", {
+    filterRemote(url) {
+        const hostname = url.hostname.replace(/^\[|\]$/g, "");
+        if (ipaddr.isValid(hostname) &&
+            ipaddr.parse(hostname).range() !== "unicast") {
+            throw new RangeError("Forbidden IP");
+        }
+    },
     connectionLimiter: {
         maxConnectionsPerIP: 2000,
         windowDuration: 60,

@@ -14,11 +14,11 @@ covered at the bottom.
 ## Manual wiring
 
 Install the packages. The versions are pinned because Scramjet 2.x is still on a
-prerelease tag, so a bare `npm install @mercuryworkshop/scramjet` would pull a
-1.x build instead. See the [version matrix](../reference/versions.md):
+prerelease tag, so a bare `bun add @mercuryworkshop/scramjet` would pull a 1.x
+build instead. See the [version matrix](../reference/versions.md):
 
 ```bash
-npm install express \
+bun add express \
     @mercuryworkshop/scramjet@2.0.67-alpha.2 \
     @mercuryworkshop/scramjet-controller@0.0.14 \
     @mercuryworkshop/scramjet-utils@0.0.3 \
@@ -67,10 +67,9 @@ app.use(express.static("public"));
 
 const server = http.createServer(app);
 server.on("upgrade", (req, socket, head) => {
-	if (
-		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
-		"/wisp/"
-	) {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 		return;
 	}
@@ -84,6 +83,12 @@ Run it with `node server.mjs`.
 
 `require.resolve()` finds the browser package directory without importing the
 browser-only transport module into Node.
+
+Three lines in the upgrade handler are load-bearing, and all three are explained
+in [Wisp vs Bare](../concepts/wisp-vs-bare.md#running-a-wisp-server): parse
+against a constant base rather than the client-controlled `Host` header,
+reassign `req.url` to the bare pathname before routing, and end every upgrade
+you do not recognise.
 
 ### Service worker
 
@@ -199,10 +204,14 @@ deleted once the upstream handshake is fixed. See
 [the bug and how to recognise it](../reference/troubleshooting.md#cannot-get-sj-after-the-tab-has-been-sitting-idle).
 
 Do not skip `await controller.wait()`. It waits for the service worker to
-complete its handshake and for the wasm to be fetched, and `createFrame()`
-throws outright if you call it too early. It does **not** wait for the cookie
-jar. That loads lazily on the first proxied request, which the controller holds
-until it is ready. See [Cookies and sessions](cookies-and-sessions.md).
+complete its handshake and for the wasm to be fetched, and **nothing stops you
+calling `createFrame()` before either has happened**. The readiness guard inside
+it tests a promise the constructor always assigns, so it never fires; you get a
+frame back, the worker may not be routing its prefix yet, and the first
+navigation lands on your own 404. It does **not** wait for the cookie jar. That
+loads lazily on the first proxied request, which the controller holds until it
+is ready. See [Cookies and sessions](cookies-and-sessions.md) and the
+[Controller API](../reference/controller-api.md#createframeelement-options).
 
 **Do not drop the `setInterval`.** Browsers terminate an idle service worker
 after about thirty seconds, and Scramjet's worker keeps its routing table in
@@ -241,7 +250,7 @@ start here even though manual wiring is the better place to end up.
 Install the server and bootstrap package:
 
 ```bash
-npm install express @mercuryworkshop/proxy-bootstrap@0.0.5
+bun add express @mercuryworkshop/proxy-bootstrap@0.0.5
 ```
 
 Create `server.mjs` so Node treats the file as an ES module:
@@ -296,7 +305,7 @@ const controller = await initBootstrap();
 `bootstrap()` resolves and caches its runtime package set, serves the browser
 assets and service worker, and handles Wisp upgrades. Those runtime packages do
 not appear in your application's lockfile. A fresh deployment or replacement
-container may need npm access while the cache is rebuilt.
+container may need registry access while the cache is rebuilt.
 
 `proxy-bootstrap@0.0.5` should be used with libcurl; its epoxy client route is
 broken. Use manual wiring to serve epoxy or to switch transports.
@@ -318,4 +327,4 @@ that same design.
 
 Bootstrap is a fine way to see a proxy working in two minutes, and that is what
 a throwaway experiment might use it for. For anything you intend to keep
-running, take the `npm install` and the five `express.static` lines.
+running, take the install line and the five `express.static` lines.

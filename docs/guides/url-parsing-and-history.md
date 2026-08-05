@@ -307,9 +307,16 @@ this.session = await engine.createSession(this.element, {
 ```
 
 With Scramjet that event comes from `UrlWatcherPlugin`, which fires on real
-navigations, hash changes, and `history.pushState`. With Ultraviolet there is no
-event and you poll `contentWindow.location`, see the generated `engine.js` for
-the UV version.
+navigations, hash changes, and `history.pushState`. It taps `init.post` for each
+top-level document, then `client.hooks.lifecycle.navigate` and a `hashchange`
+listener inside it, so a hash change can notify you twice: upstream marks that
+with a TODO in `utils/src/url-watcher.ts`. Make your handler idempotent, which
+the `record()` above already is, rather than assuming one event per navigation.
+
+Ultraviolet has no such event and leaves you polling `contentWindow.location`.
+The builder no longer generates Ultraviolet projects, so if you are maintaining
+one, that polling loop is yours to keep. See
+[proxy engines](../concepts/engines.md#ultraviolet).
 
 ### Let people turn it off
 

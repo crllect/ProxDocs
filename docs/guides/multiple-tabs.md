@@ -166,6 +166,14 @@ const ensureSession = async tab => {
 };
 ```
 
+`loading` and `ready` are what drive a per-tab spinner, and they are not
+symmetric. `loading` fires when you start a navigation, and `ready` fires on the
+iframe's `load` event, once per document. Do not wire `ready` to the URL-change
+callback instead: that one also fires for `history.pushState` and hash changes,
+where no document loads, so the spinner clears on navigations that have not
+finished and stays up on ones that never fire it. The engine adapter attaches
+the `load` listener when the session is created and removes it in `destroy()`.
+
 The `escape` handler is what makes `target="_blank"` behave: Scramjet's
 `CatchEscapedLinksPlugin` catches navigations that would leave the proxy, and
 opening them in a new tab is what users expect.

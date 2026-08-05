@@ -106,6 +106,83 @@ stack requires them, but they are what let a proxied site use
 `SharedArrayBuffer`, so keep them. See
 [cross-origin isolation](../concepts/cross-origin-isolation.md).
 
+On a normal server, where you do have upgrades, Bare needs
+`bareServer.routeUpgrade(req, socket, head)` behind the same `shouldRoute()`
+check. Leaving it out fails quietly: pages load, and only the sites that open a
+WebSocket break.
+
+### Configuring the Bare server
+
+`createBareServer(directory, init)` takes an options object, and two of its
+defaults matter more than the rest.
+
+```js
+const bareServer = createBareServer("/bare/", {
+	connectionLimiter: {
+		maxConnectionsPerIP: 2000,
+		windowDuration: 60,
+		blockDuration: 10
+	}
+});
+```
+
+`directory` must start **and** end with `/`, or the constructor throws
+`RangeError: Directory must start and end with /`. It is a URL prefix, not a
+path on disk.
+
+**`connectionLimiter` defaults to 10 concurrent connections per IP, which is too
+low for a proxy.** It is sized for a Bare server answering occasional requests,
+not for one behind an engine that fans a single page out into dozens of
+concurrent subresource fetches, so one user loading one media-heavy site trips
+it alone. The symptom is a page that loads halfway and then stalls for
+`blockDuration` seconds, which reads as "Bare is slow" rather than as a limit
+you set. The generated projects raise it to 2000 with a 10 second block: high
+enough not to fire in normal use, short enough that a burst does not lock
+someone out for a minute. It is a runaway guard, not your abuse control. Per-IP
+also means per **apparent** IP, and a school or office behind one NAT arrives as
+a single client.
+
+**`blockLocal` defaults to `true`, and it is two separate defaults you can knock
+out one at a time.** With it on, the server installs its own `filterRemote`,
+which rejects a literal non-unicast IP, and its own `lookup`, which rejects a
+hostname that resolves to one. Both are assigned with `??=`, so whichever one
+you supply replaces that half and leaves the other in place. Supply a `lookup`
+for a perfectly good reason, like pointing DNS at a filtering resolver, and you
+have quietly removed the DNS-side check while the literal-IP check still runs.
+`blockLocal: false` removes both at once, and there is no reason to set that on
+a public deployment.
+
+If you replace either, re-implement the check inside it. `filterRemote` rejects
+by **throwing**; a predicate that returns `false` allows everything, because the
+return value is discarded.
+
+Generated projects ship their own `filterRemote`, which is why they carry
+`ipaddr.js` as a dependency. The stock one misses IPv6: it reads `url.hostname`,
+which for an IPv6 literal still carries its square brackets, and
+`ipaddr.isValid("[::1]")` is `false`, so the address passes. The generated
+version strips them first, and leaves the default `lookup` in place so the
+DNS-side check still applies.
+
+```js
+filterRemote(url) {
+	const hostname = url.hostname.replace(/^\[|\]$/g, "");
+	if (ipaddr.isValid(hostname) && ipaddr.parse(hostname).range() !== "unicast") {
+		throw new RangeError("Forbidden IP");
+	}
+}
+```
+
+This is the same
+[SSRF](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)
+exposure described for wisp in
+[Running a proxy](running-a-proxy.md#a-destination-blocklist).
+
+The rest you will rarely touch: `logErrors` (off), `family` for the outbound
+address family, `localAddress` to pick an interface, `maintainer` for the info
+route, and `legacySupport`, which defaults to `true` and registers Bare v1 and
+v2 alongside v3. `bare-transport` speaks v3, so turning it off is free unless
+you also serve an older client.
+
 The `export default handleRequest` is what the platform invokes. The
 `if (!process.env.VERCEL)` guard is so the same file still runs locally with
 `node server.js`; rename the variable if your host sets a different one.
@@ -150,7 +227,7 @@ const { default: BareClient } = await import("/baremod/index.mjs");
 
 const controller = new api.Controller({
 	serviceworker,
-	transport: new BareClient(new URL("/bare/", location.href).href),
+	transport: new BareClient(new URL("/bare/", location.href)),
 	config: {
 		scramjetPath: "/scram/scramjet.js",
 		wasmPath: "/scram/scramjet.wasm",

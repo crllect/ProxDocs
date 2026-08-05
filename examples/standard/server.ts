@@ -19,10 +19,10 @@ const app = Fastify({
 		});
 
 		server.on("upgrade", (req, socket, head) => {
-			if (
-				new URL(req.url ?? "/", `http://${req.headers.host}`)
-					.pathname === "/wisp/"
-			) {
+			const wispPath = new URL(req.url ?? "/", "http://localhost")
+				.pathname;
+			if (wispPath === "/wisp/") {
+				req.url = wispPath;
 				wisp.routeRequest(req, socket, head);
 				return;
 			}

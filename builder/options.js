@@ -249,7 +249,7 @@ export const presets = {
 			"Read this one first; every other preset is this plus features.",
 		options: {
 			language: "js",
-			packageManager: "npm",
+			packageManager: "bun",
 			runtime: "node",
 			server: "express",
 			frontend: "vanilla",
@@ -307,7 +307,7 @@ export const presets = {
 			"Scramjet over a Bare server, for serverless hosts that cannot hold a WebSocket open.",
 		options: {
 			language: "js",
-			packageManager: "npm",
+			packageManager: "bun",
 			runtime: "node",
 			server: "express",
 			frontend: "vanilla",
@@ -325,7 +325,7 @@ export const presets = {
 		description: "A React shell built with TypeScript and Vite.",
 		options: {
 			language: "ts",
-			packageManager: "npm",
+			packageManager: "bun",
 			runtime: "node",
 			server: "express",
 			frontend: "react",
@@ -344,7 +344,7 @@ export const presets = {
 			"A static Astro frontend with a hydrated Preact proxy island.",
 		options: {
 			language: "ts",
-			packageManager: "npm",
+			packageManager: "bun",
 			runtime: "node",
 			server: "express",
 			frontend: "astro",
@@ -469,20 +469,26 @@ export const resolve = (raw = {}) => {
 		opts.name += "-project";
 	}
 
-	const pick = (field, table, fallback) => {
-		if (!Object.hasOwn(table, opts[field])) opts[field] = fallback;
+	const pick = (field, table) => {
+		if (Object.hasOwn(table, opts[field])) return;
+		if (Object.hasOwn(raw, field) && raw[field] !== undefined) {
+			notes.push(
+				`${field} "${String(raw[field]).slice(0, 40)}" is not one of ${Object.keys(table).join(", ")}. Using ${defaults[field]}.`
+			);
+		}
+		opts[field] = defaults[field];
 	};
 
-	pick("language", languages, "ts");
-	pick("packageManager", packageManagers, "npm");
-	pick("runtime", runtimes, "node");
-	pick("server", servers, "express");
-	pick("frontend", frontends, "vanilla");
-	pick("bundler", bundlers, "vite");
-	pick("styling", styling, "plain");
-	pick("engine", engines, "scramjet");
-	pick("wiring", wirings, "manual");
-	pick("host", hosts, "node");
+	pick("language", languages);
+	pick("packageManager", packageManagers);
+	pick("runtime", runtimes);
+	pick("server", servers);
+	pick("frontend", frontends);
+	pick("bundler", bundlers);
+	pick("styling", styling);
+	pick("engine", engines);
+	pick("wiring", wirings);
+	pick("host", hosts);
 
 	if (!wirings[opts.wiring]?.engines.includes(opts.engine)) {
 		opts.wiring = "manual";

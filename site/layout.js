@@ -168,7 +168,7 @@ export const layout = ({
 	</nav>`;
 
 	const source = sourcePath
-		? `<p class="source-link">Source: <code>${escapeHtml(sourcePath)}</code><br />Verified against Scramjet <code>${escapeHtml(versions.scramjet)}</code>, controller <code>${escapeHtml(versions.scramjetController)}</code>, and Ultraviolet <code>${escapeHtml(versions.ultraviolet)}</code> on ${escapeHtml(verifiedOn)}. If this page and upstream disagree, upstream is right.</p>`
+		? `<p class="source-link">Source: <code>${escapeHtml(sourcePath)}</code><br />Verified against Scramjet <code>${escapeHtml(versions.scramjet)}</code> and controller <code>${escapeHtml(versions.scramjetController)}</code> on ${escapeHtml(verifiedOn)}. If this page and upstream disagree, upstream is right.</p>`
 		: "";
 
 	const crumbTrail = [{ title: siteName, slug: "index" }].concat(

@@ -22,8 +22,8 @@ Ask development questions or show your project in the **Night Network** Discord:
 ## Run the documentation site
 
 ```bash
-npm install
-npm start
+bun install
+bun start
 ```
 
 The documentation is served at `/`, and the interactive builder is served at
@@ -38,7 +38,7 @@ The site also builds to static files with the builder kept working, so it can be
 hosted for people who would rather read it in a browser than on GitHub.
 
 ```bash
-npm run build:site
+bun run build:site
 ```
 
 That writes `dist/`: every page prerendered to `<slug>.html`, the search index,
@@ -49,10 +49,10 @@ Cloudflare Functions import, since a Worker cannot read them off disk.
 To preview the built site with its Functions exactly as Cloudflare runs them:
 
 ```bash
-npm run preview:site
+bun run preview:site
 ```
 
-That fetches `wrangler` through `npx` on first use rather than carrying it as a
+That fetches `wrangler` through `bunx` on first use rather than carrying it as a
 dependency, since deploying from GitHub does not need it locally.
 
 ### Cloudflare Pages
@@ -61,7 +61,7 @@ Create a Pages project pointed at this repository and set:
 
 | Setting             | Value                |
 | ------------------- | -------------------- |
-| Build command       | `npm run build:site` |
+| Build command       | `bun run build:site` |
 | Build output        | `dist`               |
 | Compatibility flags | `nodejs_compat`      |
 
@@ -76,8 +76,8 @@ endpoints run as Functions, so reading the documentation costs no invocations.
 ## Generate a proxy
 
 ```bash
-node builder/cli.js --out ./my-proxy --preset minimal
-cd my-proxy && npm install && npm start
+bun builder/cli.js --out ./my-proxy --preset minimal
+cd my-proxy && bun install && bun start
 ```
 
 ### Presets
@@ -98,7 +98,7 @@ Every preset uses Scramjet with manual wiring.
 Or answer the questions yourself:
 
 ```bash
-node builder/cli.js --out ./my-proxy \
+bun builder/cli.js --out ./my-proxy \
     --language ts --runtime bun --server express \
     --frontend react --bundler vite --styling tailwind \
     --transport libcurl,epoxy \
@@ -150,7 +150,7 @@ on your server, and a proxy is almost pure egress while serverless bills egress
 per GB, so the economics stop working as traffic grows. A static host can serve
 the client instead, with Wisp on a cheap VPS.
 
-Run `node builder/cli.js --help` for the full list.
+Run `bun builder/cli.js --help` for the full list.
 
 Pre-generated output for each preset is committed under [`examples/`](examples/)
 if you would rather just read it.
@@ -164,7 +164,8 @@ if you would rather just read it.
 [wisp vs bare](docs/concepts/wisp-vs-bare.md),
 [transports](docs/concepts/transports.md),
 [bare-mux and proxy-transports](docs/concepts/bare-mux.md),
-[cross-origin isolation](docs/concepts/cross-origin-isolation.md).
+[cross-origin isolation](docs/concepts/cross-origin-isolation.md),
+[inside Scramjet](docs/concepts/scramjet-internals.md).
 
 **Guides**: [quickstart](docs/guides/quickstart.md),
 [multiple tabs](docs/guides/multiple-tabs.md),
@@ -178,7 +179,12 @@ if you would rather just read it.
 [deployment](docs/guides/deployment.md),
 [practices worth knowing](docs/guides/site-best-practices.md).
 
-**Reference**. [version matrix](docs/reference/versions.md),
+**Reference**. [config and flags](docs/reference/scramjet-config.md),
+[plugins and hooks](docs/reference/plugins-and-hooks.md),
+[Controller and Frame API](docs/reference/controller-api.md),
+[core API and types](docs/reference/core-api.md),
+[site compatibility](docs/reference/site-compatibility.md),
+[version matrix](docs/reference/versions.md),
 [breaking changes](docs/reference/breaking-changes.md),
 [troubleshooting](docs/reference/troubleshooting.md),
 [official docs and licensing](docs/reference/official-docs.md),
@@ -239,7 +245,7 @@ builder/
   template.js    the //#if directive processor
   parts/         real source files that get composed
   cli.js         Node entry point for generated projects
-examples/        pre-generated presets (regenerate with npm run examples)
+examples/        pre-generated presets (regenerate with bun run examples)
 scripts/check.js validates docs links and that every combination compiles
 ```
 
@@ -248,16 +254,16 @@ scripts/check.js validates docs links and that every combination compiles
 ## Checks
 
 ```bash
-npm run check
+bun run check
 ```
 
 Verifies documentation files, links, Markdown rendering, URL classification,
 generated JSON and JavaScript, client TypeScript semantics, template directives,
-all 54 option combinations, and whether the committed examples match the
+all 57 option combinations, and whether the committed examples match the
 generator.
 
 ```bash
-npm run examples
+bun run examples
 ```
 
 That command regenerates `examples/` from the presets.
@@ -267,7 +273,7 @@ That command regenerates `examples/` from the presets.
 ## Versions
 
 Package constraints live in [`builder/versions.js`](builder/versions.js),
-verified against npm on **2026-08-02**. The two combinations that work:
+verified against npm on **2026-08-04**. The two combinations that work:
 
 ```text
 scramjet 2.0.67-alpha.2 + controller 0.0.14 + utils 0.0.3
@@ -278,8 +284,8 @@ There is an older bare-mux generation (libcurl ^1, epoxy ^2, bare-as-module3)
 that Ultraviolet used. Mixing the two generations causes your proxy to shit
 itself. See [the version matrix](docs/reference/versions.md).
 
-Note that `npm install @mercuryworkshop/scramjet` gives you **1.1.0**, 2.x is
-published under the `alpha` tag, not `latest`.
+Note that installing `@mercuryworkshop/scramjet` without a version gives you
+**1.1.0**; 2.x is published under the `alpha` tag, not `latest`.
 
 ---
 
@@ -297,7 +303,8 @@ entire proxy community.
 
 Corrections are the most valuable contribution. If something here is wrong, out
 of date, or describes a fork's behavior as if it were upstream, open an issue or
-a PR. Run `npm run check` before submitting.
+a PR. Run `bun run check` before submitting, and read
+[CONTRIBUTING.md](CONTRIBUTING.md) for what a documentation change has to prove.
 
 ## License
 

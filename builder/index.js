@@ -457,6 +457,7 @@ const packageJson = (
 				deps["@mercuryworkshop/bare-transport"] =
 					versions.bareTransport;
 				deps["@tomphttp/bare-server-node"] = versions.bareServerNode;
+				deps["ipaddr.js"] = versions.ipaddrJs;
 			}
 			if (chosen.includes("libcurl")) {
 				deps["@mercuryworkshop/libcurl-transport"] =

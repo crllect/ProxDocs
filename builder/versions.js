@@ -1,4 +1,4 @@
-export const verifiedOn = "2026-08-02";
+export const verifiedOn = "2026-08-04";
 
 export const versions = {
 	scramjet: "2.0.67-alpha.2",
@@ -13,8 +13,9 @@ export const versions = {
 
 	wispJs: "^0.4.1",
 
-	bareServerNode: "^2.0.3",
+	bareServerNode: "^2.0.6",
 	bareTransport: "^1.0.0",
+	ipaddrJs: "^2.1.0",
 
 	express: "^4.21.2",
 	fastify: "^5.6.0",

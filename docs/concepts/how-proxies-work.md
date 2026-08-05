@@ -49,6 +49,16 @@ The [engine](engines.md) lives here. A **service worker** registered on your
 origin intercepts every request the proxied page makes, and the rewriter
 transforms the response before the browser sees it.
 
+**The two halves of that sentence run in different places**, and Scramjet 2.x is
+explicit about it. The service worker only intercepts and forwards: it hands the
+raw request to your page over a `MessagePort` and waits for a reply. The
+controller in your page does the real work, because that is where the wasm
+rewriter, the cookie jar, and the transport all live. Once you know that, three
+otherwise strange things make sense: a terminated service worker forgets its
+routing table and needs a [keepalive](../guides/wiring.md#the-keepalive);
+plugins tap hooks on the page, not in the worker; and your tunnel opens from the
+tab, so closing the tab closes it.
+
 This is called an **interception proxy**, and it is what makes the modern
 generation different from old server-side proxies:
 
@@ -73,11 +83,11 @@ in a Scramjet 2 [frame](../guides/multiple-tabs.md).
 
 ## Layer 3: the transport
 
-The service worker has a rewritten request and needs the response bytes. It
-cannot just `fetch()` them. CORS still applies inside a service worker. So it
-hands the request to a **transport**: client-side code whose job is to get an
-arbitrary HTTP request executed somewhere unrestricted and hand the response
-back.
+The controller now has a decoded request and needs the response bytes. It cannot
+just `fetch()` them, because CORS applies the same way in a page as in a service
+worker. So it hands the request to a **transport**: client-side code whose job
+is to get an arbitrary HTTP request executed somewhere unrestricted and hand the
+response back.
 
 Transports are pluggable. `epoxy` and `libcurl` are full TCP/TLS stacks compiled
 to WebAssembly that run **inside your browser** and speak to the server over a
@@ -113,21 +123,30 @@ You type `crllect.dev` and press enter.
    `iframe.src` to `/~/sj/<controller>/<frame>/https%3A%2F%2Fcrllect.dev`.
 3. The iframe navigates. Because it is on your origin and inside the service
    worker's scope, the **service worker** intercepts the request.
-4. The service worker decodes the path back to `https://crllect.dev` and builds
-   the real outbound request, fixing up `Host`, `Referer`, `Origin` and cookies.
-5. It hands that request to the **transport**.
-6. **libcurl/epoxy** opens a stream over the **Wisp** WebSocket to your server.
+4. The worker recognises the path as one of its registered frame prefixes and
+   **forwards the request to your page**, over the `MessagePort` the controller
+   handed it at startup. It does not decode, rewrite, or fetch anything itself.
+5. The **controller**, in your page, decodes the path back to
+   `https://crllect.dev` and builds the real outbound request, fixing up `Host`,
+   `Referer`, `Origin` and cookies from its own jar. This is where
+   [`fetch.request`](../reference/plugins-and-hooks.md#fetchrequest) fires.
+6. It hands that request to the **transport**, also running in your page.
+7. **libcurl/epoxy** opens a stream over the **Wisp** WebSocket to your server.
    Your Wisp server opens a TCP socket to `crllect.dev:443` and pipes bytes.
    **TLS is negotiated inside the browser**, between the WebAssembly stack and
    `crllect.dev`. A passive Wisp relay sees ciphertext plus connection metadata.
-7. The response comes back. The service worker runs the **rewriter** over the
-   HTML: every `href`, `src`, inline script, and stylesheet URL is rewritten to
-   point back through the proxy. `<script>` contents are parsed and rewritten so
-   `location`, `fetch`, `postMessage` etc. hit the proxy's shims.
-8. The rewritten response is returned to the iframe. The page renders. Every
+8. The response comes back to the page, and the **rewriter** runs there: every
+   `href`, `src`, inline script, and stylesheet URL is rewritten to point back
+   through the proxy. `<script>` contents are parsed and rewritten so
+   `location`, `fetch`, `postMessage` etc. hit the proxy's shims. The rewriter
+   is wasm, and it was loaded into the page by `controller.wait()`.
+9. The rewritten response goes back over the port as a plain object, the service
+   worker turns it into a `Response`, and the iframe renders it. Every
    subsequent request it makes repeats from step 3.
 
-Those eight steps identify where to start debugging a failed request.
+Those nine steps identify where to start debugging a failed request. The handoff
+at step 4 is the one people do not expect: if you are looking for the code that
+fetched or rewrote something, it is in the tab's console, not the worker's.
 
 ---
 

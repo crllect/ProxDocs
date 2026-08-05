@@ -18,8 +18,9 @@
     "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@mercuryworkshop/scramjet-utils": "0.0.3",
     "@mercuryworkshop/wisp-js": "^0.4.1",
-    "@tomphttp/bare-server-node": "^2.0.3",
-    "express": "^4.21.2"
+    "@tomphttp/bare-server-node": "^2.0.6",
+    "express": "^4.21.2",
+    "ipaddr.js": "^2.1.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

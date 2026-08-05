@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "astro build",
-    "start": "npm run build && tsx server.ts",
+    "start": "bun run build && tsx server.ts",
     "dev": "node dev.js",
     "server": "tsx server.ts",
     "typecheck": "astro check"

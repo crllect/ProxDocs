@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { createBareServer } from "@tomphttp/bare-server-node";
+import ipaddr from "ipaddr.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticRoot = path.join(__dirname, "dist");
@@ -46,6 +47,15 @@ app.use(
 );
 
 const bareServer = createBareServer("/bare/", {
+	filterRemote(url) {
+		const hostname = url.hostname.replace(/^\[|\]$/g, "");
+		if (
+			ipaddr.isValid(hostname) &&
+			ipaddr.parse(hostname).range() !== "unicast"
+		) {
+			throw new RangeError("Forbidden IP");
+		}
+	},
 	connectionLimiter: {
 		maxConnectionsPerIP: 2000,
 		windowDuration: 60,
@@ -68,10 +78,9 @@ server.on("upgrade", (req, socket, head) => {
 		bareServer.routeUpgrade(req, socket, head);
 		return;
 	}
-	if (
-		new URL(req.url ?? "/", `http://${req.headers.host}`).pathname ===
-		"/wisp/"
-	) {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 		return;
 	}

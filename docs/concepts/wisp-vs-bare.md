@@ -97,9 +97,8 @@ It also means:
   stream. Nothing is bolted on, so sites that depend on WebSockets work.
 - **UDP works too**, which bare cannot do at all. The spec makes UDP optional
   for both ends and negotiates it through an extension, so it is not guaranteed
-  by "speaks wisp" alone. In practice both common relays do it:
-  `wisp-server-node` handles UDP streams, and `wisp-js` ships
-  `allow_udp_streams: true` by default.
+  by "speaks wisp" alone. In practice the relays you are likely to run do
+  support it, and `wisp-js` ships `allow_udp_streams: true` by default.
 - **One connection is reused** for everything, so there is no per-request
   connection setup.
 
@@ -157,7 +156,9 @@ route upgrade requests to it:
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 		return;
 	}
@@ -167,6 +168,46 @@ server.on("upgrade", (req, socket, head) => {
 
 The Wisp handler only routes streams. Target TLS and HTTP are implemented by the
 client transport in the browser.
+
+**The trailing slash is not cosmetic.** wisp-js branches on the raw `req.url`: a
+path ending in `/` gets a Wisp connection, and a path that does not gets a
+legacy `wsproxy` connection, where the path itself names one destination. A
+client pointed at `/wisp` against a server mounted at `/wisp/` therefore gets no
+error. It gets a different protocol, and the failure surfaces later as a socket
+that opens and then does nothing useful.
+
+**That is also why `req.url` is reassigned before routing.** `/wisp/?token=x`
+matches on pathname but does not end in `/` as a raw string, so wisp-js takes
+the wsproxy branch and tries to resolve `?token=x` as a hostname. The handshake
+still returns `101`, so the client sees a connected socket, and the only
+evidence is `getaddrinfo ENOTFOUND ?token=x` in your server log. Assigning the
+parsed pathname back onto `req.url` before calling `routeRequest` makes a
+query-bearing wisp URL work, which matters if you gate your endpoint with a
+token.
+
+**Parse against a constant base, not `` `http://${req.headers.host}` ``.** The
+`Host` header is client-controlled, a malformed one makes `new URL()` throw, and
+a throw inside an `upgrade` listener is an uncaught exception rather than a
+failed request. The base is discarded the moment you read `.pathname`, so it may
+as well be a literal.
+
+`socket.end()` on everything else is not optional either. Upgrades left hanging
+accumulate half-open sockets, and sockets are the resource a proxy runs out of
+first.
+
+Version negotiation is automatic. A client that sends `Sec-WebSocket-Protocol`
+gets v2 where the server allows it, everything else gets v1, and a v2 server
+still accepts v1 clients, so `wisp.options.wisp_version` is worth changing only
+against a client you cannot update.
+
+Everything else is configured through `wisp.options`, a plain object read at
+connection time, so an assignment applies to the next connection with no
+restart. The settings that decide what your server can be used to reach are in
+[Running a proxy](../guides/running-a-proxy.md#a-destination-blocklist).
+
+Other Wisp server implementations exist, including faster ones in other
+languages, if you would rather run the relay as its own process. They speak the
+same protocol, so the browser side does not change.
 
 > **Run your own.** Public wisp servers exist and are convenient for testing.
 > They can also see which hosts you connect to, and they can disappear without

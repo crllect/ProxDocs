@@ -13,22 +13,24 @@ A working Scramjet proxy, from nothing, in about two minutes.
 ## Generate a project
 
 ```bash
-node builder/cli.js --out ./my-proxy --preset minimal
+bun builder/cli.js --out ./my-proxy --preset minimal
 ```
 
 Or start the documentation site and use the `/build` route to download the zip.
 
 ```bash
 cd my-proxy
-npm install
-npm start
+bun install
+bun start
 ```
 
 Open the generated app's `/` route on its configured port, type an address, and
 press enter. That is the whole thing.
 
-Every package is a normal dependency in `package.json`, resolved by
-`npm install` and pinned in your lockfile. Nothing is fetched at runtime.
+Every package is a normal dependency in `package.json`, resolved at install time
+and pinned in your lockfile. Nothing is fetched at runtime. The presets generate
+for bun; pick another package manager in the builder and the generated README
+gives you its commands instead.
 
 ---
 
@@ -68,7 +70,9 @@ app.use(
 app.use(express.static("public"));
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 		return;
 	}

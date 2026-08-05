@@ -240,7 +240,15 @@ Thirteen booleans. These are the defaults upstream ships.
 > up off. Assume `false`, set it explicitly if you want it on, and check
 > `controller.scramjetConfig.flags` rather than trusting either value.
 
-### The ones you will actually change
+**`syncxhr` is unimplemented in 2.0.67-alpha.2**, not just off. The line that
+builds the worker it posts to is commented out in
+`core/src/client/shared/requests/xmlhttprequest.ts`, so turning the flag on
+throws instead of enabling anything. Off, a synchronous `XMLHttpRequest` is
+dropped with `ignoring request - sync xhr disabled in flags` in the console. The
+scaffolding is there and it will probably land in a later alpha; until then
+sites that need sync XHR break either way.
+
+### Individual flags
 
 **`sourcemaps`** is badly named and is not what it sounds like. It has nothing
 to do with `.map` files or stack traces. What it does is record the rewriter's
@@ -369,6 +377,8 @@ block out of someone's repository.
 
 - [Plugins and hooks](plugins-and-hooks.md). The other half of controlling
   Scramjet, and where behaviour you cannot get from a flag comes from.
+- [Controller and Frame API](controller-api.md). The objects these two config
+  values are passed to, and how the merge actually resolves.
 - [Site compatibility](site-compatibility.md). Which sites need which flags, and
   which are not a flag problem at all.
 - [Bootstrap or manual wiring](../guides/wiring.md). Where these paths come

@@ -22,7 +22,7 @@
 		"dev": "node scripts/build-site.js && node site/server.js",
 		"build": "node builder/cli.js",
 		"build:site": "node scripts/build-site.js",
-		"preview:site": "npm run build:site && npx wrangler pages dev dist",
+		"preview:site": "bun run build:site && bunx wrangler pages dev dist",
 		"examples": "node scripts/generate-examples.js",
 		"check": "node scripts/check.js",
 		"format": "prettier --write .",

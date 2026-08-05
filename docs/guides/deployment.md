@@ -127,15 +127,23 @@ of users.
 
 ## Docker
 
+Generated projects install with bun by default, so the lockfile in your project
+is `bun.lock` on bun 1.2 and later, or `bun.lockb` before it. The `bun.lock*`
+copy below matches either. Install with bun and run with whichever runtime you
+generated for. Two stages keep the final image on Node without carrying bun into
+it:
+
 ```dockerfile
+FROM oven/bun:1-slim AS deps
+WORKDIR /app
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile --production
+
 FROM node:22-slim
 WORKDIR /app
-
-COPY --chown=node:node package*.json ./
-USER node
-RUN npm ci --omit=dev
-
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node . .
+USER node
 
 ENV NODE_ENV=production
 ENV PORT=8080
@@ -144,16 +152,26 @@ EXPOSE 8080
 CMD ["node", "server.js"]
 ```
 
+If you generated with `--runtime bun`, drop the second stage and run
+`CMD ["bun", "server.js"]` from the bun image. If you generated with npm, pnpm,
+or yarn, use that package manager's frozen install (`npm ci --omit=dev`) against
+its own lockfile; mixing a lockfile with the wrong package manager either fails
+or silently resolves different versions.
+
+`--frozen-lockfile` is not optional in an image. Without it a rebuild can pick
+up a new transport minor, and transport packages are where the version-skew
+breakage lives; see [the version matrix](../reference/versions.md).
+
 With `proxy-bootstrap`, note that it resolves packages **at runtime** on a fresh
 boot and caches them inside its installed directory. A replacement container or
-new deployment loses that cache and needs network access to npm. The image above
-keeps `/app` writable by the `node` user so bootstrap can populate it.
+new deployment loses that cache and needs registry access. Bootstrap also needs
+`/app` writable by the runtime user, which the image above does not give it.
 
 For containers, prefer **manual wiring**, where everything is a normal
-dependency resolved at `npm ci` time:
+dependency resolved at install time:
 
 ```bash
-node builder/cli.js --out ./my-proxy --wiring manual --features tabs,settings
+bun builder/cli.js --out ./my-proxy --wiring manual --features tabs,settings
 ```
 
 ---
@@ -242,8 +260,27 @@ loading and showing an error beats a browser error page with no explanation.
 
 The route check runs first, so proxied requests never reach the cache logic.
 Beyond that, the worker skips anything that is not a same-origin `GET`, its own
-script, and the wisp endpoint. On Ultraviolet it also skips the proxy prefix and
-`/bare/`.
+script, and every path the runtime itself is served from:
+
+```js
+const runtimeRoots = [
+	"/scram/",
+	"/controller/",
+	"/utils/",
+	"/libcurl/",
+	"/epoxy/",
+	"/baremod/",
+	"/bare/",
+	"/wisp/"
+];
+```
+
+Those are the engine bundle, the wasm, the controller, the transports, and the
+tunnel endpoints. Caching them looks harmless and is not: a version bump then
+serves a stale `scramjet.js` against a fresh `controller.api.js`, and the
+[version guard](../reference/controller-api.md#version-guards) throws at
+construction on a page you cannot fix without clearing storage. On Ultraviolet
+the same rule covers the proxy prefix and `/bare/`.
 
 Two exclusions exist purely to stay out of the way during development:
 
@@ -264,20 +301,31 @@ server.
 
 ### Deploying a new version
 
-The cache name carries a version, and `activate` deletes every cache that does
-not match it:
+The cache name carries a version, and `activate` deletes the project's older
+caches:
 
 ```js
+const shellCachePrefix = "my-proxy-shell-";
+const shellCache = shellCachePrefix + "v1";
+
 caches
 	.keys()
 	.then(keys =>
 		Promise.all(
 			keys
-				.filter(key => key !== shellCache)
+				.filter(
+					key =>
+						key.startsWith(shellCachePrefix) && key !== shellCache
+				)
 				.map(key => caches.delete(key))
 		)
 	);
 ```
+
+**The prefix test is the part worth copying.** The obvious version,
+`key !== shellCache`, deletes every cache on the origin, including ones opened
+by Scramjet's own `HttpCachePlugin` and by anything else you deploy alongside
+the proxy. It looks like tidy cleanup and is a data loss bug on a shared origin.
 
 Bump `-v1` to `-v2` when you ship a breaking change to the shell. With a bundler
 this is rarely needed, because Vite fingerprints filenames and a new build

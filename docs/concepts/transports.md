@@ -123,13 +123,15 @@ the other two:
 
 ```js
 const { default: BareClient } = await import("/baremod/index.mjs");
-const transport = new BareClient(new URL("/bare/", location.href).href);
+const transport = new BareClient(new URL("/bare/", location.href));
 ```
 
-Theres also a pretty odd bug, where searching something with brave causes a
-captcha to spawn. Bare usually fails with captchas, but navigating back, then
-forward again with browser controls causes brave to not ask for captchas
-anymore.
+Theres also a pretty odd one with Brave: searching through Bare spawns a
+captcha, and captchas through Bare usually fail. Navigating back, then forward
+again with browser controls causes Brave to stop asking for the rest of the
+session. Not actually a transport bug, it is bot detection reacting to your
+server's IP, which is why the same trick does nothing on sites that fingerprint
+harder. See [site compatibility](../reference/site-compatibility.md).
 
 ---
 
@@ -148,6 +150,29 @@ Deploying everything to a serverless function?
 Shipping **both** Wisp transports gives users a fallback when a site behaves
 differently between their HTTP/TLS implementations. That is why
 [transport switching](../guides/settings.md) is a feature in the builder.
+
+### What each one costs to download
+
+The transport is the largest thing your users download, by a wide margin.
+Measured from the published packages at the pinned versions, gzipped, as a
+browser would fetch them:
+
+| Package                   | Client bundle |
+| ------------------------- | ------------- |
+| `libcurl-transport` 2.0.5 | 849 KB        |
+| `epoxy-transport` 3.0.1   | 737 KB        |
+| `bare-transport` 1.0.0    | under 20 KB   |
+
+For context, the engine itself is about 291 KB gzipped (`scramjet.js` at 88 KB
+plus the rewriter wasm at 203 KB), and the controller and utils bundles add
+roughly 10 KB between them. So a libcurl build is about **1.15 MB** before your
+own code, an epoxy build about **1.04 MB**, and a Bare build about **310 KB**.
+
+Two things follow. Shipping both Wisp transports does not double that, because
+[the import is lazy](#switching-at-runtime) and only the selected one is
+fetched. And Bare being small is a real advantage on slow connections, which is
+worth weighing against everything it gives up in
+[Wisp vs Bare](wisp-vs-bare.md).
 
 ---
 
@@ -418,13 +443,21 @@ moment the inner transport finishes initialising.
 If you are implementing the network layer yourself rather than wrapping one, the
 parts that catch people out:
 
-- **Redirects are yours to follow.** Nothing above you does it. Cap the chain,
-  20 is the conventional limit, and resolve each `location` against the URL you
-  just requested rather than the original.
+- **Do not follow redirects.** Return the 3xx as-is, headers included.
+  `BareCompatibleClient` owns the chain: it loops on 301, 302, 303, 307 and 308
+  when the caller asked for `redirect: "follow"`, capped at 20 hops, resolving
+  each `location` against the URL it just requested. Scramjet asks for
+  `redirect: "manual"` instead, because it rewrites `location` itself so the
+  browser re-enters the proxy on the next hop. A transport that quietly follows
+  redirects breaks that, and takes Scramjet's cross-site and `Sec-Fetch-Site`
+  tracking with it.
 - **`body` can be a stream.** Returning a fully buffered `ArrayBuffer` works but
   holds whole responses in memory, which is noticeable on video.
-- **`signal` must actually abort.** Frames are destroyed while requests are in
-  flight, and ignoring it leaks a request per closed tab.
+- **`signal` is currently always `undefined`.** Both callers in this stack,
+  `BareCompatibleClient.fetch` and the controller's remote-transport bridge,
+  pass `undefined` for it. Honour it if you get one, but do not build anything
+  on the assumption that a closed frame aborts your requests, because today it
+  does not.
 - **`connect` returns synchronously** with `[send, close]`, before the socket is
   open. Queue anything sent before `onopen` fires.
 

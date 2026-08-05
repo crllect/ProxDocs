@@ -82,7 +82,7 @@ const backendPort = await findFreePort(requestedPort);
 
 start(
 	"server",
-	"npx",
+	"bunx",
 	[
 		"tsx",
 		"server.ts"
@@ -105,7 +105,7 @@ if (boundPort !== requestedPort) {
 
 start(
 	"frontend",
-	"npx",
+	"bunx",
 	[
 		"astro",
 		"dev"

@@ -58,7 +58,8 @@ const wispUrl: Validator<string> = (value, fallback) => {
 	try {
 		const url = new URL(s);
 		if (!["ws:", "wss:"].includes(url.protocol)) return fallback;
-		if (url.username || url.password || url.hash) return fallback;
+		if (url.username || url.password || url.hash || s.includes("?"))
+			return fallback;
 		if (location.protocol === "https:" && url.protocol !== "wss:")
 			return fallback;
 		if (!url.pathname.endsWith("/")) url.pathname += "/";

@@ -200,6 +200,39 @@ See [Breaking changes](breaking-changes.md).
 
 ---
 
+## `scramjet version mismatch` when constructing the controller
+
+```text
+@mercuryworkshop/scramjet version mismatch: this build expects 2.0.67-alpha.2, but the loaded runtime is 2.0.66
+```
+
+The controller asserts the core version in its constructor, so this throws
+before a single request goes out. The two packages are versioned together and
+the controller will not run against a core it was not built against.
+
+Three causes, in the order they are worth checking:
+
+1. **A stale `node_modules`.** Bump both packages together and reinstall. The
+   [version matrix](versions.md) lists the pairs verified to work.
+2. **A cached `scramjet.js`.** Your own service worker outlived a deploy and is
+   serving the previous bundle from `Cache Storage` while the page loads the new
+   controller. Unregister the worker and hard-reload; see
+   [changes to sw.js do not take effect](#changes-to-swjs-do-not-take-effect).
+3. **Two copies on the page.** A bundler resolved `@mercuryworkshop/scramjet`
+   into your app bundle while a `<script>` tag also loaded the classic build.
+   Only the script tag should load it.
+
+The neighboring error means the core bundle never loaded at all:
+
+```text
+@mercuryworkshop/scramjet is not loaded. Load scramjet before the controller.
+```
+
+Load order is core, controller, then utils. See
+[version guards](controller-api.md#version-guards).
+
+---
+
 ## `BareMux is not defined`
 
 `/baremux/index.js` did not load, or loaded after your script. It is a classic
@@ -238,13 +271,18 @@ A proxied URL can contain `/wisp/` in its path, so do not use
 `req.url.includes("/wisp/")`. Match the parsed pathname:
 
 ```js
-if (new URL(req.url, `http://${req.headers.host}`).pathname === "/wisp/") {
+const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+if (wispPath === "/wisp/") {
+	req.url = wispPath;
 	wisp.routeRequest(req, socket, head);
 }
 ```
 
 The base only exists to make `req.url` parseable; the scheme and host are
-discarded when you read `.pathname`.
+discarded when you read `.pathname`. Use a constant like this rather than
+`` `http://${req.headers.host}` ``: `Host` is client-controlled, a malformed one
+makes `new URL()` throw, and a throw inside an `upgrade` listener is an uncaught
+exception rather than a failed request.
 
 **Check the scheme.** An `https://` page cannot open a `ws://` socket. The
 browser blocks it as mixed content.
@@ -321,7 +359,7 @@ The buckets are `BLAZINGLY FAST` under 1 ms, `decent speed` under 500 ms, and
 `really slow` above that. HTML rewriting and rewriter-pool allocation report the
 same way. Consistent `really slow` on one site is the signal to reach for
 `disableComputedWrap` through `siteFlags`. See
-[the flags that matter](scramjet-config.md#the-ones-you-will-actually-change).
+[the flags that matter](scramjet-config.md#individual-flags).
 
 Some sites will not work. Heavy anti-bot protection, aggressive integrity
 checking, and DRM video are the usual categories, and no amount of configuration

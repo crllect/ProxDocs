@@ -72,7 +72,7 @@ Illegal combinations are corrected automatically and reported, so you can ask
 for anything and see what it resolved to.
 
 Examples
-  node builder/cli.js --out ./my-proxy --preset barebones
+  node builder/cli.js --out ./my-proxy --preset minimal
   node builder/cli.js --out ./my-proxy --preset standard
   node builder/cli.js --out ./my-proxy --engine scramjet --wiring manual \\
       --features tabs,settings,transportSwitch,history

@@ -1,6 +1,20 @@
 importScripts("/controller/controller.sw.js");
 
-const shellCache = "minimal-shell-v1";
+const shellCachePrefix = "minimal-shell-";
+const shellCache = shellCachePrefix + "v1";
+const runtimeRoots = [
+	"/scram/",
+	"/controller/",
+	"/utils/",
+	"/libcurl/",
+	"/epoxy/",
+	"/baremod/",
+	"/bare/",
+	"/wisp/"
+];
+
+const isUnderRoot = (pathname, root) =>
+	pathname === root.slice(0, -1) || pathname.startsWith(root);
 
 const isShellRequest = request => {
 	if (request.method !== "GET") return false;
@@ -11,7 +25,8 @@ const isShellRequest = request => {
 	if (location.hostname === "localhost" || location.hostname === "127.0.0.1")
 		return false;
 	if (url.pathname === "/sw.js") return false;
-	if (url.pathname.startsWith("/wisp")) return false;
+	if (runtimeRoots.some(root => isUnderRoot(url.pathname, root)))
+		return false;
 
 	return true;
 };
@@ -50,7 +65,11 @@ self.addEventListener("activate", event =>
 			.then(keys =>
 				Promise.all(
 					keys
-						.filter(key => key !== shellCache)
+						.filter(
+							key =>
+								key.startsWith(shellCachePrefix) &&
+								key !== shellCache
+						)
 						.map(key => caches.delete(key))
 				)
 			)

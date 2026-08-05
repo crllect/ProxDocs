@@ -209,8 +209,8 @@ const boot = async (): Promise<ScramjetController> => {
 		}
 	});
 
-	await controller.wait();
 	//#endif
+	await controller.wait();
 
 	startKeepAlive();
 
@@ -357,10 +357,15 @@ class ScramjetSession implements ProxySession {
 	#frame: ScramjetFrame;
 	#handlers: SessionHandlers;
 	#destroyed = false;
+	#onLoad: () => void;
 
 	constructor(frame: ScramjetFrame, handlers: SessionHandlers) {
 		this.#frame = frame;
 		this.#handlers = handlers;
+		this.#onLoad = () => {
+			if (!this.#destroyed) this.#handlers.ready?.();
+		};
+		this.#frame.element.addEventListener("load", this.#onLoad);
 	}
 
 	get element(): HTMLIFrameElement {
@@ -386,7 +391,9 @@ class ScramjetSession implements ProxySession {
 	}
 
 	destroy(): void {
+		if (this.#destroyed) return;
 		this.#destroyed = true;
+		this.#frame.element.removeEventListener("load", this.#onLoad);
 
 		const index = controller?.frames.indexOf(this.#frame) ?? -1;
 		if (index !== -1) controller!.frames.splice(index, 1);
@@ -424,7 +431,6 @@ export const engine: ProxyEngine = {
 					new u.UrlWatcherPlugin((url: string) => {
 						session.url = url;
 						handlers.url?.(url);
-						handlers.ready?.();
 					}),
 
 					new u.CatchEscapedLinksPlugin((url: URL) => {

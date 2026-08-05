@@ -75,9 +75,16 @@ The name change reflects a scope change:
   [transports](transports.md) implement. Multiplexing is the engine's problem
   now.
 
-In Scramjet 2.x the `Controller` owns the transport and distributes it to frames
-and the service worker itself, over its own message channels. So you construct
-the transport directly, in your own code, and hand it over:
+In Scramjet 2.x the `Controller` owns one transport instance, in your page. The
+service worker never holds one: it forwards each intercepted request to the
+controller and waits for the reply. Proxied documents that need the tunnel
+directly, for a `WebSocket` or a worker, open a `MessageChannel`, hand one end
+to the service worker to relay to the controller, and talk to the real transport
+through it as a `RemoteTransport`. Same outcome bare-mux's SharedWorker was
+built for, one instance and one socket, reached through the controller instead
+of through a worker you have no reference to.
+
+So you construct the transport directly, in your own code, and hand it over:
 
 ```js
 const { default: LibcurlClient } = await import("/libcurl/index.mjs");

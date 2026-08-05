@@ -49,6 +49,7 @@ question. You use Scramjet _over_ wisp.
 | [Transports](concepts/transports.md)                         | epoxy, libcurl, bare. What they are and how to choose        |
 | [bare-mux and proxy-transports](concepts/bare-mux.md)        | What bare-mux is, and what replaced it                       |
 | [Cross-origin isolation](concepts/cross-origin-isolation.md) | Why Scramjet needs COOP/COEP and what breaks without them    |
+| [Inside Scramjet](concepts/scramjet-internals.md)            | Scramjet's own codebase, build, and test suite               |
 
 ### Guides
 
@@ -70,11 +71,13 @@ question. You use Scramjet _over_ wisp.
 
 ### Reference
 
-| Page                                                  | What it answers                                    |
-| ----------------------------------------------------- | -------------------------------------------------- |
-| [Config and flags](reference/scramjet-config.md)      | Every Scramjet option, what it does, what breaks   |
-| [Plugins and hooks](reference/plugins-and-hooks.md)   | The extension surface, and how to write against it |
-| [Site compatibility](reference/site-compatibility.md) | Why a given site fails, and whether you can fix it |
+| Page                                                    | What it answers                                         |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| [Config and flags](reference/scramjet-config.md)        | Every Scramjet option, what it does, what breaks        |
+| [Plugins and hooks](reference/plugins-and-hooks.md)     | The extension surface, and how to write against it      |
+| [Controller and Frame API](reference/controller-api.md) | Every member of the two classes, and the traps          |
+| [Core API and types](reference/core-api.md)             | The `$scramjet` global, class by class and type by type |
+| [Site compatibility](reference/site-compatibility.md)   | Why a given site fails, and whether you can fix it      |
 
 [Version matrix](reference/versions.md) ·
 [Breaking changes](reference/breaking-changes.md) ·
@@ -147,8 +150,8 @@ controls. It works on narrow screens and is intended to be easy to edit.
 ## Running this documentation locally
 
 ```bash
-npm install
-npm start
+bun install
+bun start
 ```
 
 The documentation opens at `/` on the configured port. The guides render from

@@ -127,25 +127,39 @@ const searchTemplate = (value, def) => {
 The wisp URL gets the tightest validation in the file, for the reasons above:
 
 ```js
-const wispUrl = (value, def) => {
-	const text = typeof value === "string" ? value.trim() : "";
-	if (!text) return def;
+const wispUrl = (value, fallback) => {
+	const s = typeof value === "string" ? value.trim() : "";
+	if (!s) return "";
 	try {
-		const url = new URL(text);
-		if (!["ws:", "wss:"].includes(url.protocol)) return def;
-		if (url.username || url.password || url.hash) return def;
+		const url = new URL(s);
+		if (!["ws:", "wss:"].includes(url.protocol)) return fallback;
+		if (url.username || url.password || url.hash || s.includes("?"))
+			return fallback;
 		if (location.protocol === "https:" && url.protocol !== "wss:")
-			return def;
+			return fallback;
 		if (!url.pathname.endsWith("/")) url.pathname += "/";
 		return url.href;
 	} catch {
-		return def;
+		return fallback;
 	}
 };
 ```
 
-Rejecting credentials matters: `wss://user:pass@attacker.crllect.dev/` is a
-valid URL and not something a settings field should ever accept.
+Every clause earns its place:
+
+- **Empty means empty**, not the fallback. A cleared field is the user asking
+  for your default endpoint, so it returns `""` and the caller substitutes.
+- **Credentials are rejected.** `wss://user:pass@attacker.crllect.dev/` is a
+  valid URL and not something a settings field should ever accept.
+- **A query string is rejected**, because wisp-js branches on the raw request
+  path: `/wisp/?x` does not end in `/`, so the server hands the connection to
+  its legacy `wsproxy` path and tries to resolve the query as a hostname. The
+  handshake still returns `101`, so the user sees a connected socket that never
+  works. Rejecting it here turns a silent dead end into a rejected setting. See
+  [running a wisp server](../concepts/wisp-vs-bare.md#running-a-wisp-server).
+- **The trailing slash is added** for the same reason, from the other direction.
+- **`wss:` is required on an `https:` page**, because the browser blocks mixed
+  content and the failure is otherwise invisible.
 
 ---
 

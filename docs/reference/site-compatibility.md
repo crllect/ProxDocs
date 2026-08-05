@@ -92,6 +92,7 @@ upgrade-insecure-requests            x-content-type-options
 clear-site-data                      x-xss-protection
 expect-ct                            x-download-options
 feature-policy                       x-permitted-cross-domain-policies
+x-powered-by
 ```
 
 Know what that means. CSP is one of the page's defences against script

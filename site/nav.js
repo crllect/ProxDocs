@@ -68,6 +68,13 @@ export const nav = [
 				title: "Cross-origin isolation",
 				description:
 					"Why Scramjet needs COOP and COEP headers, what SharedArrayBuffer has to do with it, and what breaks without them."
+			},
+			{
+				slug: "concepts/scramjet-internals",
+				file: "concepts/scramjet-internals.md",
+				title: "Inside Scramjet",
+				description:
+					"Scramjet's own codebase: the packages, the Rust rewriter, what each build output is, and how to run its tests."
 			}
 		]
 	},
@@ -101,6 +108,13 @@ export const nav = [
 				title: "Custom protocols",
 				description:
 					"Internal pages on your own scheme, plus Scramjet fake origins served entirely from a plugin."
+			},
+			{
+				slug: "guides/cookies-and-sessions",
+				file: "guides/cookies-and-sessions.md",
+				title: "Cookies and sessions",
+				description:
+					"Where Scramjet stores cookies, how sessions persist across tabs, and what commonly breaks logins."
 			},
 			{
 				slug: "guides/cookies-and-sessions",
@@ -176,6 +190,20 @@ export const nav = [
 				title: "Plugins and hooks",
 				description:
 					"Scramjet plugin API and every hook it exposes, with the context and props each one gives you."
+			},
+			{
+				slug: "reference/controller-api",
+				file: "reference/controller-api.md",
+				title: "Controller and Frame API",
+				description:
+					"Every member of the Controller and Frame classes, the types they exchange, and the ones that do not do what they look like."
+			},
+			{
+				slug: "reference/core-api",
+				file: "reference/core-api.md",
+				title: "Core API and types",
+				description:
+					"Every class, function, and type on the $scramjet global, with the signatures and the behaviour they do not advertise."
 			},
 			{
 				slug: "reference/site-compatibility",

@@ -107,6 +107,13 @@ If you sit behind a reverse proxy, `remoteAddress` is the proxy's address for
 every user, so you are rate limiting everyone as one client. Read the forwarded
 header instead, and only trust it because you control the proxy setting it.
 
+wisp-js does the same thing internally for its own logging, and its defaults are
+already correct: `parse_real_ip` is `true`, and `parse_real_ip_from` is
+`["127.0.0.1"]`, so the header is honoured only from a peer on the same host.
+Widen that list to an address your users can reach directly and any of them can
+claim any IP, at which point every log line and every IP-based block you have is
+fiction. Add your load balancer and nothing else.
+
 ---
 
 ## A destination blocklist
@@ -115,17 +122,43 @@ You are the exit node for whatever your users do. A blocklist is not censorship
 policy, it is the thing that keeps your server from being the source of traffic
 you want no part of.
 
-`wisp-js` exposes options for this:
+`wisp-js` exposes options for this on `wisp.options`, a plain object read at
+connection time, so changes apply to the next connection without a restart:
 
 ```js
 import { server as wisp } from "@mercuryworkshop/wisp-js/server";
 
-wisp.options.blocked_hostnames = ["metadata.google.internal"];
+wisp.options.hostname_blacklist = [/^metadata\.google\.internal$/];
+wisp.options.allow_direct_ip = false;
 wisp.options.allow_loopback_ips = false;
 wisp.options.allow_private_ips = false;
 ```
 
-**The last two default to `false` in `wisp-js`, and they must stay that way.**
+The destination options, with their defaults:
+
+| Option               | Default | What it does                                                      |
+| -------------------- | ------- | ----------------------------------------------------------------- |
+| `hostname_blacklist` | `null`  | Array of `RegExp`. Matches are blocked                            |
+| `hostname_whitelist` | `null`  | Array of `RegExp`. Only matches allowed, supersedes the blacklist |
+| `port_blacklist`     | `null`  | Ports, or `[start, end]` ranges, to block                         |
+| `port_whitelist`     | `null`  | Only these ports, supersedes the blacklist                        |
+| `allow_direct_ip`    | `true`  | Whether a client may ask for a bare IP                            |
+| `allow_private_ips`  | `false` | RFC1918 and friends                                               |
+| `allow_loopback_ips` | `false` | `127.0.0.0/8` and other loopback ranges                           |
+
+**The blacklists take regular expressions, not strings.** A plain
+`"example.com"` in that array throws when wisp calls `.test()` on it.
+
+**A hostname blocklist is decorative while `allow_direct_ip` is `true`.** The
+client can resolve the name itself and connect to the address, which never
+touches your hostname rules. Turn it off in the same change, and accept that it
+breaks the few sites that hand out bare IPs.
+
+**Whitelists supersede blacklists rather than combining with them.** Setting
+both is not an error, and the blacklist is silently ignored. That is a good way
+to believe you have two layers when you have one.
+
+**The private and loopback defaults are `false`, and they must stay that way.**
 Set either to `true` and a user can point your proxy at `127.0.0.1` or
 `10.0.0.0/8` and reach services on your own machine and your provider's internal
 network, including cloud metadata endpoints, which on several providers hand out
@@ -137,6 +170,17 @@ They are written explicitly above because a config file is a better place to be
 reminded of them than a changelog. If you have enabled either for local
 development, make sure it did not follow you into production. This is the one
 item on this page that is a security bug rather than a preference.
+
+Two more that look like abuse controls and are not. `stream_limit_per_host` and
+`stream_limit_total` both default to `-1`, meaning no limit, and both count
+**per connection**, not per user. One browser tab is one wisp connection, so a
+user with five tabs gets five times whatever you set, and a script opening
+connections in a loop is unbounded either way. They stop one page from opening a
+thousand sockets. They are not the rate limiter above.
+
+`client_ip_blacklist` and `client_ip_whitelist` exist on the options object and
+are marked not implemented in the source. Setting them does nothing; block
+client addresses at your reverse proxy.
 
 ---
 

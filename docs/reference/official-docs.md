@@ -92,7 +92,7 @@ the date. That comes from
 so it cannot drift page by page: bump the pins, and every page restamps.
 
 The checking is not editorial. Upstream sources are cloned locally and claims
-are traced to a file and a line before they get written down. `npm run check`
+are traced to a file and a line before they get written down. `bun run check`
 enforces what can be automated: links and heading anchors resolve, version pins
 in prose match `builder/versions.js`, and all 58 generator combinations still
 compile and type-check.

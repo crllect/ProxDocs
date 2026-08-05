@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, access } from "node:fs/promises";
+import { readFile, access, readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
@@ -25,6 +25,7 @@ import {
 	styling,
 	packageManagers,
 	exampleNames,
+	defaults as defaultOptions,
 	resolve as resolveOptions
 } from "../builder/options.js";
 
@@ -143,6 +144,51 @@ for (const page of pages) {
 }
 
 if (!brokenLinks) ok(`${linkCount} relative links and anchors resolve`);
+
+console.log("\nHouse style");
+
+const styleRules = [
+	{
+		pattern: /—/g,
+		message: "em dash, use a comma, colon, or a second sentence"
+	},
+	{
+		pattern: /[“”‘’]/g,
+		message: "curly quote, use a straight quote"
+	}
+];
+
+let styleViolations = 0;
+const styleSources = [
+	...pages.map(page => ({
+		label: page.file,
+		file: path.join(docsDir, page.file)
+	})),
+	{ label: "README.md", file: path.join(root, "README.md") },
+	{ label: "CONTRIBUTING.md", file: path.join(root, "CONTRIBUTING.md") }
+];
+
+for (const source of styleSources) {
+	let text;
+	try {
+		text = await readFile(source.file, "utf8");
+	} catch {
+		continue;
+	}
+	const lines = text.split("\n");
+	for (const rule of styleRules) {
+		lines.forEach((line, index) => {
+			if (!rule.pattern.test(line)) return;
+			rule.pattern.lastIndex = 0;
+			fail(`${source.label}:${index + 1} ${rule.message}`);
+			styleViolations++;
+		});
+	}
+}
+
+if (!styleViolations) {
+	ok(`${styleSources.length} files use plain punctuation`);
+}
 
 console.log("\nVersion pins");
 
@@ -273,10 +319,12 @@ const hostile = resolveOptions({
 	wiring: "toString",
 	features: ["__proto__"]
 }).options;
-if (hostile.server !== "express") fail("inherited server option was accepted");
-if (hostile.packageManager !== "npm")
+if (hostile.server !== defaultOptions.server)
+	fail("inherited server option was accepted");
+if (hostile.packageManager !== defaultOptions.packageManager)
 	fail("inherited package-manager option was accepted");
-if (hostile.wiring !== "manual") fail("inherited wiring option was accepted");
+if (hostile.wiring !== defaultOptions.wiring)
+	fail("inherited wiring option was accepted");
 if (hostile.features.length) fail("inherited feature option was accepted");
 
 const serverlessSwitch = resolveOptions({
@@ -295,6 +343,69 @@ if (popupSettings.features.includes("aboutPages")) {
 	fail("settings forced custom protocols instead of using a popup");
 }
 if (!failures) ok("inherited properties and serverless features are rejected");
+
+console.log("\nPart directives");
+
+const partsDir = path.join(root, "builder", "parts");
+const collectFiles = async dir => {
+	const out = [];
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) out.push(...(await collectFiles(full)));
+		else out.push(full);
+	}
+	return out;
+};
+
+const producibleFlags = new Set([
+	...Object.keys(languages),
+	...Object.keys(packageManagers),
+	...Object.keys(servers),
+	...Object.keys(wirings),
+	...Object.keys(styling),
+	...Object.keys(features),
+	...Object.keys(exampleNames),
+	"scramjet",
+	"node",
+	"bun",
+	"vanilla",
+	"react",
+	"astro",
+	"vite",
+	"nobundler",
+	"vercel",
+	"tailwindCdn",
+	"scramjetManual",
+	"frameworkFrontend",
+	"vitePlugins",
+	"menuPages",
+	"menuSingle",
+	"popupMenus",
+	"requiresIsolation",
+	"hasLibcurl",
+	"hasEpoxy",
+	"transportBare",
+	"transportWisp",
+	"hasWebsockets"
+]);
+
+let unknownFlags = 0;
+let directiveCount = 0;
+for (const file of await collectFiles(partsDir)) {
+	const source = await readFile(file, "utf8");
+	for (const [, raw] of source.matchAll(/#if[ \t]+(!?[A-Za-z_][\w]*)/g)) {
+		directiveCount++;
+		const flag = raw.replace(/^!/, "");
+		if (producibleFlags.has(flag)) continue;
+		fail(
+			`${path.relative(root, file)} tests #if ${flag}, which the generator never sets`
+		);
+		unknownFlags++;
+	}
+}
+if (!unknownFlags) {
+	ok(`${directiveCount} #if directives reference producible flags`);
+}
 
 console.log("\nGenerator output");
 const generatorFailureStart = failures;

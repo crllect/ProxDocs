@@ -485,6 +485,8 @@ message; routing back through your own shell lets you open it in a new tab.
 
 - [Config and flags](scramjet-config.md). The other half of controlling
   Scramjet, and the one that decides how the rewriter behaves.
+- [Controller and Frame API](controller-api.md). What `frame` is, beyond the
+  hooks you tap on it.
 - [Custom protocols](../guides/custom-protocols.md). `fetch.request` and
   `earlyResponse` applied to internal pages.
 - [Cookies and sessions](../guides/cookies-and-sessions.md). What the controller

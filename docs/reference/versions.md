@@ -1,6 +1,6 @@
 # Version matrix
 
-Verified against the npm registry on **2026-08-02**. The canonical copy lives in
+Verified against the npm registry on **2026-08-04**. The canonical copy lives in
 [`builder/versions.js`](https://github.com/crllect/ProxDocs/blob/main/builder/versions.js),
 which is what the generator uses.
 
@@ -46,7 +46,7 @@ accidentally install half of it alongside Scramjet. See
 	"@mercuryworkshop/wisp-js": "^0.4.1",
 
 	"@mercuryworkshop/bare-as-module3": "^2.2.5",
-	"@tomphttp/bare-server-node": "^2.0.3"
+	"@tomphttp/bare-server-node": "^2.0.6"
 }
 ```
 
@@ -59,7 +59,7 @@ and `^3`. That is the mismatch that bites people who copy one line out of an old
 ## The trap: `latest` is not the newest Scramjet
 
 ```bash
-npm install @mercuryworkshop/scramjet     # installs 1.1.0, not 2.x
+bun add @mercuryworkshop/scramjet     # installs 1.1.0, not 2.x
 ```
 
 Scramjet 2.x is published under the **`alpha`** dist-tag. `latest` still points
@@ -67,7 +67,7 @@ at the 1.x line, which uses a completely different API
 (`$scramjetLoadController` and bare-mux). Ask for the version explicitly:
 
 ```bash
-npm install @mercuryworkshop/scramjet@2.0.67-alpha.2
+bun add @mercuryworkshop/scramjet@2.0.67-alpha.2
 ```
 
 Pin the Scramjet packages exactly. These are alphas and the
@@ -78,7 +78,8 @@ Older guides install from a GitHub release URL:
 `https://github.com/MercuryWorkshop/scramjet/releases/download/latest/mercuryworkshop-scramjet-2.0.0-alpha.tgz`
 
 `latest` there is a rolling continuous build, so that URL no longer resolves to
-the version the guide was written against. Everything is on npm now; use npm.
+the version the guide was written against. Everything is on npm now; install
+from the registry.
 
 ---
 

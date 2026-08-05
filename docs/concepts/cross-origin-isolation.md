@@ -47,8 +47,11 @@ That is the argument for sending them: the cost is two lines and self-hosting
 your own assets, the failure is silent and unattributable, and you cannot add
 the headers retroactively for a user who already hit the problem.
 
-There is one place Scramjet needs isolation in your own shell: the `syncxhr`
-flag, which is off by default. See
+There is one place Scramjet reaches for isolation in your own shell: the
+`syncxhr` flag, which is off by default and which allocates a
+`SharedArrayBuffer` when on. It is also unimplemented in 2.0.67-alpha.2 and
+throws for a second reason before isolation matters, so it is not an argument
+for the headers either way. See
 [config and flags](../reference/scramjet-config.md#flags).
 
 **Ultraviolet does the same thing**, and does it correctly. Its service worker

@@ -63,7 +63,10 @@ const app = Fastify({
 	serverFactory: handler => {
 		const server = require("node:http").createServer(handler);
 		server.on("upgrade", (req, socket, head) => {
-			if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+			const wispPath = new URL(req.url ?? "/", "http://localhost")
+				.pathname;
+			if (wispPath === "/wisp/") {
+				req.url = wispPath;
 				wisp.routeRequest(req, socket, head);
 			} else {
 				socket.end();
@@ -160,7 +163,9 @@ app.use("/*", serveStatic({ root: "./public" }));
 const server = serve({ fetch: app.fetch, port: 8080 });
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 	} else {
 		socket.end();
@@ -215,10 +220,10 @@ export default {
 				}
 
 				server.httpServer?.on("upgrade", (req, socket, head) => {
-					if (
-						new URL(req.url, "https://myproxy.com").pathname ===
-						"/wisp/"
-					) {
+					const wispPath = new URL(req.url ?? "/", "http://localhost")
+						.pathname;
+					if (wispPath === "/wisp/") {
+						req.url = wispPath;
 						wisp.routeRequest(req, socket, head);
 					}
 				});
@@ -265,7 +270,9 @@ const server = http.createServer((req, res) => {
 });
 
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 	}
 });
@@ -341,7 +348,9 @@ app.use(handler);
 
 const server = http.createServer(app);
 server.on("upgrade", (req, socket, head) => {
-	if (new URL(req.url, "https://myproxy.com").pathname === "/wisp/") {
+	const wispPath = new URL(req.url ?? "/", "http://localhost").pathname;
+	if (wispPath === "/wisp/") {
+		req.url = wispPath;
 		wisp.routeRequest(req, socket, head);
 	} else {
 		socket.end();
