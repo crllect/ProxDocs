@@ -93,21 +93,17 @@ const registerServiceWorker = async (): Promise<ServiceWorker> => {
 };
 
 const transportModules: Partial<Record<string, string>> = {
-	//#if hasLibcurl
-	libcurl: "/libcurl/index.mjs",
-	//#endif
-	//#if hasEpoxy
-	epoxy: "/epoxy/index.mjs",
-	//#endif
-	//#if transportBare
-	bare: "/baremod/index.mjs"
-	//#endif
+	//#insert TRANSPORT_MODULES
 };
 
 let currentTransport: TransportConfig = {
-	kind: "{{DEFAULT_TRANSPORT}}",
+	//#if transportWisp
 	wisp: "",
-	bare: ""
+	//#endif
+	//#if transportBare
+	bare: "",
+	//#endif
+	kind: "{{DEFAULT_TRANSPORT}}"
 };
 
 //#if transportSwitch

@@ -122,10 +122,10 @@ It also asks about the features:
 - **Quiet service worker:** silence log, info and debug inside the worker
 
 Choices that can't work together are greyed out with the reason, rather than
-letting you pick them and quietly changing them afterwards. Picking an
-all-in-one serverless host selects the Bare transport, because those hosts can't
-hold Wisp's WebSocket open; a static frontend may instead point at Wisp hosted
-elsewhere. See [Serverless deployment](guides/serverless.md).
+letting you pick them and quietly changing them afterwards. Serverless hosts
+can't hold Wisp's WebSocket open, so targeting one means picking the Bare
+transport, which the serverless preset does; a static frontend may instead point
+at Wisp hosted elsewhere. See [Serverless deployment](guides/serverless.md).
 
 Or from the terminal:
 

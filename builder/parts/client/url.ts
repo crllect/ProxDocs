@@ -9,11 +9,19 @@ const looksLikeUrl =
 
 const proxyableSchemes = new Set(["http:", "https:"]);
 
-const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+const isLoopback = (hostname: string): boolean => {
+	const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+	if (host === "localhost" || host.endsWith(".localhost")) return true;
+	if (host === "::1" || host === "::") return true;
 
-const isLoopback = (hostname: string): boolean =>
-	loopbackHosts.has(hostname.toLowerCase()) ||
-	hostname.toLowerCase().endsWith(".localhost");
+	const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(host);
+	const octets = (mapped ? mapped[1] : host).split(".");
+	if (octets.length !== 4) return false;
+	if (!octets.every(part => /^\d{1,3}$/.test(part) && Number(part) < 256))
+		return false;
+
+	return Number(octets[0]) === 127 || octets.join(".") === "0.0.0.0";
+};
 const blockedSchemes = new Set([
 	"javascript:",
 	"data:",

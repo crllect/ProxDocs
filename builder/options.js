@@ -154,6 +154,7 @@ export const transports = {
 		label: "libcurl",
 		tagline: "curl in WebAssembly, over wisp. Widest site compatibility.",
 		backend: "wisp",
+		module: "/libcurl/index.mjs",
 		docs: "/concepts/transports",
 		engines: ["scramjet"]
 	},
@@ -162,6 +163,7 @@ export const transports = {
 		tagline:
 			"A Rust TLS stack in WebAssembly, over wisp. Smaller than libcurl.",
 		backend: "wisp",
+		module: "/epoxy/index.mjs",
 		docs: "/concepts/transports",
 		engines: ["scramjet"]
 	},
@@ -170,21 +172,9 @@ export const transports = {
 		tagline: "Plain HTTP to a Bare server. Works without WebSockets.",
 		detail: "The only transport that runs on request/response serverless hosts. Your server can inspect target request and response data, and WebSocket sites will not work.",
 		backend: "bare",
+		module: "/baremod/index.mjs",
 		docs: "/guides/serverless",
 		engines: ["scramjet"]
-	}
-};
-
-export const hosts = {
-	node: {
-		label: "Node host or VPS",
-		tagline: "Everything works.",
-		supportsWebsockets: true
-	},
-	vercel: {
-		label: "Vercel or serverless",
-		tagline: "No WebSockets, so the Bare transport only.",
-		supportsWebsockets: false
 	}
 };
 
@@ -258,7 +248,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["libcurl"],
-			host: "node",
 			features: ["browserControls"]
 		}
 	},
@@ -278,7 +267,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["libcurl", "epoxy"],
-			host: "node",
 			features: ["browserControls", "tabs", "settings"]
 		}
 	},
@@ -297,7 +285,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["libcurl", "epoxy", "bare"],
-			host: "node",
 			features: Object.keys(features)
 		}
 	},
@@ -316,7 +303,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["bare"],
-			host: "vercel",
 			features: ["browserControls", "settings", "history", "aboutPages"]
 		}
 	},
@@ -334,7 +320,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["libcurl"],
-			host: "node",
 			features: ["browserControls", "tabs", "settings"]
 		}
 	},
@@ -353,7 +338,6 @@ export const presets = {
 			engine: "scramjet",
 			wiring: "manual",
 			transports: ["libcurl"],
-			host: "node",
 			features: ["browserControls", "settings"]
 		}
 	}
@@ -380,7 +364,7 @@ export const defaults = {
 	engine: "scramjet",
 	wiring: "manual",
 	transports: ["libcurl"],
-	host: "node",
+	vercel: false,
 	features: ["browserControls", "tabs"]
 };
 
@@ -395,13 +379,10 @@ export const incompatibilities = opts => {
 		engine: {},
 		wiring: {},
 		transport: {},
-		host: {},
 		features: {}
 	};
 
-	const serverless = opts.host === "vercel";
-
-	if (serverless) {
+	if (opts.vercel) {
 		out.transport.libcurl =
 			"Wisp needs a WebSocket, which serverless hosts cannot hold open.";
 		out.transport.epoxy =
@@ -488,7 +469,8 @@ export const resolve = (raw = {}) => {
 	pick("styling", styling);
 	pick("engine", engines);
 	pick("wiring", wirings);
-	pick("host", hosts);
+
+	opts.vercel = opts.vercel === true || opts.vercel === "true";
 
 	if (!wirings[opts.wiring]?.engines.includes(opts.engine)) {
 		opts.wiring = "manual";
@@ -522,10 +504,10 @@ export const resolve = (raw = {}) => {
 		opts.wiring = "manual";
 	}
 
-	if (!hosts[opts.host].supportsWebsockets) {
+	if (opts.vercel) {
 		if (selected.some(id => transports[id].backend === "wisp")) {
 			notes.push(
-				"A serverless function cannot hold a WebSocket open, so only Bare was kept."
+				"A Vercel function cannot hold a WebSocket open, so only Bare was kept."
 			);
 		}
 		selected = ["bare"];
@@ -535,12 +517,12 @@ export const resolve = (raw = {}) => {
 	opts.transports = selected;
 	opts.transport = selected[0];
 
-	if (opts.runtime === "bun" && opts.host === "vercel") {
+	if (opts.runtime === "bun" && opts.vercel) {
 		notes.push("Vercel functions run Node, so the runtime was switched.");
 		opts.runtime = "node";
 	}
 
-	if (opts.server === "fastify" && opts.host === "vercel") {
+	if (opts.server === "fastify" && opts.vercel) {
 		notes.push(
 			"The Vercel function needs an exported handler, so Express was used."
 		);
@@ -581,9 +563,9 @@ export const resolve = (raw = {}) => {
 			continue;
 		}
 
-		if (key === "transportSwitch" && opts.host === "vercel") {
+		if (key === "transportSwitch" && opts.vercel) {
 			notes.push(
-				"A serverless function cannot hold a WebSocket open, so only the Bare transport is available and switching was removed."
+				"A Vercel function cannot hold a WebSocket open, so only the Bare transport is available and switching was removed."
 			);
 			continue;
 		}
@@ -647,18 +629,6 @@ export const resolve = (raw = {}) => {
 	return { options: opts, notes };
 };
 
-/**
- * Splits every choice into two buckets by asking the resolver what actually
- * happens if you pick it.
- *
- *   blocked      the value cannot be applied at all, so the UI disables it
- *   consequence  the value applies but adjusts something else, so the UI keeps
- *                it clickable and explains what will change
- *
- * Deriving this from resolve() rather than a second hand-written table means
- * the two can never disagree, which is how "greyed out but it would have
- * worked" bugs got in.
- */
 export const availability = opts => {
 	const reasons = incompatibilities(opts);
 	const tables = {
@@ -668,9 +638,7 @@ export const availability = opts => {
 		frontend: frontends,
 		bundler: bundlers,
 		styling: styling,
-		engine: engines,
-		transport: transports,
-		host: hosts
+		engine: engines
 	};
 
 	const blocked = {};
@@ -693,6 +661,23 @@ export const availability = opts => {
 			} else if (attempt.notes.length) {
 				consequence[field][value] = attempt.notes.join(" ");
 			}
+		}
+	}
+
+	blocked.transport = {};
+	consequence.transport = {};
+	for (const id of Object.keys(transports)) {
+		if (opts.transports.includes(id)) continue;
+		const attempt = resolve({
+			...opts,
+			transports: [...opts.transports, id]
+		});
+		if (!attempt.options.transports.includes(id)) {
+			blocked.transport[id] =
+				reasons.transport?.[id] ??
+				`${id} cannot be used with these choices.`;
+		} else if (attempt.notes.length) {
+			consequence.transport[id] = attempt.notes.join(" ");
 		}
 	}
 

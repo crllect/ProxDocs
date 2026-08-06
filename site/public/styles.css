@@ -212,8 +212,6 @@ a {
 	padding: 1.25rem 0;
 }
 
-/* Thumb only, no track. Firefox and friends take the standard properties;
-   WebKit needs the pseudo-elements, including the arrow buttons. */
 .sidebar,
 .filelist,
 .filepreview,

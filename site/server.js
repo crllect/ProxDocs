@@ -17,8 +17,7 @@ import {
 	wirings,
 	features,
 	servers,
-	hosts,
-	incompatibilities
+	availability
 } from "../builder/options.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -34,8 +33,7 @@ const optionsJson = JSON.stringify({
 	engines,
 	wirings: visible(wirings),
 	features,
-	servers,
-	hosts
+	servers
 });
 
 const mimeTypes = {
@@ -159,13 +157,15 @@ const server = http.createServer(async (req, res) => {
 				if (req.method !== "POST") break;
 				const body = await readBody(req);
 				const { files, options, notes } = await compose(body);
+				const { blocked, consequence } = availability(options);
 				return send(
 					res,
 					200,
 					JSON.stringify({
 						options,
 						notes,
-						blocked: incompatibilities(options),
+						blocked,
+						consequence,
 						files: Object.fromEntries(
 							Object.entries(files).map(([name, contents]) => [
 								name,

@@ -11,12 +11,7 @@ const backendPort = process.env.BACKEND_PORT || "{{PORT}}";
 export default defineConfig({
 	//#if vitePlugins
 	plugins: [
-		//#if react
-		react(),
-		//#endif
-		//#if tailwind
-		tailwindcss()
-		//#endif
+		//#insert VITE_PLUGINS
 	],
 	//#endif
 

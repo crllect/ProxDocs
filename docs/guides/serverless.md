@@ -45,6 +45,19 @@ sites. If you have the option, skip to
 node builder/cli.js --out ./my-proxy --preset serverless
 ```
 
+The serverless preset is exactly one thing: the Bare transport instead of Wisp.
+It is not tied to any host, and what it produces runs anywhere a Node server
+runs. Vercel is that plus a `vercel.json` and an exported handler, which is a
+separate opt-in flag:
+
+```bash
+node builder/cli.js --out ./my-proxy --preset serverless --vercel
+```
+
+Neither is offered in the web builder. If you are deploying somewhere else,
+build without `--vercel` and copy the manifest below into whatever your platform
+calls it.
+
 ---
 
 ## The pieces
@@ -206,9 +219,14 @@ you also serve an older client.
 
 The `export default handleRequest` is what the platform invokes. The
 `if (!process.env.VERCEL)` guard is so the same file still runs locally with
-`node server.js`; rename the variable if your host sets a different one.
+`node server.js`; rename the variable if your host sets a different one. Both
+come from `--vercel`; without it the server is an ordinary listening one, and
+you add the export yourself if your platform wants a handler.
 
 ### `vercel.json`
+
+`--vercel` writes this file. Without the flag it is not generated, so copy it
+from here.
 
 ```json
 {
@@ -267,6 +285,9 @@ of the transport abstraction. See [Transports](../concepts/transports.md).
 
 ## What you are giving up
 
+Everything below is the cost of deploying onto a function, not the cost of the
+Bare transport. Run the same build on a Node host and none of it applies.
+
 ### WebSocket sites won't work
 
 Not "will be slow". Will not work. Discord, most chat apps, live dashboards,
@@ -274,7 +295,9 @@ collaborative editors, anything with real-time updates. The Bare spec does
 define WebSocket tunnelling, and `bare-transport` implements it, but it needs a
 connection the function can't hold open.
 
-This rules out a large fraction of what people want a proxy for.
+This rules out a large fraction of what people want a proxy for. On a Node host
+the build registers the Bare server's upgrade handler and tunnelling works, so
+this is the single biggest reason not to put the proxy on a function.
 
 ### Your server can inspect target traffic
 

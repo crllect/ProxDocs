@@ -9,7 +9,6 @@ import {
 	bundlers,
 	styling,
 	transports,
-	hosts,
 	packageManagers,
 	frontends
 } from "./options.js";
@@ -55,10 +54,11 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		options.styling,
 		options.frontend,
 		options.packageManager,
-		options.host,
 		options.bundler === "vite" ? "vite" : "nobundler",
 		...options.features
 	]);
+
+	if (options.vercel) flags.add("vercel");
 
 	if (!isVite && options.styling === "tailwind") flags.add("tailwindCdn");
 	if (isScramjet && !isBootstrap) flags.add("scramjetManual");
@@ -83,7 +83,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	if (
 		isBootstrap ||
 		flags.has("transportWisp") ||
-		(flags.has("transportBare") && options.host !== "vercel")
+		(flags.has("transportBare") && !options.vercel)
 	) {
 		flags.add("hasWebsockets");
 	}
@@ -96,7 +96,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 	const vars = {
 		PROJECT_NAME: options.name,
 		PROJECT_TITLE: titleCase(options.name),
-		PORT: options.host === "vercel" ? 3000 : 8080,
+		PORT: options.vercel ? 3000 : 8080,
 		STORAGE_NAMESPACE: options.name,
 		INTERNAL_SCHEME: internalScheme(options.name),
 		SCRAMJET_VERSION: versions.scramjet,
@@ -109,6 +109,12 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		TRANSPORT_OPTIONS: transportOptions
 			.map(transport => inlineObject(transport))
 			.join(",\n"),
+		TRANSPORT_MODULES: transportOptions
+			.map(
+				transport =>
+					`${transport.id}: ${JSON.stringify(transports[transport.id].module)}`
+			)
+			.join(",\n"),
 		STATIC_ROOT: staticRoot,
 		APP_ENTRY: appEntry,
 		CLIENT_EXT: ext,
@@ -117,6 +123,12 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		VITE_PROXY_ROUTES: Object.entries(viteProxyConfig(options))
 			.map(([route, config]) => `${JSON.stringify(route)}: ${config}`)
 			.join(",\n"),
+		VITE_PLUGINS: [
+			...(isReact ? ["react()"] : []),
+			...(isVite && options.styling === "tailwind"
+				? ["tailwindcss()"]
+				: [])
+		].join(",\n"),
 		DEV_SERVER_EXECUTABLE: serverCommand.executable,
 		DEV_SERVER_ARGS: serverCommand.args.map(JSON.stringify).join(",\n"),
 		DEV_CLIENT_EXECUTABLE: clientCommand.executable,
@@ -228,7 +240,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		"!.env.example",
 		"!.env.*.example",
 		"*.log",
-		".vercel/",
+		...(options.vercel ? [".vercel/"] : []),
 		"",
 		".DS_Store",
 		"Thumbs.db",
@@ -240,7 +252,7 @@ export const compose = async (raw = {}, { readPart } = {}) => {
 		""
 	].join("\n");
 
-	if (options.host === "vercel") {
+	if (options.vercel) {
 		const builds = [
 			{
 				src: `server.${ext}`,
@@ -322,7 +334,6 @@ const frontendCommand = options => {
 
 const viteProxyConfig = options => {
 	const proxy = {};
-	const switches = options.features.includes("transportSwitch");
 	const backend = "`http://127.0.0.1:${backendPort}`";
 	const http = route => {
 		proxy[route] = backend;
@@ -343,7 +354,10 @@ const viteProxyConfig = options => {
 			const chosen = options.transports ?? [options.transport];
 			if (chosen.includes("bare")) {
 				http("/baremod");
-				http("/bare");
+				if (options.vercel) http("/bare");
+				else
+					proxy["/bare"] =
+						"{ target: `http://127.0.0.1:${backendPort}`, ws: true }";
 			}
 			if (chosen.includes("libcurl")) http("/libcurl");
 			if (chosen.includes("epoxy")) http("/epoxy");
@@ -600,7 +614,6 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 					: transports[id].label
 			)
 			.join(", ")} |`,
-		`| Target host | ${hosts[options.host].label} |`,
 		"",
 		"### Features",
 		"",
@@ -694,7 +707,7 @@ const readme = (options, notes, vars, { isVite, isTs, srcDir }) => {
 		lines.push("");
 	}
 
-	if (options.host === "vercel") {
+	if (options.vercel) {
 		lines.push(
 			"## Deploying to Vercel",
 			"",

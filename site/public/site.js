@@ -189,17 +189,14 @@ if (form) {
 			server: data.get("server"),
 			bundler: data.get("bundler"),
 			styling: data.get("styling"),
-			engine: data.get("engine"),
-			wiring: data.get("wiring"),
 			transports: data.getAll("transport"),
-			host: "node",
 			features: data.getAll("features")
 		};
 	};
 
 	const applyPreset = options => {
 		for (const [key, value] of Object.entries(options)) {
-			if (key === "features" || key === "host") continue;
+			if (key === "features") continue;
 			const input = form.querySelector(
 				`[name="${key}"][value="${value}"]`
 			);
@@ -251,7 +248,7 @@ if (form) {
 		}
 
 		for (const [key, value] of Object.entries(options)) {
-			if (key === "features" || key === "host") continue;
+			if (key === "features") continue;
 			const input = form.querySelector(
 				`[name="${key}"][value="${value}"]`
 			);

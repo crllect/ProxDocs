@@ -10,7 +10,6 @@ import {
 	features,
 	wirings,
 	servers,
-	hosts,
 	languages,
 	runtimes,
 	bundlers,
@@ -63,7 +62,7 @@ Options
   --engine <id>      ${list(engines)}
   --wiring <id>      ${list(wirings)}
   --transport <ids>  ${list(transports)} (comma separated)
-  --host <id>        ${list(hosts)}
+  --vercel           add vercel.json and the serverless function export
 
   --features a,b,c   ${Object.keys(features).join(",")}
   --force            write into a non-empty directory
@@ -110,14 +109,14 @@ for (const key of [
 	"bundler",
 	"styling",
 	"engine",
-	"wiring",
-	"host"
+	"wiring"
 ]) {
 	if (args[key]) raw[key] = args[key];
 }
 if (Array.isArray(args.features)) raw.features = args.features;
 if (Array.isArray(args.transport)) raw.transports = args.transport;
 else if (args.transport) raw.transports = [args.transport];
+if (args.vercel) raw.vercel = true;
 
 try {
 	const existing = await readdir(outDir);

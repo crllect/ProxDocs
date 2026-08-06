@@ -122,8 +122,11 @@ bun builder/cli.js --out ./my-proxy \
 Two more flags exist but are not part of the normal path. `--wiring manual`
 (default) or `bootstrap` picks how Scramjet's browser files are served; only
 manual is offered in the web builder, and `bootstrap` cannot use the Bare
-transport. See [wiring](docs/guides/wiring.md). `--host node` (default) or
-`vercel` targets a serverless function, which forces the Bare transport.
+transport. See [wiring](docs/guides/wiring.md). `--vercel` adds `vercel.json`
+and the serverless function export, which forces the Bare transport. Neither is
+offered in the web builder. Serverless deployment itself is just the Bare
+transport, which `--preset serverless` selects on its own; see
+[Serverless deployment](docs/guides/serverless.md).
 
 | Feature identifier   | Adds                                                 |
 | -------------------- | ---------------------------------------------------- |
@@ -152,8 +155,8 @@ the client instead, with Wisp on a cheap VPS.
 
 Run `bun builder/cli.js --help` for the full list.
 
-Pre-generated output for each preset is committed under [`examples/`](examples/)
-if you would rather just read it.
+Run `bun run examples` to write every preset into `examples/` if you would
+rather just read the output. That directory is generated and untracked.
 
 ---
 
@@ -246,7 +249,7 @@ builder/
   template.js    the //#if directive processor
   parts/         real source files that get composed
   cli.js         Node entry point for generated projects
-examples/        pre-generated presets (regenerate with bun run examples)
+examples/        generated presets, untracked (bun run examples)
 scripts/check.js validates docs links and that every combination compiles
 ```
 
@@ -260,14 +263,14 @@ bun run check
 
 Verifies documentation files, links, Markdown rendering, URL classification,
 generated JSON and JavaScript, client TypeScript semantics, template directives,
-all 57 option combinations, and whether the committed examples match the
-generator.
+and all 57 option combinations.
 
 ```bash
 bun run examples
 ```
 
-That command regenerates `examples/` from the presets.
+That command writes `examples/` from the presets. It is generated output, not
+tracked in git, so there is nothing to keep in sync.
 
 ---
 

@@ -28,14 +28,22 @@ importScripts("/controller/controller.sw.js");
 const shellCachePrefix = "{{PROJECT_NAME}}-shell-";
 const shellCache = shellCachePrefix + "v1";
 const runtimeRoots = [
-	"/scram/",
-	"/controller/",
-	"/utils/",
+	//#if hasLibcurl
 	"/libcurl/",
+	//#endif
+	//#if hasEpoxy
 	"/epoxy/",
+	//#endif
+	//#if transportBare
 	"/baremod/",
 	"/bare/",
-	"/wisp/"
+	//#endif
+	//#if transportWisp
+	"/wisp/",
+	//#endif
+	"/scram/",
+	"/controller/",
+	"/utils/"
 ];
 
 const isUnderRoot = (pathname, root) =>

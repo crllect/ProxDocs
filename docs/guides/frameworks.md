@@ -20,9 +20,9 @@ and popup documents. This avoids rerendering an active proxy
 [frame](multiple-tabs.md) when UI state changes.
 
 Use React when the rest of your client already uses React. Use Astro + Preact
-when you want a static page with only the proxy shell hydrated. The generated
-examples are in [`examples/react`](../../examples/react/) and
-[`examples/astro-preact`](../../examples/astro-preact/).
+when you want a static page with only the proxy shell hydrated. Build either one
+from the [builder](/build), or run `bun run examples` to write every preset into
+`examples/`.
 
 ## Server frameworks
 

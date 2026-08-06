@@ -22,8 +22,7 @@ import {
 	engines,
 	wirings,
 	features,
-	servers,
-	hosts
+	servers
 } from "../builder/options.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -146,8 +145,7 @@ const run = async () => {
 			engines,
 			wirings: visible(wirings),
 			features,
-			servers,
-			hosts
+			servers
 		})
 	);
 

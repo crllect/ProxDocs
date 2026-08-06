@@ -8,12 +8,7 @@ node_modules/
 **/.yarn/install-state.gz
 .pnp.*
 
-/examples/*/package-lock.json
-/examples/*/npm-shrinkwrap.json
-/examples/*/pnpm-lock.yaml
-/examples/*/yarn.lock
-/examples/*/bun.lock
-/examples/*/bun.lockb
+examples/
 
 dist/
 build/

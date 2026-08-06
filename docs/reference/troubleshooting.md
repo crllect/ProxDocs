@@ -456,6 +456,59 @@ Almost always one of:
 
 ---
 
+## Sharing a dev server over a tunnel or Live Share
+
+Someone else opens the link and gets a blank page, a refused connection, or
+`Blocked request`. Four separate things have to line up, and the dev server only
+does the first one for you if you ask.
+
+**Bind to every interface.** Vite and Astro listen on `localhost` only, so
+nothing outside your machine can reach them. Pass `--host` on the command, or
+set it in the config so you cannot forget.
+
+**Allow the tunnel's hostname.** Vite 6 rejects requests whose `Host` header it
+does not recognize, which reads as `Blocked request. This host is not allowed`.
+A leading dot covers subdomains, which you want, because most tunnels hand you a
+fresh random one every restart.
+
+Both live in the same place:
+
+```js
+export default defineConfig({
+	server: {
+		host: true,
+		allowedHosts: [".trycloudflare.com", ".ngrok-free.app"]
+	}
+});
+```
+
+Astro takes the same two keys, nested one level deeper under `vite.server`.
+
+The generated backend already binds every interface, so it needs nothing:
+Express omits the host in `listen()`, which means all of them, and Fastify
+passes `0.0.0.0` explicitly. It is the frontend dev server that needs the flag.
+With no build step there is no separate frontend, so this whole section does not
+apply.
+
+**Use HTTPS, not a LAN address.** Service workers need a secure context, and
+`localhost` is the only exemption. `http://192.168.1.5:5173` is not a secure
+context, so the worker never registers and the proxy cannot work at all, however
+healthy the page looks. Tunnels terminate TLS for you, which is the real reason
+to prefer one over `--host` on its own.
+
+**Check the tunnel forwards WebSockets and keeps the isolation headers.** Wisp
+is one long-lived socket, so a tunnel that does not upgrade leaves you with a
+page that loads and a proxy that never connects. Run the
+[Start here](#start-here) checks in the visitor's browser rather than your own;
+`crossOriginIsolated` is the one that catches a tunnel stripping
+`Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy`.
+
+Bare needs no upgrade, so if a tunnel refuses to carry WebSockets and you only
+want to show someone the thing working, building with `--preset serverless` is
+the quicker route than fighting the tunnel.
+
+---
+
 ## Changes to sw.js don't take effect
 
 Service workers update on their own schedule. Force it:
