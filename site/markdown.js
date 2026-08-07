@@ -40,8 +40,8 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 
 	const renderer = new marked.Renderer();
 
-	renderer.heading = function ({ tokens, depth }) {
-		const text = this.parser.parseInline(tokens);
+	renderer.heading = ({ tokens, depth }) => {
+		const text = renderer.parser.parseInline(tokens);
 		const plain = decodeEntities(text.replace(/<[^>]+>/g, ""));
 
 		if (depth === 1 && title === null) {
@@ -55,8 +55,8 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 		return `<h${depth} id="${id}"><a class="anchor" href="#${id}" aria-hidden="true">#</a>${text}</h${depth}>\n`;
 	};
 
-	renderer.link = function ({ href, title: linkTitle, tokens }) {
-		const text = this.parser.parseInline(tokens);
+	renderer.link = ({ href, title: linkTitle, tokens }) => {
+		const text = renderer.parser.parseInline(tokens);
 		let target = href ?? "";
 
 		const markdownLink = /^([^?#]+\.md)([?#].*)?$/.exec(target);
@@ -79,8 +79,8 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 		return `<a ${attrs.join(" ")}>${text}</a>`;
 	};
 
-	renderer.blockquote = function ({ tokens }) {
-		const body = this.parser.parse(tokens);
+	renderer.blockquote = ({ tokens }) => {
+		const body = renderer.parser.parse(tokens);
 		const marker = /^<p>\s*\[!(\w+)\]\s*(<\/p>\s*)?/i.exec(body);
 		const type = marker?.[1].toLowerCase();
 		const label = type ? alertLabels.get(type) : null;
@@ -99,19 +99,19 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 		return `<pre><code${cls}>${highlight(text, language)}\n</code></pre>\n`;
 	};
 
-	renderer.table = function ({ header, rows }) {
+	renderer.table = ({ header, rows }) => {
 		const cells = (row, tag) =>
 			"<tr>" +
 			row
 				.map(cell => {
 					const align = cell.align ? ` align="${cell.align}"` : "";
-					return `<${tag}${align}>${this.parser.parseInline(cell.tokens)}</${tag}>`;
+					return `<${tag}${align}>${renderer.parser.parseInline(cell.tokens)}</${tag}>`;
 				})
 				.join("") +
 			"</tr>";
 
 		const hasHeader = header.some(
-			cell => this.parser.parseInline(cell.tokens).trim() !== ""
+			cell => renderer.parser.parseInline(cell.tokens).trim() !== ""
 		);
 		const thead = hasHeader ? `<thead>${cells(header, "th")}</thead>` : "";
 		const tbody = rows.map(row => cells(row, "td")).join("");
