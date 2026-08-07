@@ -298,6 +298,98 @@ if (markup.includes("&amp;quot;"))
 	fail("HTML highlighting double-escaped quotes");
 if (!headless.includes('class="table--headless"'))
 	fail("headless table class is missing");
+const alert = markdownToHtml(
+	"> [!IMPORTANT]\n> Read this.",
+	"guides/test.md"
+).html;
+if (
+	!alert.includes('class="alert alert--important"') ||
+	alert.includes("[!IMPORTANT]")
+) {
+	fail("GitHub alert blockquote was not rendered as a callout");
+}
+
+const inlineAlert = markdownToHtml(
+	"> [!NOTE] Same line.",
+	"guides/test.md"
+).html;
+if (!inlineAlert.includes('class="alert alert--note"'))
+	fail("single-line GitHub alert was not rendered as a callout");
+
+const plainQuote = markdownToHtml("> Just a quote.", "guides/test.md").html;
+if (!plainQuote.includes("<blockquote>"))
+	fail("plain blockquote stopped rendering");
+
+const highlighted = [
+	{
+		language: "css",
+		source: ".a { color: #fff; }",
+		tokens: ["attr", "number"]
+	},
+	{
+		language: "scss",
+		source: "$a: 1px;\n.b { &--c { top: $a; } }",
+		tokens: ["attr"]
+	},
+	{
+		language: "md",
+		source: "# Title\n\n`code` <tag>",
+		tokens: ["keyword", "string"]
+	},
+	{
+		language: "json",
+		source: '{ "name": "x", "on": true }',
+		tokens: ["attr", "string", "keyword"]
+	},
+	{
+		language: "tsx",
+		source: 'const A = () => <div id="a">{x}</div>;',
+		tokens: ["tag", "attr"]
+	},
+	{
+		language: "astro",
+		source: '---\nconst a = 1;\n---\n<main class="b"></main>',
+		tokens: ["keyword", "tag"]
+	},
+	{
+		language: "yml",
+		source: "a:\n  - b: 1\n    c: true",
+		tokens: ["attr", "number", "keyword"]
+	},
+	{
+		language: "ini",
+		source: "; c\n[S]\nExecStart=/bin/node\nPort=80",
+		tokens: ["comment", "tag", "attr", "number"]
+	},
+	{
+		language: "nginx",
+		source: "server {\n  listen 443;\n}",
+		tokens: ["keyword", "number"]
+	},
+	{
+		language: "dockerfile",
+		source: "# c\nFROM node:22\nRUN npm ci",
+		tokens: ["comment", "keyword"]
+	},
+	{
+		language: "http",
+		source: "GET / HTTP/1.1\nHost: a.dev",
+		tokens: ["keyword", "tag", "attr"]
+	}
+];
+
+for (const { language, source, tokens } of highlighted) {
+	const output = highlight(source, language);
+	for (const token of tokens) {
+		if (!output.includes(`class="tok-${token}"`)) {
+			fail(`${language} highlighting produced no ${token} token`);
+		}
+	}
+	if (/<(?!span|\/span)/.test(output)) {
+		fail(`${language} highlighting emitted unescaped markup`);
+	}
+}
+
 const previewHighlight = highlight('const value = "<safe>";', "ts");
 if (
 	!previewHighlight.includes('class="tok-keyword"') ||

@@ -2,6 +2,14 @@ import { marked } from "marked";
 import path from "node:path";
 import { highlight } from "./public/highlight.js";
 
+const alertLabels = new Map([
+	["note", "Note"],
+	["tip", "Tip"],
+	["important", "Important"],
+	["warning", "Warning"],
+	["caution", "Caution"]
+]);
+
 export const markdownToHtml = (source, sourceFile = "index.md") => {
 	const toc = [];
 	const seen = new Map();
@@ -69,6 +77,20 @@ export const markdownToHtml = (source, sourceFile = "index.md") => {
 			attrs.push('target="_blank" rel="noopener noreferrer"');
 
 		return `<a ${attrs.join(" ")}>${text}</a>`;
+	};
+
+	renderer.blockquote = function ({ tokens }) {
+		const body = this.parser.parse(tokens);
+		const marker = /^<p>\s*\[!(\w+)\]\s*(<\/p>\s*)?/i.exec(body);
+		const type = marker?.[1].toLowerCase();
+		const label = type ? alertLabels.get(type) : null;
+
+		if (!label) return `<blockquote>\n${body}</blockquote>\n`;
+
+		const remainder = body.slice(marker[0].length);
+		const rest = marker[2] ? remainder : `<p>${remainder}`;
+
+		return `<div class="alert alert--${type}"><p class="alert__title">${label}</p>\n${rest}</div>\n`;
 	};
 
 	renderer.code = ({ text, lang }) => {

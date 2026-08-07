@@ -310,34 +310,10 @@ if (form) {
 	};
 
 	const showFile = name => {
-		const extension = name.split(".").pop()?.toLowerCase();
-		let language = "";
-
-		switch (extension) {
-			case "js":
-			case "cjs":
-			case "mjs":
-				language = "js";
-				break;
-			case "ts":
-				language = "ts";
-				break;
-			case "jsx":
-				language = "jsx";
-				break;
-			case "tsx":
-				language = "tsx";
-				break;
-			case "json":
-				language = "json";
-				break;
-			case "astro":
-			case "html":
-			case "svg":
-			case "xml":
-				language = "html";
-				break;
-		}
+		const base = name.split("/").pop() ?? name;
+		const language = base.includes(".")
+			? base.split(".").pop()
+			: base.toLowerCase();
 
 		previewEl.innerHTML = highlight(currentFiles[name] ?? "", language);
 	};

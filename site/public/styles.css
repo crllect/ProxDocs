@@ -10,6 +10,11 @@
 	--accent-text: #ff4d83;
 	--accent-soft: #3a1022;
 	--warn: #d6a15d;
+	--alert-note: #82b9ff;
+	--alert-tip: #67d6aa;
+	--alert-important: #c4a7ff;
+	--alert-warning: #d6a15d;
+	--alert-caution: #ff5b8d;
 	--max: 1440px;
 	--sidebar: 15rem;
 	--toc: 14rem;
@@ -27,6 +32,11 @@
 	--accent-text: #b50041;
 	--accent-soft: #f7d8e3;
 	--warn: #8a5a18;
+	--alert-note: #245f9e;
+	--alert-tip: #147555;
+	--alert-important: #7048a8;
+	--alert-warning: #8a5a18;
+	--alert-caution: #b0003f;
 }
 
 * {
@@ -396,6 +406,41 @@ h3:hover .anchor {
 }
 .prose blockquote strong {
 	color: var(--fg);
+}
+
+.prose .alert {
+	margin: 1.5rem 0;
+	padding: 0.75rem 1.25rem;
+	border-left: 3px solid var(--alert-color);
+	background: var(--bg-soft);
+	border-radius: 0 6px 6px 0;
+}
+
+.prose .alert p {
+	margin: 0.5rem 0;
+}
+
+.prose .alert__title {
+	margin: 0 0 0.35rem;
+	color: var(--alert-color);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.prose .alert--note {
+	--alert-color: var(--alert-note);
+}
+.prose .alert--tip {
+	--alert-color: var(--alert-tip);
+}
+.prose .alert--important {
+	--alert-color: var(--alert-important);
+}
+.prose .alert--warning {
+	--alert-color: var(--alert-warning);
+}
+.prose .alert--caution {
+	--alert-color: var(--alert-caution);
 }
 
 .prose :not(pre) > code {
